@@ -278,7 +278,7 @@ export default function App(){
 
         *{box-sizing:border-box}
         body,html,#root{height:100%}
-        .container{max-width:1400px; margin:0 auto}
+        .container{max-width:min(95vw,1600px); margin:0 auto}
         .nav{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:14px}
         .title{font-size:22px;font-weight:800}
         .subtitle{color:var(--muted);font-size:13px}
@@ -289,7 +289,7 @@ export default function App(){
         .tab{padding:8px 12px;border-radius:12px;border:1px solid var(--stroke);cursor:pointer;background:var(--cardAlt);font-weight:600}
         .tab.active{border-color:var(--brand);box-shadow:0 0 0 2px rgba(94,155,255,.24) inset}
         .grid{display:grid;gap:12px}
-        .grid2{grid-template-columns:1fr} @media(min-width:1100px){.grid2{grid-template-columns:1.2fr .8fr}}
+        .grid2{grid-template-columns:1fr}
         .card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--baseRadius);overflow:hidden}
         .card-h{padding:10px 14px;border-bottom:1px solid var(--stroke);font-weight:800;display:flex;align-items:center;justify-content:space-between}
         .card-c{padding:14px}
@@ -315,10 +315,8 @@ export default function App(){
         .cal-open{margin-top:auto;font-size:12px}
         .cal-chip{display:inline-block;border:1px solid var(--stroke);border-radius:999px;padding:2px 6px;margin-right:6px;margin-bottom:6px}
 
-        /* Sticky header + scroll area for Open Vacancies */
-        .table-scroll{max-height:60vh; overflow:auto; border:1px solid var(--stroke); border-radius:12px}
-        .table-scroll table{margin:0}
-        .table-scroll thead th{position:sticky; top:0; background:var(--card); z-index:1}
+        /* Vacancies table header sticks to viewport while the whole page scrolls */
+        .vac-table thead th{position:sticky; top:0; background:var(--card); z-index:2}
 
         /* Countdown chips */
         .cd-chip{display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid var(--stroke); font-weight:700}
@@ -408,8 +406,7 @@ export default function App(){
             <div className="card">
               <div className="card-h">Open Vacancies</div>
               <div className="card-c">
-                <div className="table-scroll">
-                  <table>
+                <table className="vac-table">
                     <thead>
                       <tr>
                         <th>Shift</th>
@@ -453,7 +450,6 @@ export default function App(){
                       })}
                     </tbody>
                   </table>
-                </div>
                 {!vacancies.some(v=>v.status!=="Awarded") && <div className="subtitle" style={{marginTop:8}}>No open vacancies 🎉</div>}
               </div>
             </div>
