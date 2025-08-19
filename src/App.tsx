@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 
 // MAPLEWOOD SCHEDULER — Netlify-friendly single-file React app
 // - No external UI libs, no path aliases. Pure React + inline CSS.
@@ -178,7 +178,7 @@ export default function App(){
       employeeId: v.employeeId ?? "",
       employeeName: v.employeeName ?? "",
       classification: (v.classification ?? "RCA") as Classification,
-      status: (v.status ?? "Pending"),
+      status: (v.status ?? "Pending") as Vacation["status"],
       startDate: v.startDate ?? isoDate(new Date()),
       endDate: v.endDate ?? isoDate(new Date()),
       notes: v.notes ?? ""
@@ -197,7 +197,7 @@ export default function App(){
       shiftStart: v.shiftStart ?? "06:30",
       shiftEnd: v.shiftEnd ?? "14:30",
       knownAt: v.knownAt ?? new Date().toISOString(),
-      offeringStep: (v.offeringStep ?? "Casuals"),
+      offeringStep: (v.offeringStep ?? "Casuals") as Vacancy["offeringStep"],
       status: (v.status ?? "Open"),
       recommendedAward: v.recommendedAward,
       awardedTo: undefined,
