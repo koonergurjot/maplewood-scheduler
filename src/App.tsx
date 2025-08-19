@@ -1,132 +1,116 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
- * Maplewood Scheduler – Coverage-first build
- * - Coverage tab: Add Vacation (with wing), automatically generates daily Vacancies to fill.
- * - No tester seed data.
- * - No vacation status (you only add approved vacations).
- * - Archive tab: vacations auto-archive after *all* their days are awarded.
- * - Award flow fixed: pick winner manually and award. Archive updates automatically.
- * - Higher-contrast colors + clearer chips.
- * - Long-date formatting for readability.
+ * Maplewood Scheduler — Coverage-first (v2.2)
+ *
+ * What’s new vs your current build:
+ * - Higher-contrast color theme (much easier to read)
+ * - Keep the Monthly Calendar (shows open shifts per day; click a day for details)
+ * - Vacation form has a Wing/Unit DROPDOWN (Shamrock, Bluebell, Rosewood, Front, Receptionist)
+ * - Adding a Vacation automatically creates Vacancies for each day in the range
+ * - Bids: Vacancy selector shows WHO is being covered; timestamp uses separate Date + Time pickers (+ Now button)
+ * - Human-friendly vacancy labels (easier to parse at a glance)
+ * - Recommendation = highest seniority among employees who actually BID for that vacancy
+ * - Auto-archive vacations once ALL their days are awarded (Archive tab)
+ * - Removed old tester seeds
  */
 
 // ---------- Types ----------
-type Classification = "RCA" | "LPN" | "RN";
-type Status = "FT" | "PT" | "Casual";
+export type Classification = "RCA" | "LPN" | "RN";
+export type Status = "FT" | "PT" | "Casual";
 
-type Employee = {
+export type Employee = {
   id: string;
   firstName: string;
   lastName: string;
   classification: Classification;
   status: Status;
-  homeWing?: string;     // not relied on for coverage anymore
-  seniorityRank: number;
+  homeWing?: string; // not used for coverage now
+  seniorityRank: number; // 1 = most senior
   active: boolean;
 };
 
-type Vacation = {
+export type Vacation = {
   id: string;
   employeeId: string;
   employeeName: string;
   classification: Classification;
-  wing: string;                // NEW: wing lives here (picked when adding a vacation)
-  startDate: string;           // ISO date
-  endDate: string;             // ISO date
+  wing: string; // lives on the vacation now
+  startDate: string; // ISO YYYY-MM-DD
+  endDate: string;   // ISO YYYY-MM-DD
   notes?: string;
-  archived?: boolean;          // NEW: archived once all days covered
-  archivedAt?: string;
+  archived?: boolean;
+  archivedAt?: string; // ISO
 };
 
-type Vacancy = {
+export type Vacancy = {
   id: string;
   vacationId?: string;
-  reason: string;
+  reason: string; // e.g. Vacation Backfill
   classification: Classification;
   wing?: string;
-  shiftDate: string;   // ISO date
-  shiftStart: string;  // HH:mm
-  shiftEnd: string;    // HH:mm
-  knownAt: string;     // ISO datetime
+  shiftDate: string; // ISO date
+  shiftStart: string; // HH:mm
+  shiftEnd: string;   // HH:mm
+  knownAt: string;    // ISO datetime
   offeringStep: "Casuals" | "OT-Regular" | "OT-Casuals";
   status: "Open" | "Pending Award" | "Awarded";
   awardedTo?: string;        // employeeId
   awardedAt?: string;        // ISO datetime
 };
 
-type Bid = {
+export type Bid = {
   vacancyId: string;
   bidderEmployeeId: string;
   bidderName: string;
   bidderStatus: Status;
   bidderClassification: Classification;
-  bidTimestamp: string; // ISO datetime
+  bidTimestamp: string; // ISO
   notes?: string;
 };
 
-type Settings = {
-  scheduleChangeNoticeDays: number;
-  restBetweenShiftsHours: number;
+export type Settings = {
   responseWindows: { lt2h: number; h2to4: number; h4to24: number; h24to72: number; gt72: number }
 };
 
-// ---------- Defaults (no tester seeds) ----------
+// ---------- Constants ----------
 const defaultSettings: Settings = {
-  scheduleChangeNoticeDays: 14,
-  restBetweenShiftsHours: 12,
   responseWindows: { lt2h: 7, h2to4: 15, h4to24: 30, h24to72: 120, gt72: 1440 },
 };
 
+const WINGS = ["Shamrock", "Bluebell", "Rosewood", "Front", "Receptionist"] as const;
+
 // ---------- Local Storage ----------
-const LS_KEY = "maplewood-scheduler-v2";
+const LS_KEY = "maplewood-scheduler-v3";
 const loadState = () => { try { const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } };
 const saveState = (state: any) => localStorage.setItem(LS_KEY, JSON.stringify(state));
 
 // ---------- Utils ----------
 const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const combineDateTime = (dateISO: string, timeHHmm: string) => new Date(`${dateISO}T${timeHHmm}:00`);
-const diffHours = (a: Date, b: Date) => (a.getTime() - b.getTime()) / 36e5;
-const formatDateLong = (iso: string) => {
-  try {
-    const d = new Date(iso+"T00:00:00");
-    return d.toLocaleDateString(undefined, { month: "long", day: "2-digit", year: "numeric" });
-  } catch { return iso; }
-};
-const formatDateTime = (iso?: string) => iso ? new Date(iso).toLocaleString() : "—";
-const dateRangeInclusive = (startISO: string, endISO: string) => {
-  const out: string[] = [];
-  const s = new Date(startISO+"T00:00:00");
-  const e = new Date(endISO+"T00:00:00");
-  for (let d = new Date(s); d <= e; d.setDate(d.getDate()+1)) out.push(isoDate(d));
-  return out;
-};
-function windowMinutes(hoursBefore: number, s: Settings){
-  const w=s.responseWindows;
-  if(hoursBefore<2) return w.lt2h;
-  if(hoursBefore<4) return w.h2to4;
-  if(hoursBefore<24) return w.h4to24;
-  if(hoursBefore<72) return w.h24to72;
-  return w.gt72;
-}
-const withinDeadline = (bid: Date, knownAt: Date, start: Date, s: Settings) =>
-  bid.getTime() <= new Date(knownAt.getTime()+windowMinutes(diffHours(start,knownAt),s)*60000).getTime();
+const formatDateLong = (iso: string) => new Date(iso+"T00:00:00").toLocaleDateString(undefined, { month: "long", day: "2-digit", year: "numeric" });
+const formatDowShort = (iso: string) => new Date(iso+"T00:00:00").toLocaleDateString(undefined, { weekday: "short" });
+const matchText = (q: string, label: string) => q.trim().toLowerCase().split(/\s+/).filter(Boolean).every(p => label.toLowerCase().includes(p));
 
-const eligibleByStep = (step: Vacancy["offeringStep"], status: Status) =>
-  step==="Casuals" ? status==="Casual" : step==="OT-Regular" ? (status==="FT"||status==="PT") : status==="Casual";
-
-const sortBySeniority = (bids: Bid[], emps: Employee[]) => {
-  const r=(id:string)=> emps.find(e=>e.id===id)?.seniorityRank ?? 1e9;
-  return [...bids].sort((a,b)=>r(a.bidderEmployeeId)-r(b.bidderEmployeeId));
+const buildCalendar = (year:number, month:number) => {
+  const first = new Date(year, month, 1);
+  const start = new Date(first); start.setDate(first.getDate() - first.getDay());
+  const days: {date: Date; inMonth: boolean}[] = [];
+  for(let i=0;i<42;i++){ const d=new Date(start); d.setDate(start.getDate()+i); days.push({date:d,inMonth:d.getMonth()===month}); }
+  return days;
 };
+const prevMonth = (setY:Function,setM:Function,y:number,m:number)=>{ if(m===0){setY(y-1); setM(11);} else setM(m-1); };
+const nextMonth = (setY:Function,setM:Function,y:number,m:number)=>{ if(m===11){setY(y+1); setM(0);} else setM(m+1); };
 
-const matchText = (q: string, label: string) =>
-  q.trim().toLowerCase().split(/\s+/).filter(Boolean).every(p => label.toLowerCase().includes(p));
+const displayVacancyLabel = (v: Vacancy) => {
+  const d = formatDateLong(v.shiftDate);
+  return `${d} • ${v.shiftStart}–${v.shiftEnd} • ${v.wing ?? ''} • ${v.classification}`.replace(/\s+•\s+$/, "");
+};
 
 // ---------- Main App ----------
 export default function App(){
   const persisted = loadState();
-  const [tab, setTab] = useState<"dashboard"|"coverage"|"employees"|"bids"|"alerts"|"settings"|"archive"|"tests">("coverage");
+  const [tab, setTab] = useState<"coverage"|"bids"|"employees"|"calendar"|"alerts"|"archive"|"settings">("coverage");
 
   const [employees, setEmployees] = useState<Employee[]>(persisted?.employees ?? []);
   const [vacations, setVacations] = useState<Vacation[]>(persisted?.vacations ?? []);
@@ -138,28 +122,24 @@ export default function App(){
 
   const employeesById = useMemo(()=>Object.fromEntries(employees.map(e=>[e.id,e])),[employees]);
 
-  // --- Recommendation (still available for OT/Casuals logic if you use Bids)
+  // Recommendation: choose among *bidders* for that vacancy, highest seniority (rank 1 best)
   const computeRecommendation = (vac: Vacancy) => {
-    const start = combineDateTime(vac.shiftDate, vac.shiftStart);
-    const known = new Date(vac.knownAt);
-    const relevant = bids.filter(b=> b.vacancyId===vac.id && b.bidderClassification===vac.classification);
-    const filtered = relevant.filter(b=>{
-      const emp = employeesById[b.bidderEmployeeId];
-      if(!emp) return false;
-      return withinDeadline(new Date(b.bidTimestamp), known, start, settings) && eligibleByStep(vac.offeringStep, emp.status);
-    });
-    return sortBySeniority(filtered, employees)[0]?.bidderEmployeeId;
+    const rel = bids.filter(b=> b.vacancyId===vac.id);
+    const enriched = rel.map(b=> ({ bid:b, emp: employeesById[b.bidderEmployeeId] })).filter(x=> !!x.emp && x.emp.active);
+    if (!enriched.length) return undefined;
+    enriched.sort((a,b)=> (a.emp!.seniorityRank??99999) - (b.emp!.seniorityRank??99999));
+    return enriched[0].emp!.id;
   };
-  const recommendations = useMemo(()=> {
+  const recommendations = useMemo(()=>{
     const m:Record<string,string|undefined>={};
-    vacancies.forEach(v=>m[v.id]=computeRecommendation(v));
+    vacancies.forEach(v=> m[v.id]=computeRecommendation(v));
     return m;
-  },[vacancies,bids,employees,settings]);
+  },[vacancies,bids,employeesById]);
 
-  // --- Auto-archive hook: if *all* vacancies for a vacation are awarded, archive it
+  // Auto-archive vacations when all their vacancies are awarded
   useEffect(()=>{
     const byVacation = new Map<string, Vacancy[]>();
-    vacancies.forEach(v => { if(v.vacationId){ const a=byVacation.get(v.vacationId)||[]; a.push(v); byVacation.set(v.vacationId, a); }});
+    vacancies.forEach(v => { if(v.vacationId){ const a=byVacation.get(v.vacationId)||[]; a.push(v); byVacation.set(v.vacationId, a);} });
     setVacations(prev => prev.map(vac => {
       const list = byVacation.get(vac.id) || [];
       const allAwarded = list.length>0 && list.every(x=>x.status==="Awarded");
@@ -169,36 +149,34 @@ export default function App(){
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vacancies]);
 
-  // --- Forms state (Coverage page)
+  // Coverage form state
   const [newVacay, setNewVacay] = useState<Partial<Vacation & {shiftStart:string; shiftEnd:string}>>({
-    wing:"", shiftStart:"06:30", shiftEnd:"14:30"
+    wing: WINGS[0], shiftStart:"06:30", shiftEnd:"14:30"
   });
 
-  // --- Actions
-  const addVacationAndGenerateVacancies = (v: Partial<Vacation & {shiftStart:string; shiftEnd:string}>) => {
-    if (!v.employeeId || !v.employeeName || !v.classification || !v.startDate || !v.endDate) {
-      alert("Employee, wing, start and end are required.");
-      return;
+  // Actions
+  const addVacationAndGenerate = (v: Partial<Vacation & {shiftStart:string; shiftEnd:string}>) => {
+    if (!v.employeeId || !v.employeeName || !v.classification || !v.startDate || !v.endDate || !v.wing) {
+      alert("Employee, wing, start & end are required."); return;
     }
     const vac: Vacation = {
       id: `vac_${Date.now().toString(36)}`,
       employeeId: v.employeeId!,
       employeeName: v.employeeName!,
       classification: v.classification!,
-      wing: (v.wing ?? "").trim(),
+      wing: v.wing!,
       startDate: v.startDate!,
       endDate: v.endDate!,
       notes: v.notes ?? "",
-      archived: false
+      archived: false,
     };
-    // Add vacation
     setVacations(prev => [vac, ...prev]);
 
-    // Generate daily vacancies for the date range
+    // one vacancy per day in range
     const days = dateRangeInclusive(v.startDate!, v.endDate!);
     const nowISO = new Date().toISOString();
-    const newVacancies: Vacancy[] = days.map(d => ({
-      id: `x${Math.random().toString(36).slice(2,7)}`,
+    const vxs: Vacancy[] = days.map(d => ({
+      id: `VAC-${Math.random().toString(36).slice(2,7).toUpperCase()}`,
       vacationId: vac.id,
       reason: "Vacation Backfill",
       classification: vac.classification,
@@ -208,264 +186,219 @@ export default function App(){
       shiftEnd: v.shiftEnd ?? "14:30",
       knownAt: nowISO,
       offeringStep: "Casuals",
-      status: "Open"
+      status: "Open",
     }));
-    setVacancies(prev => [...newVacancies, ...prev]);
+    setVacancies(prev => [...vxs, ...prev]);
 
-    // Reset form
-    setNewVacay({ wing:"", shiftStart:"06:30", shiftEnd:"14:30" });
+    setNewVacay({ wing: WINGS[0], shiftStart:"06:30", shiftEnd:"14:30" });
   };
 
-  const awardVacancy = (vacId: string, empId: string | undefined) => {
+  const awardVacancy = (vacId: string, empId?: string) => {
     if (!empId) { alert("Pick an employee to award."); return; }
-    setVacancies(prev =>
-      prev.map(v => v.id===vacId ? ({ ...v, status:"Awarded", awardedTo: empId, awardedAt: new Date().toISOString() }) : v)
-    );
+    setVacancies(prev => prev.map(v => v.id===vacId ? ({...v, status:"Awarded", awardedTo: empId, awardedAt: new Date().toISOString()}) : v));
   };
 
-  const removeTestData = () => {
-    if (confirm("Remove all sample/test data? This keeps your employees.")) {
-      setVacations([]); setVacancies([]); setBids([]);
-    }
-  };
-
-  // ---------- UI ----------
   return (
     <div className="app">
       <style>{`
         :root{
-          --bg1:#0b1020; --bg2:#0a0e1a;
-          --card:#121833; --cardAlt:#0f1530;
-          --stroke:rgba(255,255,255,.16);
-          --text:#f5f7fb; --muted:#b6bfd6;
-          --brand:#6ea8fe; --accent:#20c997;
-          --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
-          --chipBg:#1f2a4d; --chipText:#e6ecff;
+          /* Much higher contrast */
+          --bg1:#0a0c12; --bg2:#0d1117;
+          --card:#141a25; --cardAlt:#0f1622;
+          --stroke:#2a3545;
+          --text:#f2f4f8; --muted:#c7cfdd;
+          --brand:#4ea1ff; --accent:#2dd4bf;
+          --ok:#16a34a; --warn:#f59e0b; --bad:#ef4444;
+          --chipBg:#1d2736; --chipText:#e8eef9;
         }
-        *{box-sizing:border-box} body,html,#root{height:100%}
-        .app{min-height:100vh;background:radial-gradient(1000px 600px at 15% -10%,rgba(110,168,254,.18),transparent),radial-gradient(1000px 600px at 85% 5%,rgba(32,201,151,.14),transparent),linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);font-family:Inter,system-ui,Arial,sans-serif;padding:20px}
+        *{box-sizing:border-box}
+        body,html,#root{height:100%}
+        .app{min-height:100vh;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);font-family:Inter,system-ui,Arial,sans-serif;padding:18px}
         .container{max-width:1100px;margin:0 auto}
-        .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-        .title{font-size:22px;font-weight:800;letter-spacing:.2px}
+        .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+        .title{font-size:22px;font-weight:800}
         .subtitle{color:var(--muted);font-size:13px}
         .toolbar{display:flex;gap:8px}
-        .btn{background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.06));border:1px solid var(--stroke);padding:9px 12px;border-radius:12px;color:var(--text);cursor:pointer}
-        .btn:hover{border-color:#9ebcff}
-        .grid{display:grid;gap:12px}
-        .grid3{grid-template-columns:1fr} @media(min-width:800px){.grid3{grid-template-columns:repeat(3,1fr)}}
-        .card{background:var(--card);border:1px solid var(--stroke);border-radius:14px;overflow:hidden}
-        .card-h{padding:10px 14px;border-bottom:1px solid var(--stroke);font-weight:700;display:flex;align-items:center;justify-content:space-between}
-        .card-c{padding:14px}
-        table{width:100%;border-collapse:collapse} th,td{padding:10px;border-bottom:1px solid var(--stroke);text-align:left} th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-        input,select,textarea{width:100%;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;padding:10px;color:var(--text)} input::placeholder{color:#9aa3b2}
+        .btn{background:#1b2332;border:1px solid var(--stroke);padding:9px 12px;border-radius:12px;color:var(--text);cursor:pointer;font-weight:600}
+        .btn:hover{border-color:#5b9bff}
         .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px}
-        .tab{padding:8px 12px;border-radius:12px;border:1px solid var(--stroke);cursor:pointer;background:var(--cardAlt)} .tab.active{border-color:#9ebcff;box-shadow:0 0 0 2px rgba(110,168,254,.18) inset}
-        .row{display:grid;gap:10px} .cols2{grid-template-columns:1fr} @media(min-width:900px){.cols2{grid-template-columns:1fr 1fr}}
-        .pill{background:var(--chipBg); color:var(--chipText); border:1px solid var(--stroke); padding:4px 8px;border-radius:999px;font-size:12px}
+        .tab{padding:8px 12px;border-radius:12px;border:1px solid var(--stroke);cursor:pointer;background:#142033;font-weight:600}
+        .tab.active{border-color:#5b9bff;box-shadow:0 0 0 2px rgba(94,155,255,.24) inset}
+        .grid{display:grid;gap:12px}
+        .grid2{grid-template-columns:1fr} @media(min-width:980px){.grid2{grid-template-columns:1.2fr .8fr}}
+        .card{background:var(--card);border:1px solid var(--stroke);border-radius:14px;overflow:hidden}
+        .card-h{padding:10px 14px;border-bottom:1px solid var(--stroke);font-weight:800;display:flex;align-items:center;justify-content:space-between}
+        .card-c{padding:14px}
+        table{width:100%;border-collapse:collapse}
+        th,td{padding:10px;border-bottom:1px solid var(--stroke);text-align:left}
+        th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+        input,select,textarea{width:100%;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;padding:10px;color:var(--text)}
+        input::placeholder{color:#a9b3c6}
+        .row{display:grid;gap:10px}
+        .cols2{grid-template-columns:1fr} @media(min-width:900px){.cols2{grid-template-columns:1fr 1fr}}
+        .pill{background:var(--chipBg); color:var(--chipText); border:1px solid var(--stroke); padding:4px 8px;border-radius:999px;font-size:12px; font-weight:600}
         .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
-        .dropdown{position:relative} .menu{position:absolute;z-index:30;top:100%;left:0;right:0;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;max-height:220px;overflow:auto}
-        .item{padding:8px 10px;cursor:pointer} .item:hover{background:rgba(110,168,254,.18)}
+        .dropdown{position:relative}
+        .menu{position:absolute;z-index:30;top:100%;left:0;right:0;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;max-height:240px;overflow:auto}
+        .item{padding:8px 10px;cursor:pointer} .item:hover{background:#1a2741}
+        /* Calendar */
+        .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px}
+        .cal-dow{opacity:.85;font-size:12px;text-align:center;color:var(--muted);font-weight:700}
+        .cal-day{border:1px solid var(--stroke);border-radius:10px;padding:8px;min-height:92px;background:#0f1622;display:flex;flex-direction:column}
+        .cal-day.mute{opacity:.45}
+        .cal-num{font-weight:800;margin-bottom:6px}
+        .cal-open{margin-top:auto;font-size:12px}
+        .cal-chip{display:inline-block;border:1px solid var(--stroke);border-radius:999px;padding:2px 6px;margin-right:6px;margin-bottom:6px}
       `}</style>
 
       <div className="container">
         <div className="nav">
           <div>
             <div className="title">Maplewood Scheduler</div>
-            <div className="subtitle">Coverage requests • call-outs • seniority & response windows</div>
+            <div className="subtitle">Vacations → vacancies • bids • seniority</div>
           </div>
           <div className="toolbar">
             <button className="btn" onClick={()=>{ if(confirm("Reset ALL data?")){ localStorage.removeItem(LS_KEY); location.reload(); } }}>Reset</button>
             <button className="btn" onClick={()=>{ const blob=new Blob([JSON.stringify({employees,vacations,vacancies,bids,settings},null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="maplewood-scheduler-backup.json"; a.click(); URL.revokeObjectURL(url); }}>Export</button>
-            <button className="btn" onClick={removeTestData}>Clear Sample Data</button>
           </div>
         </div>
 
         <div className="tabs">
-          {(["coverage","employees","bids","alerts","settings","archive","tests","dashboard"] as const).map(k=> (
+          {(["coverage","calendar","bids","employees","archive","alerts","settings"] as const).map(k=> (
             <button key={k} className={`tab ${tab===k?"active":""}`} onClick={()=>setTab(k)}>{k[0].toUpperCase()+k.slice(1)}</button>
           ))}
         </div>
 
         {tab==="coverage" && (
-          <CoveragePage
-            employees={employees}
-            employeesById={employeesById}
-            vacations={vacations}
-            vacancies={vacancies}
-            recommendations={recommendations}
-            addVacationAndGenerateVacancies={addVacationAndGenerateVacancies}
-            newVacay={newVacay}
-            setNewVacay={setNewVacay}
-            awardVacancy={awardVacancy}
-          />
+          <div className="grid grid2">
+            <div className="card">
+              <div className="card-h">Add Vacation (auto-creates daily vacancies)</div>
+              <div className="card-c">
+                <div className="row cols2">
+                  <div>
+                    <label>Employee</label>
+                    <EmployeeCombo employees={employees} onSelect={(id)=>{
+                      const e = employees.find(x=>x.id===id);
+                      setNewVacay(v=>({
+                        ...v,
+                        employeeId:id,
+                        employeeName: e? `${e.firstName} ${e.lastName}`: "",
+                        classification: (e?.classification ?? v.classification ?? "RCA") as Classification
+                      }));
+                    }}/>
+                  </div>
+                  <div>
+                    <label>Wing / Unit</label>
+                    <select value={newVacay.wing ?? WINGS[0]} onChange={e=> setNewVacay(v=>({...v, wing:e.target.value}))}>
+                      {WINGS.map(w=> <option key={w} value={w}>{w}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label>Start Date</label>
+                    <input type="date" onChange={e=> setNewVacay(v=>({...v,startDate:e.target.value}))}/>
+                  </div>
+                  <div>
+                    <label>End Date</label>
+                    <input type="date" onChange={e=> setNewVacay(v=>({...v,endDate:e.target.value}))}/>
+                  </div>
+                  <div>
+                    <label>Shift Start</label>
+                    <input type="time" value={newVacay.shiftStart ?? "06:30"} onChange={e=> setNewVacay(v=>({...v,shiftStart:e.target.value}))}/>
+                  </div>
+                  <div>
+                    <label>Shift End</label>
+                    <input type="time" value={newVacay.shiftEnd ?? "14:30"} onChange={e=> setNewVacay(v=>({...v,shiftEnd:e.target.value}))}/>
+                  </div>
+                  <div style={{gridColumn:"1 / -1"}}>
+                    <label>Notes</label>
+                    <textarea placeholder="Optional" onChange={e=> setNewVacay(v=>({...v,notes:e.target.value}))}/>
+                  </div>
+                  <div style={{gridColumn:"1 / -1"}}>
+                    <button className="btn" onClick={()=> addVacationAndGenerate(newVacay)}>Add & Generate</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-h">Open Vacancies</div>
+              <div className="card-c">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Shift</th><th>Wing</th><th>Class</th><th>Offering</th><th>Recommended</th><th>Assign</th><th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vacancies.filter(v=>v.status!=="Awarded").map(v=>{
+                      const recId = recommendations[v.id];
+                      const recName = recId ? `${employeesById[recId]?.firstName ?? ""} ${employeesById[recId]?.lastName ?? ""}`.trim() : "—";
+                      return (
+                        <VacancyRow key={v.id} v={v} recName={recName} employees={employees} onAward={(empId)=> awardVacancy(v.id, empId)} />
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {!vacancies.some(v=>v.status!=="Awarded") && <div className="subtitle" style={{marginTop:8}}>No open vacancies 🎉</div>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab==="calendar" && (
+          <div className="grid">
+            <div className="card">
+              <div className="card-h">Monthly Schedule (open shifts)</div>
+              <div className="card-c">
+                <MonthlySchedule vacancies={vacancies}/>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab==="bids" && (
+          <BidsPage bids={bids} setBids={setBids} vacancies={vacancies} vacations={vacations} employees={employees} employeesById={employeesById} />
         )}
 
         {tab==="employees" && (
           <EmployeesPage employees={employees} setEmployees={setEmployees}/>
         )}
 
-        {tab==="bids" && (
-          <BidsPage bids={bids} setBids={setBids} vacancies={vacancies} employees={employees} employeesById={employeesById} settings={settings}/>
+        {tab==="archive" && (
+          <ArchivePage vacations={vacations}/>
         )}
 
         {tab==="alerts" && (
-          <div className="grid"><div className="card"><div className="card-h">Response Windows (open vacancies)</div><div className="card-c"><DeadlineList vacancies={vacancies} settings={settings}/></div></div></div>
+          <div className="grid">
+            <div className="card"><div className="card-h">Quick Stats</div><div className="card-c">
+              <div className="pill">Open: {vacancies.filter(v=>v.status!=="Awarded").length}</div>
+              <div className="pill" style={{marginLeft:6}}>Archived vacations: {vacations.filter(v=>v.archived).length}</div>
+            </div></div>
+          </div>
         )}
 
         {tab==="settings" && (
           <SettingsPage settings={settings} setSettings={setSettings}/>
         )}
-
-        {tab==="archive" && (
-          <ArchivePage vacations={vacations}/>
-        )}
-
-        {tab==="tests" && (
-          <DiagnosticsPage settings={settings} employees={employees} vacancies={vacancies}/>
-        )}
-
-        {tab==="dashboard" && (
-          <Dashboard vacancies={vacancies} bids={bids} settings={settings}/>
-        )}
       </div>
     </div>
   );
 }
 
-// ---------- Pages & Components ----------
-function CoveragePage({
-  employees, employeesById, vacations, vacancies, recommendations,
-  addVacationAndGenerateVacancies, newVacay, setNewVacay, awardVacancy
-}:{
-  employees: Employee[];
-  employeesById: Record<string,Employee>;
-  vacations: Vacation[];
-  vacancies: Vacancy[];
-  recommendations: Record<string,string|undefined>;
-  addVacationAndGenerateVacancies: (v: Partial<Vacation & {shiftStart:string; shiftEnd:string}>)=>void;
-  newVacay: Partial<Vacation & {shiftStart:string; shiftEnd:string}>;
-  setNewVacay: (u: any)=>void;
-  awardVacancy: (vacId:string, empId: string|undefined)=>void;
-}){
-  return (
-    <div className="grid">
-      <div className="card">
-        <div className="card-h">Add Vacation (auto-creates vacancies)</div>
-        <div className="card-c">
-          <div className="row cols2">
-            <div>
-              <label>Employee</label>
-              <EmployeeCombo employees={employees} onSelect={(id)=>{
-                const e = employees.find(x=>x.id===id);
-                setNewVacay((v:any)=>({
-                  ...v,
-                  employeeId:id,
-                  employeeName: e? `${e.firstName} ${e.lastName}` : "",
-                  classification: (e?.classification ?? v.classification ?? "RCA") as Classification
-                }));
-              }}/>
-            </div>
-            <div>
-              <label>Wing / Unit</label>
-              <input placeholder="Shamrock / Bluebell / ..." value={newVacay.wing ?? ""} onChange={e=> setNewVacay((v:any)=>({...v, wing:e.target.value}))}/>
-            </div>
-            <div>
-              <label>Start Date</label>
-              <input type="date" onChange={e=> setNewVacay((v:any)=>({...v,startDate:e.target.value}))}/>
-            </div>
-            <div>
-              <label>End Date</label>
-              <input type="date" onChange={e=> setNewVacay((v:any)=>({...v,endDate:e.target.value}))}/>
-            </div>
-            <div>
-              <label>Shift Start</label>
-              <input type="time" value={newVacay.shiftStart ?? "06:30"} onChange={e=> setNewVacay((v:any)=>({...v,shiftStart:e.target.value}))}/>
-            </div>
-            <div>
-              <label>Shift End</label>
-              <input type="time" value={newVacay.shiftEnd ?? "14:30"} onChange={e=> setNewVacay((v:any)=>({...v,shiftEnd:e.target.value}))}/>
-            </div>
-            <div style={{gridColumn:"1 / -1"}}>
-              <label>Notes</label>
-              <textarea placeholder="Optional" onChange={e=> setNewVacay((v:any)=>({...v,notes:e.target.value}))}/>
-            </div>
-            <div style={{gridColumn:"1 / -1"}}>
-              <button className="btn" onClick={()=> addVacationAndGenerateVacancies(newVacay)}>Add & Generate</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="card">
-        <div className="card-h">Open Vacancies</div>
-        <div className="card-c">
-          <table>
-            <thead>
-              <tr>
-                <th>Day</th><th>Wing</th><th>Class</th><th>Time</th><th>Offering</th><th>Recommended</th><th>Assign</th><th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vacancies.filter(v=>v.status!=="Awarded").map(v=>{
-                const recId = recommendations[v.id];
-                return (
-                  <VacancyRow
-                    key={v.id}
-                    v={v}
-                    recName={recId ? `${employeesById[recId]?.firstName ?? ""} ${employeesById[recId]?.lastName ?? ""}`.trim() : "—"}
-                    employees={employees}
-                    onAward={(empId)=> awardVacancy(v.id, empId)}
-                  />
-                );
-              })}
-            </tbody>
-          </table>
-          {!vacancies.some(v=>v.status!=="Awarded") && <div className="subtitle" style={{marginTop:8}}>No open vacancies 🎉</div>}
-        </div>
-      </div>
-
-      <div className="card">
-        <div className="card-h">Vacations (active)</div>
-        <div className="card-c">
-          <table>
-            <thead><tr><th>Employee</th><th>Wing</th><th>From</th><th>To</th><th>Days</th></tr></thead>
-            <tbody>
-              {vacations.filter(v=>!v.archived).map(v=>{
-                const days = dateRangeInclusive(v.startDate, v.endDate).length;
-                return (
-                  <tr key={v.id}>
-                    <td>{v.employeeName}</td>
-                    <td>{v.wing}</td>
-                    <td>{formatDateLong(v.startDate)}</td>
-                    <td>{formatDateLong(v.endDate)}</td>
-                    <td>{days}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {!vacations.some(v=>!v.archived) && <div className="subtitle" style={{marginTop:8}}>No active vacations.</div>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
+// ---------- Pages ----------
 function EmployeesPage({employees, setEmployees}:{employees:Employee[]; setEmployees:(u:any)=>void}){
   return (
     <div className="grid">
       <div className="card"><div className="card-h">Import Staff (CSV)</div><div className="card-c">
         <input type="file" accept=".csv" onChange={async e=>{
-          const f=e.target.files?.[0]; if(!f) return;
-          const text=await f.text();
-          const rows=parseCSV(text);
+          const f=e.target.files?.[0]; if(!f) return; const text=await f.text(); const rows=parseCSV(text);
           const out:Employee[]=rows.map((r:any,i:number)=>({
             id:String(r.id??r.EmployeeID??`emp_${i}`),
             firstName:String(r.firstName ?? r.name ?? ""),
             lastName:String(r.lastName ?? ""),
             classification:(["RCA","LPN","RN"].includes(String(r.classification)) ? r.classification : "RCA") as Classification,
             status:(["FT","PT","Casual"].includes(String(r.status)) ? r.status : "FT") as Status,
-            homeWing:String(r.homeWing ?? ""),       // still accepted but not used for coverage
+            homeWing:String(r.homeWing ?? ""),
             seniorityRank:Number(r.seniorityRank ?? (i+1)),
             active:String(r.active ?? "Yes").toLowerCase().startsWith("y")
           }));
@@ -476,15 +409,8 @@ function EmployeesPage({employees, setEmployees}:{employees:Employee[]; setEmplo
 
       <div className="card"><div className="card-h">Employees</div><div className="card-c">
         <table><thead><tr><th>ID</th><th>Name</th><th>Class</th><th>Status</th><th>Rank</th><th>Active</th></tr></thead>
-          <tbody>{employees.map(e=>(
-            <tr key={e.id}>
-              <td>{e.id}</td>
-              <td>{e.firstName} {e.lastName}</td>
-              <td>{e.classification}</td>
-              <td>{e.status}</td>
-              <td>{e.seniorityRank}</td>
-              <td>{e.active?"Yes":"No"}</td>
-            </tr>
+          <tbody>{employees.map(e=> (
+            <tr key={e.id}><td>{e.id}</td><td>{e.firstName} {e.lastName}</td><td>{e.classification}</td><td>{e.status}</td><td>{e.seniorityRank}</td><td>{e.active?"Yes":"No"}</td></tr>
           ))}</tbody>
         </table>
       </div></div>
@@ -492,85 +418,22 @@ function EmployeesPage({employees, setEmployees}:{employees:Employee[]; setEmplo
   );
 }
 
-function BidsPage({bids,setBids,vacancies,employees,employeesById,settings}:{bids:Bid[];setBids:(u:any)=>void;vacancies:Vacancy[];employees:Employee[];employeesById:Record<string,Employee>;settings:Settings}){
-  const [newBid, setNewBid] = useState<Partial<Bid>>({});
+function ArchivePage({vacations}:{vacations:Vacation[]}){
+  const archived = vacations.filter(v=>v.archived);
   return (
     <div className="grid">
-      <div className="card"><div className="card-h">Add Bid (manual)</div><div className="card-c">
-        <div className="row cols2">
-          <div>
-            <label>Vacancy</label>
-            <select onChange={e=> setNewBid(b=>({...b, vacancyId:e.target.value}))} defaultValue="">
-              <option value="" disabled>Pick vacancy</option>
-              {vacancies.map(v=> <option key={v.id} value={v.id}>{v.id} • {formatDateLong(v.shiftDate)} {v.shiftStart}</option>)}
-            </select>
-          </div>
-          <div>
-            <label>Employee</label>
-            <EmployeeCombo employees={employees} onSelect={(id)=>{
-              const e=employeesById[id];
-              setNewBid(b=>({...b,
-                bidderEmployeeId:id,
-                bidderName: e? `${e.firstName} ${e.lastName}`: "",
-                bidderStatus: e?.status,
-                bidderClassification: e?.classification
-              }));
-            }}/>
-          </div>
-          <div><label>Timestamp</label><input type="datetime-local" onChange={e=> setNewBid(b=>({...b,bidTimestamp:e.target.value}))}/></div>
-          <div><label>Notes</label><input placeholder={'e.g., "available for 06:30-14:30"'} onChange={e=> setNewBid(b=>({...b,notes:e.target.value}))}/></div>
-          <div style={{gridColumn:"1 / -1"}}><button className="btn" onClick={()=>{
-            if(!newBid.vacancyId||!newBid.bidderEmployeeId) return alert("Vacancy and employee required");
-            setBids(prev=>[...prev,{
-              vacancyId:newBid.vacancyId!,
-              bidderEmployeeId:newBid.bidderEmployeeId!,
-              bidderName:newBid.bidderName ?? "",
-              bidderStatus:(newBid.bidderStatus ?? "Casual") as Status,
-              bidderClassification:(newBid.bidderClassification ?? "RCA") as Classification,
-              bidTimestamp:newBid.bidTimestamp ?? new Date().toISOString(),
-              notes:newBid.notes ?? ""
-            }]);
-            setNewBid({});
-          }}>Add Bid</button></div>
-        </div>
-      </div></div>
-
-      <div className="card"><div className="card-h">Bids</div><div className="card-c">
-        <table><thead><tr><th>Vacancy</th><th>Employee</th><th>Class</th><th>Status</th><th>Time</th><th>Within Window?</th><th>Eligible?</th></tr></thead>
-          <tbody>{bids.map((b,i)=>{
-            const vac=vacancies.find(v=>v.id===b.vacancyId);
-            const emp=employeesById[b.bidderEmployeeId];
-            const start=vac? combineDateTime(vac.shiftDate, vac.shiftStart): new Date();
-            const known=vac? new Date(vac.knownAt): new Date();
-            const inWin=withinDeadline(new Date(b.bidTimestamp), known, start, settings);
-            const stepOK=eligibleByStep(vac?.offeringStep ?? "Casuals", emp?.status ?? "Casual");
-            return (
-              <tr key={i}><td>{b.vacancyId}</td><td>{b.bidderName}</td><td>{b.bidderClassification}</td><td>{b.bidderStatus}</td><td>{formatDateTime(b.bidTimestamp)}</td><td>{inWin? <span className="ok">Yes</span>: <span className="bad">No</span>}</td><td>{stepOK? <span className="ok">Yes</span>: <span className="bad">No</span>}</td></tr>
-            );
-          })}</tbody>
+      <div className="card"><div className="card-h">Archived Vacations (fully covered)</div><div className="card-c">
+        <table><thead><tr><th>Employee</th><th>Wing</th><th>From</th><th>To</th><th>Archived</th></tr></thead>
+          <tbody>
+            {archived.map(v=> (
+              <tr key={v.id}><td>{v.employeeName}</td><td>{v.wing}</td><td>{formatDateLong(v.startDate)}</td><td>{formatDateLong(v.endDate)}</td><td>{new Date(v.archivedAt||"").toLocaleString()}</td></tr>
+            ))}
+          </tbody>
         </table>
+        {!archived.length && <div className="subtitle" style={{marginTop:8}}>Nothing here yet.</div>}
       </div></div>
     </div>
   );
-}
-
-function DeadlineList({vacancies, settings}:{vacancies:Vacancy[]; settings:Settings}){
-  const now = new Date();
-  const items = vacancies.filter(v=>v.status!=="Awarded").map(v=>{
-    const start=combineDateTime(v.shiftDate,v.shiftStart);
-    const known=new Date(v.knownAt);
-    const mins=windowMinutes(diffHours(start,known),settings);
-    const deadline=new Date(known.getTime()+mins*60000);
-    const left=Math.max(0,Math.round((deadline.getTime()-now.getTime())/60000));
-    return { id:v.id, offering:v.offeringStep, deadline, left };
-  }).sort((a,b)=>a.deadline.getTime()-b.deadline.getTime());
-  if(!items.length) return <div className="subtitle">No open response windows.</div>;
-  return <div className="row">{items.map(it=> (
-    <div key={it.id} className="pill" style={{display:"flex",justifyContent:"space-between",gap:8}}>
-      <span>Vacancy <b>{it.id}</b> • {it.offering}</span>
-      <span className={it.left<=5?"bad":it.left<=30?"warn":"ok"}>{it.left} min left (deadline {it.deadline.toLocaleTimeString()})</span>
-    </div>
-  ))}</div>;
 }
 
 function SettingsPage({settings,setSettings}:{settings:Settings; setSettings:(u:any)=>void}){
@@ -587,61 +450,148 @@ function SettingsPage({settings,setSettings}:{settings:Settings; setSettings:(u:
   );
 }
 
-function ArchivePage({vacations}:{vacations:Vacation[]}) {
-  const archived = vacations.filter(v=>v.archived);
+function BidsPage({bids,setBids,vacancies,vacations,employees,employeesById}:{bids:Bid[];setBids:(u:any)=>void;vacancies:Vacancy[];vacations:Vacation[];employees:Employee[];employeesById:Record<string,Employee>}){
+  const [newBid, setNewBid] = useState<Partial<Bid & {bidDate:string; bidTime:string}>>({});
+
+  const vacWithCoveredName = (v: Vacancy) => {
+    const vac = vacations.find(x=>x.id===v.vacationId);
+    const covered = vac ? vac.employeeName : "";
+    return `${displayVacancyLabel(v)} — covering ${covered}`.trim();
+  };
+
+  const setNow = () => {
+    const now = new Date();
+    const d = isoDate(now);
+    const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    setNewBid(b=>({...b, bidDate:d, bidTime:t}));
+  };
+
   return (
     <div className="grid">
-      <div className="card"><div className="card-h">Archived Vacations (covered)</div><div className="card-c">
-        <table><thead><tr><th>Employee</th><th>Wing</th><th>From</th><th>To</th><th>Archived</th></tr></thead>
-          <tbody>
-            {archived.map(v=>(
-              <tr key={v.id}>
-                <td>{v.employeeName}</td>
-                <td>{v.wing}</td>
-                <td>{formatDateLong(v.startDate)}</td>
-                <td>{formatDateLong(v.endDate)}</td>
-                <td>{formatDateTime(v.archivedAt)}</td>
-              </tr>
-            ))}
-          </tbody>
+      <div className="card"><div className="card-h">Add Bid</div><div className="card-c">
+        <div className="row cols2">
+          <div>
+            <label>Vacancy</label>
+            <select onChange={e=> setNewBid(b=>({...b, vacancyId:e.target.value}))} value={newBid.vacancyId ?? ""}>
+              <option value="" disabled>Pick vacancy</option>
+              {vacancies.map(v=> <option key={v.id} value={v.id}>{vacWithCoveredName(v)}</option>)}
+            </select>
+          </div>
+          <div>
+            <label>Employee</label>
+            <EmployeeCombo employees={employees} onSelect={(id)=>{
+              const e=employeesById[id];
+              setNewBid(b=>({...b,
+                bidderEmployeeId:id,
+                bidderName: e? `${e.firstName} ${e.lastName}`: "",
+                bidderStatus: e?.status,
+                bidderClassification: e?.classification
+              }));
+            }}/>
+          </div>
+          <div>
+            <label>Bid Date</label>
+            <input type="date" value={newBid.bidDate ?? ""} onChange={e=> setNewBid(b=>({...b, bidDate:e.target.value}))}/>
+          </div>
+          <div>
+            <label>Bid Time</label>
+            <div style={{display:'flex', gap:8}}>
+              <input type="time" value={newBid.bidTime ?? ""} onChange={e=> setNewBid(b=>({...b, bidTime:e.target.value}))}/>
+              <button className="btn" onClick={setNow}>Now</button>
+            </div>
+          </div>
+          <div style={{gridColumn:"1 / -1"}}>
+            <label>Notes</label>
+            <input placeholder={'e.g., "available for 06:30-14:30"'} onChange={e=> setNewBid(b=>({...b,notes:e.target.value}))}/>
+          </div>
+          <div style={{gridColumn:"1 / -1"}}>
+            <button className="btn" onClick={()=>{
+              if(!newBid.vacancyId||!newBid.bidderEmployeeId) return alert("Vacancy and employee required");
+              const ts = newBid.bidDate && newBid.bidTime ? new Date(`${newBid.bidDate}T${newBid.bidTime}:00`).toISOString() : new Date().toISOString();
+              setBids(prev=>[...prev,{
+                vacancyId:newBid.vacancyId!,
+                bidderEmployeeId:newBid.bidderEmployeeId!,
+                bidderName:newBid.bidderName ?? "",
+                bidderStatus:(newBid.bidderStatus ?? "Casual") as Status,
+                bidderClassification:(newBid.bidderClassification ?? "RCA") as Classification,
+                bidTimestamp: ts,
+                notes:newBid.notes ?? ""
+              }]);
+              setNewBid({});
+            }}>Add Bid</button>
+          </div>
+        </div>
+      </div></div>
+
+      <div className="card"><div className="card-h">Bids</div><div className="card-c">
+        <table><thead><tr><th>Vacancy</th><th>Employee</th><th>Class</th><th>Status</th><th>Bid at</th></tr></thead>
+          <tbody>{bids.map((b,i)=>{ const v = vacancies.find(x=>x.id===b.vacancyId); return (
+            <tr key={i}><td>{v? displayVacancyLabel(v): b.vacancyId}</td><td>{b.bidderName}</td><td>{b.bidderClassification}</td><td>{b.bidderStatus}</td><td>{new Date(b.bidTimestamp).toLocaleString()}</td></tr>
+          );})}</tbody>
         </table>
-        {!archived.length && <div className="subtitle" style={{marginTop:8}}>No archived items yet.</div>}
       </div></div>
     </div>
   );
 }
 
-function DiagnosticsPage({ settings, employees, vacancies }:{ settings:Settings; employees:Employee[]; vacancies:Vacancy[] }){
-  const now = new Date("2025-08-25T15:00:00");
-  const shiftSoon = new Date("2025-08-25T16:00:00"); // 1h later => lt2h => 7min
-  const shift4h = new Date("2025-08-25T19:00:00");   // 4h => h4to24 => 30min
-  const shift30h = new Date("2025-08-26T21:00:00");  // 30h => h24to72 => 120min
-  const w1 = windowMinutes(diffHours(shiftSoon, now), settings);
-  const w2 = windowMinutes(diffHours(shift4h, now), settings);
-  const w3 = windowMinutes(diffHours(shift30h, now), settings);
-  const rows = [
-    { name:"Bucket <2h => 7min", pass: w1===settings.responseWindows.lt2h, value:w1 },
-    { name:"Bucket 4h => 30min", pass: w2===settings.responseWindows.h4to24, value:w2 },
-    { name:"Bucket 30h => 120min", pass: w3===settings.responseWindows.h24to72, value:w3 },
-  ];
+function CoverageDayList({dateISO, vacancies}:{dateISO:string; vacancies:Vacancy[]}){
   return (
-    <div className="row">
-      {rows.map((r,i)=> (
-        <div key={i} className="pill" style={{display:"flex",justifyContent:"space-between"}}>
-          <span>{r.name}</span>
-          <span className={r.pass?"ok":"bad"}>{r.pass?"PASS":"FAIL"} <span className="subtitle">({String(r.value)})</span></span>
-        </div>
-      ))}
+    <div style={{marginTop:12}}>
+      <div className="pill">Open on {formatDateLong(dateISO)}: {vacancies.length}</div>
+      {vacancies.length>0 && (
+        <table style={{marginTop:8}}>
+          <thead><tr><th>Shift</th><th>Wing</th><th>Class</th><th>Offering</th><th>Status</th></tr></thead>
+          <tbody>
+            {vacancies.map(v=> (
+              <tr key={v.id}><td>{v.shiftStart}-{v.shiftEnd}</td><td>{v.wing ?? ''}</td><td>{v.classification}</td><td>{v.offeringStep}</td><td>{v.status}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
 
-function Dashboard({vacancies,bids,settings}:{vacancies:Vacancy[]; bids:Bid[]; settings:Settings}){
+function MonthlySchedule({ vacancies }:{ vacancies:Vacancy[] }){
+  const today = new Date();
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth()); // 0-11
+  const [selectedISO, setSelectedISO] = useState<string>(isoDate(today));
+
+  const calDays = useMemo(()=> buildCalendar(year, month), [year, month]);
+  const openByDay = useMemo(()=> {
+    const m = new Map<string, Vacancy[]>();
+    vacancies.forEach(v=>{ if(v.status!=="Awarded"){ const k=v.shiftDate; const arr=m.get(k)||[]; arr.push(v); m.set(k,arr);} });
+    return m;
+  },[vacancies]);
+
+  const monthLabel = new Date(year, month, 1).toLocaleString(undefined, { month: 'long', year: 'numeric' });
+  const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
   return (
-    <div className="grid grid3">
-      <div className="card"><div className="card-h">Open Vacancies</div><div className="card-c"><div style={{fontSize:30,fontWeight:800}}>{vacancies.filter(v=>v.status!=="Awarded").length}</div><div className="subtitle">Shifts needing action</div></div></div>
-      <div className="card"><div className="card-h">Bids Logged</div><div className="card-c"><div style={{fontSize:30,fontWeight:800}}>{bids.length}</div><div className="subtitle">Manual entries from WhatsApp</div></div></div>
-      <div className="card"><div className="card-h">Deadlines Today</div><div className="card-c"><DeadlineList vacancies={vacancies} settings={settings}/></div></div>
+    <div>
+      <div style={{display:'flex',alignItems:'center',gap:8}}>
+        <button className="btn" onClick={()=> prevMonth(setYear,setMonth,year,month)}>&lt;</button>
+        <div className="pill">{monthLabel}</div>
+        <button className="btn" onClick={()=> nextMonth(setYear,setMonth,year,month)}>&gt;</button>
+        <div style={{marginLeft:'auto'}} className="subtitle">Click a day to list open shifts</div>
+      </div>
+      <div className="cal-grid">
+        {dow.map(d=> <div key={d} className="cal-dow">{d}</div>)}
+        {calDays.map(({date, inMonth})=>{
+          const key = isoDate(date);
+          const opens = openByDay.get(key) || [];
+          return (
+            <div key={key} className={`cal-day ${inMonth?"":"mute"}`} onClick={()=> setSelectedISO(key)}>
+              <div className="cal-num">{date.getDate()}</div>
+              <div className="cal-open">
+                {opens.length? <span className="pill">{opens.length} open</span> : <span className="subtitle">—</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <CoverageDayList dateISO={selectedISO} vacancies={openByDay.get(selectedISO)||[]} />
     </div>
   );
 }
@@ -651,10 +601,9 @@ function VacancyRow({v, recName, employees, onAward}:{v:Vacancy; recName:string;
   const [choice, setChoice] = useState<string>("");
   return (
     <tr>
-      <td>{formatDateLong(v.shiftDate)}</td>
+      <td><span className="pill">{formatDowShort(v.shiftDate)}</span> {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}</td>
       <td>{v.wing ?? ""}</td>
       <td>{v.classification}</td>
-      <td>{v.shiftStart}-{v.shiftEnd}</td>
       <td>{v.offeringStep}</td>
       <td>{recName}</td>
       <td style={{minWidth:220}}>
@@ -708,7 +657,15 @@ function EmployeeCombo({ employees, onSelect }:{ employees:Employee[]; onSelect:
   );
 }
 
-// ---------- Tiny CSV ----------
+// ---------- Helpers ----------
+function dateRangeInclusive(startISO: string, endISO: string){
+  const out: string[] = [];
+  const s = new Date(startISO+"T00:00:00");
+  const e = new Date(endISO+"T00:00:00");
+  for (let d = new Date(s); d <= e; d.setDate(d.getDate()+1)) out.push(isoDate(d));
+  return out;
+}
+
 function parseCSV(text: string){
   const lines = text.split(/\r?\n/).filter(Boolean); if(!lines.length) return [] as any[];
   const header = lines[0].split(",").map(s=>s.trim());
