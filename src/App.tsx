@@ -2,17 +2,10 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 
 // MAPLEWOOD SCHEDULER — Netlify-friendly single-file React app
 // - No external UI libs, no path aliases. Pure React + inline CSS.
-// - NEW: Monthly Schedule view that highlights days with open (unfilled) shifts.
-// - Searchable employee selector (type to filter or click from list).
-// - LocalStorage persistence. Diagnostics tab with tests (now also checks calendar counts).
-// - Netlify EZ deploy: see steps at bottom of this file header.
-//
-// Netlify (super simple):
-// 1) npm create vite@latest maplewood-scheduler -- --template react-ts
-// 2) cd maplewood-scheduler && npm install
-// 3) Replace src/App.tsx with THIS file's contents. Ensure src/main.tsx renders <App/> (default).
-// 4) npm run build  → upload the generated dist/ to Netlify (Drop or Git deploy).
-//    (Optional) Add a netlify.toml with: [build] command="npm run build" publish="dist".
+// - Monthly Schedule view shows days with open (unfilled) shifts.
+// - Searchable employee selector. LocalStorage persistence. Diagnostics.
+// - Netlify build-friendly: relies on Vite for TS transpile.
+//   Build command: "vite build", publish: "dist".
 
 // ---------- Types ----------
 type Classification = "RCA" | "LPN" | "RN";
@@ -90,15 +83,29 @@ const loadState = () => { try { const raw = localStorage.getItem(LS_KEY); return
 const saveState = (state: any) => localStorage.setItem(LS_KEY, JSON.stringify(state));
 
 // ---------- Utils ----------
-const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; // TZ-safe
+const isoDate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; // TZ-safe
 const combineDateTime = (dateISO: string, timeHHmm: string) => new Date(`${dateISO}T${timeHHmm}:00`);
 const diffHours = (a: Date, b: Date) => (a.getTime() - b.getTime()) / 36e5;
-function windowMinutes(hoursBefore: number, s: Settings){ const w=s.responseWindows; if(hoursBefore<2)return w.lt2h; if(hoursBefore<4)return w.h2to4; if(hoursBefore<24)return w.h4to24; if(hoursBefore<72)return w.h24to72; return w.gt72; }
-const withinDeadline = (bid: Date, knownAt: Date, start: Date, s: Settings) => bid.getTime() <= new Date(knownAt.getTime()+windowMinutes(diffHours(start,knownAt),s)*60000).getTime();
-const eligibleByStep = (step: Vacancy["offeringStep"], status: Status) => step==="Casuals"? status==="Casual" : step==="OT-Regular"? (status==="FT"||status==="PT") : status==="Casual";
-const sortBySeniority = (bids: Bid[], emps: Employee[]) => { const r=(id:string)=> emps.find(e=>e.id===id)?.seniorityRank ?? 1e9; return [...bids].sort((a,b)=>r(a.bidderEmployeeId)-r(b.bidderEmployeeId)); };
+function windowMinutes(hoursBefore: number, s: Settings){
+  const w=s.responseWindows;
+  if(hoursBefore<2) return w.lt2h;
+  if(hoursBefore<4) return w.h2to4;
+  if(hoursBefore<24) return w.h4to24;
+  if(hoursBefore<72) return w.h24to72;
+  return w.gt72;
+}
+const withinDeadline = (bid: Date, knownAt: Date, start: Date, s: Settings) =>
+  bid.getTime() <= new Date(knownAt.getTime()+windowMinutes(diffHours(start,knownAt),s)*60000).getTime();
+const eligibleByStep = (step: Vacancy["offeringStep"], status: Status) =>
+  step==="Casuals" ? status==="Casual" : step==="OT-Regular" ? (status==="FT"||status==="PT") : status==="Casual";
+const sortBySeniority = (bids: Bid[], emps: Employee[]) => {
+  const r=(id:string)=> emps.find(e=>e.id===id)?.seniorityRank ?? 1e9;
+  return [...bids].sort((a,b)=>r(a.bidderEmployeeId)-r(b.bidderEmployeeId));
+};
 const human = (dt?: string) => dt? new Date(dt).toLocaleString() : "—";
-const matchText = (q: string, label: string) => q.trim().toLowerCase().split(/\s+/).filter(Boolean).every(p => label.toLowerCase().includes(p));
+const matchText = (q: string, label: string) =>
+  q.trim().toLowerCase().split(/\s+/).filter(Boolean).every(p => label.toLowerCase().includes(p));
 
 // ---------- Seed Data ----------
 const seedEmployees: Employee[] = [
@@ -110,7 +117,11 @@ const seedVacations: Vacation[] = [
   { id:"v1", employeeId:"1001", employeeName:"Priya Kaur", classification:"RCA", status:"Approved", startDate:"2025-08-25", endDate:"2025-08-29" },
   { id:"v2", employeeId:"1002", employeeName:"Amrit Singh", classification:"RCA", status:"Pending", startDate:"2025-12-18", endDate:"2025-12-24" },
 ];
-const seedVacancies: Vacancy[] = [{ id:"x101", vacationId:"v1", reason:"Vacation Backfill", classification:"RCA", wing:"Shamrock", shiftDate:"2025-08-26", shiftStart:"06:30", shiftEnd:"14:30", knownAt:"2025-08-25T15:00:00", offeringStep:"Casuals", status:"Open" }];
+const seedVacancies: Vacancy[] = [{
+  id:"x101", vacationId:"v1", reason:"Vacation Backfill", classification:"RCA", wing:"Shamrock",
+  shiftDate:"2025-08-26", shiftStart:"06:30", shiftEnd:"14:30", knownAt:"2025-08-25T15:00:00",
+  offeringStep:"Casuals", status:"Open"
+}];
 const seedBids: Bid[] = [
   { vacancyId:"x101", bidderEmployeeId:"1005", bidderName:"Rani Patel", bidderStatus:"Casual", bidderClassification:"RCA", bidTimestamp:"2025-08-25T15:06:00" },
   { vacancyId:"x101", bidderEmployeeId:"1002", bidderName:"Amrit Singh", bidderStatus:"PT", bidderClassification:"RCA", bidTimestamp:"2025-08-25T15:10:00" },
@@ -118,9 +129,15 @@ const seedBids: Bid[] = [
 
 // ---------- Tiny CSV (simple) ----------
 function parseCSV(text: string){
-  const lines = text.split(/\\r?\\n/).filter(Boolean); if(!lines.length) return [] as any[];
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  if(!lines.length) return [] as any[];
   const header = lines[0].split(",").map(s=>s.trim());
-  return lines.slice(1).map(line=>{ const cols=line.split(","); const o:any={}; header.forEach((h,i)=>o[h]=cols[i]?.trim()); return o; });
+  return lines.slice(1).map(line=>{
+    const cols=line.split(",");
+    const o:any={};
+    header.forEach((h,i)=>o[h]=cols[i]?.trim());
+    return o;
+  });
 }
 
 // ---------- Main App ----------
@@ -135,17 +152,72 @@ export default function App(){
   useEffect(()=>{ saveState({ employees, vacations, vacancies, bids, settings }); },[employees,vacations,vacancies,bids,settings]);
 
   const employeesById = useMemo(()=>Object.fromEntries(employees.map(e=>[e.id,e])),[employees]);
+
   const computeRecommendation = (vac: Vacancy) => {
     const start = combineDateTime(vac.shiftDate, vac.shiftStart);
-    const known = new Date(vac.knownAt);
+    const known = new Date(vac.knownAt || new Date().toISOString());
     const relevant = bids.filter(b=> b.vacancyId===vac.id && b.bidderClassification===vac.classification);
-    const filtered = relevant.filter(b=>{ const emp = employeesById[b.bidderEmployeeId]; if(!emp) return false; return withinDeadline(new Date(b.bidTimestamp), known, start, settings) && eligibleByStep(vac.offeringStep, emp.status); });
+    const filtered = relevant.filter(b=>{
+      const emp = employeesById[b.bidderEmployeeId];
+      if(!emp) return false;
+      return withinDeadline(new Date(b.bidTimestamp), known, start, settings) && eligibleByStep(vac.offeringStep, emp.status);
+    });
     return sortBySeniority(filtered, employees)[0]?.bidderEmployeeId;
   };
-  const recommendations = useMemo(()=>{ const m:Record<string,string|undefined>={}; vacancies.forEach(v=>m[v.id]=computeRecommendation(v)); return m; },[vacancies,bids,employees,settings]);
+
+  const recommendations = useMemo(()=>{
+    const m:Record<string,string|undefined>={};
+    vacancies.forEach(v=>m[v.id]=computeRecommendation(v));
+    return m;
+  },[vacancies,bids,employees,settings]);
+
+  // --- Helpers added to satisfy buttons ---
+  const addVacation = (v: Partial<Vacation>) => {
+    const vac: Vacation = {
+      id: v.id ?? `v_${Date.now()}`,
+      employeeId: v.employeeId ?? "",
+      employeeName: v.employeeName ?? "",
+      classification: (v.classification ?? "RCA") as Classification,
+      status: (v.status ?? "Pending"),
+      startDate: v.startDate ?? isoDate(new Date()),
+      endDate: v.endDate ?? isoDate(new Date()),
+      notes: v.notes ?? ""
+    };
+    setVacations(prev => [...prev, vac]);
+  };
+
+  const addVacancy = (v: Partial<Vacancy>) => {
+    const vac: Vacancy = {
+      id: v.id ?? `x${Math.random().toString(36).slice(2,7)}`,
+      vacationId: v.vacationId,
+      reason: v.reason ?? "Vacancy",
+      classification: (v.classification ?? "RCA") as Classification,
+      wing: v.wing,
+      shiftDate: v.shiftDate ?? isoDate(new Date()),
+      shiftStart: v.shiftStart ?? "06:30",
+      shiftEnd: v.shiftEnd ?? "14:30",
+      knownAt: v.knownAt ?? new Date().toISOString(),
+      offeringStep: (v.offeringStep ?? "Casuals"),
+      status: (v.status ?? "Open"),
+      recommendedAward: v.recommendedAward,
+      awardedTo: undefined,
+      awardedAt: undefined
+    };
+    setVacancies(prev => [vac, ...prev]);
+  };
+
+  const awardVacancy = (vacId: string) => {
+    const empId = recommendations[vacId];
+    if(!empId) return;
+    setVacancies(prev =>
+      prev.map(v => v.id===vacId ? ({ ...v, status:"Awarded", awardedTo: empId, awardedAt: new Date().toISOString() }) : v)
+    );
+  };
 
   // forms state
-  const [newVac, setNewVac] = useState<Partial<Vacancy>>({ classification:"RCA", shiftDate: isoDate(new Date()), shiftStart:"06:30", shiftEnd:"14:30", offeringStep:"Casuals" });
+  const [newVac, setNewVac] = useState<Partial<Vacancy>>({
+    classification:"RCA", shiftDate: isoDate(new Date()), shiftStart:"06:30", shiftEnd:"14:30", offeringStep:"Casuals"
+  });
   const [newBid, setNewBid] = useState<Partial<Bid>>({});
   const [newVacay, setNewVacay] = useState<Partial<Vacation>>({ status:"Pending" });
 
@@ -189,8 +261,22 @@ export default function App(){
             <div className="subtitle">Vacation coverage • call-outs • seniority & response windows</div>
           </div>
           <div className="toolbar">
-            <button className="btn" onClick={()=>{ if(confirm("Reset all data?")){ setEmployees(seedEmployees); setVacations(seedVacations); setVacancies(seedVacancies); setBids(seedBids); setSettings(defaultSettings);} }}>Reset</button>
-            <button className="btn" onClick={()=>{ const blob=new Blob([JSON.stringify({employees,vacations,vacancies,bids,settings},null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="maplewood-scheduler-backup.json"; a.click(); URL.revokeObjectURL(url); }}>Export</button>
+            <button className="btn" onClick={()=>{
+              if(confirm("Reset all data?")){
+                setEmployees(seedEmployees);
+                setVacations(seedVacations);
+                setVacancies(seedVacancies);
+                setBids(seedBids);
+                setSettings(defaultSettings);
+              }
+            }}>Reset</button>
+            <button className="btn" onClick={()=>{
+              const blob=new Blob([JSON.stringify({employees,vacations,vacancies,bids,settings},null,2)],{type:"application/json"});
+              const url=URL.createObjectURL(blob);
+              const a=document.createElement("a");
+              a.href=url; a.download="maplewood-scheduler-backup.json"; a.click();
+              URL.revokeObjectURL(url);
+            }}>Export</button>
           </div>
         </div>
 
@@ -224,12 +310,29 @@ export default function App(){
         {tab==="employees" && (
           <div className="grid">
             <div className="card"><div className="card-h">Import Seniority (CSV)</div><div className="card-c">
-              <input type="file" accept=".csv" onChange={async e=>{ const f=e.target.files?.[0]; if(!f) return; const text=await f.text(); const rows=parseCSV(text); const out:Employee[]=rows.map((r:any,i:number)=>({ id:String(r.id??r.EmployeeID??`emp_${i}`), firstName:String(r.firstName??r.FirstName??""), lastName:String(r.lastName??r.LastName??""), classification:(r.classification??r.Classification??"RCA") as Classification, status:(r.status??r.Status??"FT") as Status, homeWing:String(r.homeWing??r.HomeWing??""), seniorityRank:Number(r.seniorityRank??r.SeniorityRank??9999), active:String(r.active??r.Active??"Yes").toLowerCase().startsWith("y") })); setEmployees(out.filter(e=>!!e.id)); }}/>
+              <input type="file" accept=".csv" onChange={async e=>{
+                const f=e.target.files?.[0]; if(!f) return;
+                const text=await f.text();
+                const rows=parseCSV(text);
+                const out:Employee[]=rows.map((r:any,i:number)=>({
+                  id:String(r.id??r.EmployeeID??`emp_${i}`),
+                  firstName:String(r.firstName??r.FirstName??""),
+                  lastName:String(r.lastName??r.LastName??""),
+                  classification:(r.classification??r.Classification??"RCA") as Classification,
+                  status:(r.status??r.Status??"FT") as Status,
+                  homeWing:String(r.homeWing??r.HomeWing??""),
+                  seniorityRank:Number(r.seniorityRank??r.SeniorityRank??9999),
+                  active:String(r.active??r.Active??"Yes").toLowerCase().startsWith("y")
+                }));
+                setEmployees(out.filter(e=>!!e.id));
+              }}/>
               <div className="subtitle">Columns: id, firstName, lastName, classification (RCA/LPN/RN), status (FT/PT/Casual), homeWing, seniorityRank, active (Yes/No)</div>
             </div></div>
             <div className="card"><div className="card-h">Employees</div><div className="card-c">
               <table><thead><tr><th>ID</th><th>Name</th><th>Class</th><th>Status</th><th>Wing</th><th>Rank</th><th>Active</th></tr></thead>
-              <tbody>{employees.map(e=> (<tr key={e.id}><td>{e.id}</td><td>{e.firstName} {e.lastName}</td><td>{e.classification}</td><td>{e.status}</td><td>{e.homeWing}</td><td>{e.seniorityRank}</td><td>{e.active?"Yes":"No"}</td></tr>))}</tbody></table>
+              <tbody>{employees.map(e=> (
+                <tr key={e.id}><td>{e.id}</td><td>{e.firstName} {e.lastName}</td><td>{e.classification}</td><td>{e.status}</td><td>{e.homeWing}</td><td>{e.seniorityRank}</td><td>{e.active?"Yes":"No"}</td></tr>
+              ))}</tbody></table>
             </div></div>
           </div>
         )}
@@ -240,7 +343,15 @@ export default function App(){
               <div className="row cols2">
                 <div>
                   <label>Employee</label>
-                  <EmployeeCombo employees={employees} onSelect={(id)=>{ const e=employeesById[id]; setNewVacay(v=>({...v, employeeId:id, employeeName: e? `${e.firstName} ${e.lastName}`: "" , classification: (e?.classification??v.classification) as Classification })); }} />
+                  <EmployeeCombo employees={employees} onSelect={(id)=>{
+                    const e=employeesById[id];
+                    setNewVacay(v=>({
+                      ...v,
+                      employeeId:id,
+                      employeeName: e? `${e.firstName} ${e.lastName}`: "" ,
+                      classification: (e?.classification??v.classification??"RCA") as Classification
+                    }));
+                  }} />
                 </div>
                 <div>
                   <label>Status</label>
@@ -250,7 +361,7 @@ export default function App(){
                 </div>
                 <div>
                   <label>Classification</label>
-                  <select value={newVacay.classification ?? "RCA"} onChange={e=> setNewVacay(v=>({...v, classification: e.target.value as Classification}))}>
+                  <select value={(newVacay.classification ?? "RCA")} onChange={e=> setNewVacay(v=>({...v, classification: e.target.value as Classification}))}>
                     <option>RCA</option><option>LPN</option><option>RN</option>
                   </select>
                 </div>
@@ -258,15 +369,25 @@ export default function App(){
                 <div><label>End</label><input type="date" onChange={e=> setNewVacay(v=>({...v,endDate:e.target.value}))}/></div>
                 <div style={{gridColumn:"1 / -1"}}><label>Notes</label><textarea onChange={e=> setNewVacay(v=>({...v,notes:e.target.value}))}/></div>
                 <div style={{gridColumn:"1 / -1"}}>
-                  <button className="btn" onClick={()=>{ if(!newVacay.employeeId||!newVacay.startDate||!newVacay.endDate) return alert("Employee, start and end required"); addVacation(newVacay); setNewVacay({ status:"Pending" }); }}>Add</button>
+                  <button className="btn" onClick={()=>{
+                    if(!newVacay.employeeId||!newVacay.startDate||!newVacay.endDate) return alert("Employee, start and end required");
+                    addVacation(newVacay);
+                    setNewVacay({ status:"Pending" });
+                  }}>Add</button>
                 </div>
               </div>
             </div></div>
             <div className="card"><div className="card-h">Vacations</div><div className="card-c">
               <table><thead><tr><th>Employee</th><th>Status</th><th>Class</th><th>Start</th><th>End</th><th>Prime?</th></tr></thead>
-              <tbody>{vacations.map(v=>{ const s=new Date(v.startDate), e=new Date(v.endDate), p1s=new Date(settings.prime1Start), p1e=new Date(settings.prime1End), p2s=new Date(settings.prime2Start), p2e=new Date(settings.prime2End); const prime=((s>=p1s&&s<=p1e)||(e>=p1s&&e<=p1e)||(s>=p2s&&s<=p2e)||(e>=p2s&&e<=p2e)); return (
-                <tr key={v.id}><td>{v.employeeName}</td><td>{v.status}</td><td>{v.classification}</td><td>{v.startDate}</td><td>{v.endDate}</td><td>{prime? <span className="pill warn">Prime</span>: ""}</td></tr>
-              );})}</tbody></table>
+              <tbody>{vacations.map(v=>{
+                const s=new Date(v.startDate), e=new Date(v.endDate),
+                  p1s=new Date(settings.prime1Start), p1e=new Date(settings.prime1End),
+                  p2s=new Date(settings.prime2Start), p2e=new Date(settings.prime2End);
+                const prime=((s>=p1s&&s<=p1e)||(e>=p1s&&e<=p1e)||(s>=p2s&&s<=p2e)||(e>=p2s&&e<=p2e));
+                return (
+                  <tr key={v.id}><td>{v.employeeName}</td><td>{v.status}</td><td>{v.classification}</td><td>{v.startDate}</td><td>{v.endDate}</td><td>{prime? <span className="pill warn">Prime</span>: ""}</td></tr>
+                );
+              })}</tbody></table>
             </div></div>
           </div>
         )}
@@ -284,14 +405,28 @@ export default function App(){
                 <div><label>Known At</label><input type="datetime-local" value={newVac.knownAt??""} onChange={e=> setNewVac(v=>({...v,knownAt:e.target.value}))}/></div>
                 <div><label>Offering Step</label><select value={newVac.offeringStep} onChange={e=> setNewVac(v=>({...v,offeringStep:e.target.value as Vacancy["offeringStep"]}))}><option>Casuals</option><option>OT-Regular</option><option>OT-Casuals</option></select></div>
                 <div><label>Status</label><select value={newVac.status??"Open"} onChange={e=> setNewVac(v=>({...v,status:e.target.value as Vacancy["status"]}))}><option>Open</option><option>Pending Award</option><option>Awarded</option></select></div>
-                <div style={{gridColumn:"1 / -1"}}><button className="btn" onClick={()=>{ if(!newVac.shiftDate) return alert("Shift date required"); addVacancy(newVac); setNewVac({ classification:"RCA", shiftDate: isoDate(new Date()), shiftStart:"06:30", shiftEnd:"14:30", offeringStep:"Casuals" }); }}>Create</button></div>
+                <div style={{gridColumn:"1 / -1"}}><button className="btn" onClick={()=>{
+                  if(!newVac.shiftDate) return alert("Shift date required");
+                  addVacancy(newVac);
+                  setNewVac({ classification:"RCA", shiftDate: isoDate(new Date()), shiftStart:"06:30", shiftEnd:"14:30", offeringStep:"Casuals" });
+                }}>Create</button></div>
               </div>
             </div></div>
             <div className="card"><div className="card-h">Vacancies</div><div className="card-c">
               <table><thead><tr><th>ID</th><th>When</th><th>Class</th><th>Wing</th><th>KnownAt</th><th>Offering</th><th>Status</th><th>Recommended</th><th>Action</th></tr></thead>
-              <tbody>{vacancies.map(v=>{ const empId=recommendations[v.id]; const emp=empId? employeesById[empId]:undefined; return (
-                <tr key={v.id}><td>{v.id}</td><td>{v.shiftDate} {v.shiftStart}-{v.shiftEnd}</td><td>{v.classification}</td><td>{v.wing??""}</td><td>{human(v.knownAt)}</td><td>{v.offeringStep}</td><td>{v.status}</td><td>{emp? `${emp.firstName} ${emp.lastName}`: "—"}</td><td><button className="btn" disabled={!emp||v.status==="Awarded"} onClick={()=> awardVacancy(v.id)}>Award</button></td></tr>
-              );})}</tbody></table>
+              <tbody>{vacancies.map(v=>{
+                const empId=recommendations[v.id];
+                const emp=empId? employeesById[empId]:undefined;
+                return (
+                  <tr key={v.id}>
+                    <td>{v.id}</td><td>{v.shiftDate} {v.shiftStart}-{v.shiftEnd}</td>
+                    <td>{v.classification}</td><td>{v.wing??""}</td>
+                    <td>{human(v.knownAt)}</td><td>{v.offeringStep}</td><td>{v.status}</td>
+                    <td>{emp? `${emp.firstName} ${emp.lastName}`: "—"}</td>
+                    <td><button className="btn" disabled={!emp||v.status==="Awarded"} onClick={()=> awardVacancy(v.id)}>Award</button></td>
+                  </tr>
+                );
+              })}</tbody></table>
             </div></div>
           </div>
         )}
@@ -309,18 +444,52 @@ export default function App(){
                 </div>
                 <div>
                   <label>Employee</label>
-                  <EmployeeCombo employees={employees} onSelect={(id)=>{ const e=employeesById[id]; setNewBid(b=>({...b, bidderEmployeeId:id, bidderName:e? `${e.firstName} ${e.lastName}`: "", bidderStatus: e?.status, bidderClassification: e?.classification })); }} />
+                  <EmployeeCombo employees={employees} onSelect={(id)=>{
+                    const e=employeesById[id];
+                    setNewBid(b=>({
+                      ...b,
+                      bidderEmployeeId:id,
+                      bidderName:e? `${e.firstName} ${e.lastName}`: "",
+                      bidderStatus: e?.status,
+                      bidderClassification: e?.classification
+                    }));
+                  }} />
                 </div>
                 <div><label>Timestamp</label><input type="datetime-local" onChange={e=> setNewBid(b=>({...b,bidTimestamp:e.target.value}))}/></div>
                 <div><label>Notes</label><input placeholder={'e.g., "available for 06:30-14:30"'} onChange={e=> setNewBid(b=>({...b,notes:e.target.value}))}/></div>
-                <div style={{gridColumn:"1 / -1"}}><button className="btn" onClick={()=>{ if(!newBid.vacancyId||!newBid.bidderEmployeeId) return alert("Vacancy and employee required"); setBids(prev=>[...prev,{ vacancyId:newBid.vacancyId!, bidderEmployeeId:newBid.bidderEmployeeId!, bidderName:newBid.bidderName ?? "", bidderStatus:(newBid.bidderStatus ?? "Casual") as Status, bidderClassification:(newBid.bidderClassification ?? "RCA") as Classification, bidTimestamp:newBid.bidTimestamp ?? new Date().toISOString(), notes:newBid.notes ?? "" }]); setNewBid({}); }}>Add Bid</button></div>
+                <div style={{gridColumn:"1 / -1"}}><button className="btn" onClick={()=>{
+                  if(!newBid.vacancyId||!newBid.bidderEmployeeId) return alert("Vacancy and employee required");
+                  setBids(prev=>[...prev,{
+                    vacancyId:newBid.vacancyId!,
+                    bidderEmployeeId:newBid.bidderEmployeeId!,
+                    bidderName:newBid.bidderName ?? "",
+                    bidderStatus:(newBid.bidderStatus ?? "Casual") as Status,
+                    bidderClassification:(newBid.bidderClassification ?? "RCA") as Classification,
+                    bidTimestamp:newBid.bidTimestamp ?? new Date().toISOString(),
+                    notes:newBid.notes ?? ""
+                  }]);
+                  setNewBid({});
+                }}>Add Bid</button></div>
               </div>
             </div></div>
             <div className="card"><div className="card-h">Bids</div><div className="card-c">
               <table><thead><tr><th>Vacancy</th><th>Employee</th><th>Class</th><th>Status</th><th>Time</th><th>Within Window?</th><th>Eligible?</th></tr></thead>
-              <tbody>{bids.map((b,i)=>{ const vac=vacancies.find(v=>v.id===b.vacancyId); const emp=employeesById[b.bidderEmployeeId]; const start=vac? combineDateTime(vac.shiftDate, vac.shiftStart): new Date(); const known=vac? new Date(vac.knownAt): new Date(); const inWin=withinDeadline(new Date(b.bidTimestamp), known, start, settings); const stepOK=eligibleByStep(vac?.offeringStep ?? "Casuals", emp?.status ?? "Casual"); return (
-                <tr key={i}><td>{b.vacancyId}</td><td>{b.bidderName}</td><td>{b.bidderClassification}</td><td>{b.bidderStatus}</td><td>{human(b.bidTimestamp)}</td><td>{inWin? <span className="ok">Yes</span>: <span className="bad">No</span>}</td><td>{stepOK? <span className="ok">Yes</span>: <span className="bad">No</span>}</td></tr>
-              );})}</tbody></table>
+              <tbody>{bids.map((b,i)=>{
+                const vac=vacancies.find(v=>v.id===b.vacancyId);
+                const emp=employeesById[b.bidderEmployeeId];
+                const start=vac? combineDateTime(vac.shiftDate, vac.shiftStart): new Date();
+                const known=vac? new Date(vac.knownAt): new Date();
+                const inWin=withinDeadline(new Date(b.bidTimestamp), known, start, settings);
+                const stepOK=eligibleByStep(vac?.offeringStep ?? "Casuals", emp?.status ?? "Casual");
+                return (
+                  <tr key={i}>
+                    <td>{b.vacancyId}</td><td>{b.bidderName}</td><td>{b.bidderClassification}</td>
+                    <td>{b.bidderStatus}</td><td>{human(b.bidTimestamp)}</td>
+                    <td>{inWin? <span className="ok">Yes</span>: <span className="bad">No</span>}</td>
+                    <td>{stepOK? <span className="ok">Yes</span>: <span className="bad">No</span>}</td>
+                  </tr>
+                );
+              })}</tbody></table>
             </div></div>
           </div>
         )}
@@ -329,9 +498,17 @@ export default function App(){
           <div className="grid">
             <div className="card"><div className="card-h">Recommend & Award</div><div className="card-c">
               <table><thead><tr><th>Vacancy</th><th>When</th><th>Offering</th><th>Top Eligible</th><th>Action</th></tr></thead>
-              <tbody>{vacancies.filter(v=>v.status!=="Awarded").map(v=>{ const id=recommendations[v.id]; const e=id? employeesById[id]:undefined; return (
-                <tr key={v.id}><td>{v.id}</td><td>{v.shiftDate} {v.shiftStart}</td><td>{v.offeringStep}</td><td>{e? `${e.firstName} ${e.lastName} (rank ${e.seniorityRank})` : "—"}</td><td><button className="btn" disabled={!e} onClick={()=> awardVacancy(v.id)}>Award</button></td></tr>
-              );})}</tbody></table>
+              <tbody>{vacancies.filter(v=>v.status!=="Awarded").map(v=>{
+                const id=recommendations[v.id];
+                const e=id? employeesById[id]:undefined;
+                return (
+                  <tr key={v.id}>
+                    <td>{v.id}</td><td>{v.shiftDate} {v.shiftStart}</td><td>{v.offeringStep}</td>
+                    <td>{e? `${e.firstName} ${e.lastName} (rank ${e.seniorityRank})` : "—"}</td>
+                    <td><button className="btn" disabled={!e} onClick={()=> awardVacancy(v.id)}>Award</button></td>
+                  </tr>
+                );
+              })}</tbody></table>
             </div></div>
           </div>
         )}
@@ -370,9 +547,19 @@ export default function App(){
 }
 
 // ---------- Components ----------
-function DeadlineList({vacancies, settings, detailed=false}:{vacancies:Vacancy[]; settings:Settings; detailed?:boolean}){
+function DeadlineList({vacancies, settings}:{vacancies:Vacancy[]; settings:Settings; detailed?:boolean}){
   const now = new Date();
-  const items = vacancies.filter(v=>v.status!=="Awarded").map(v=>{ const start=combineDateTime(v.shiftDate,v.shiftStart); const known=new Date(v.knownAt); const mins=windowMinutes(diffHours(start,known),settings); const deadline=new Date(known.getTime()+mins*60000); const left=Math.max(0,Math.round((deadline.getTime()-now.getTime())/60000)); return { id:v.id, offering:v.offeringStep, deadline, left }; }).sort((a,b)=>a.deadline.getTime()-b.deadline.getTime());
+  const items = vacancies
+    .filter(v=>v.status!=="Awarded")
+    .map(v=>{
+      const start=combineDateTime(v.shiftDate,v.shiftStart);
+      const known=new Date(v.knownAt);
+      const mins=windowMinutes(diffHours(start,known),settings);
+      const deadline=new Date(known.getTime()+mins*60000);
+      const left=Math.max(0,Math.round((deadline.getTime()-now.getTime())/60000));
+      return { id:v.id, offering:v.offeringStep, deadline, left };
+    })
+    .sort((a,b)=>a.deadline.getTime()-b.deadline.getTime());
   if(!items.length) return <div className="subtitle">No open response windows.</div>;
   return <div className="row">{items.map(it=> (
     <div key={it.id} className="pill" style={{display:"flex",justifyContent:"space-between",gap:8}}>
@@ -418,8 +605,6 @@ function MonthlySchedule({ vacancies }:{ vacancies:Vacancy[] }){
   },[vacancies]);
 
   const monthLabel = new Date(year, month, 1).toLocaleString(undefined, { month: 'long', year: 'numeric' });
-  const dow = ['Sun','Mon','Mon','Tue','Wed','Thu','Fri','Sat']
-  // Fix typo above (we'll override in render)
   const daysOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
   return (
@@ -500,7 +685,8 @@ function Diagnostics({ settings, employees, vacancies }:{ settings:Settings; emp
     { vacancyId:"t1", bidderEmployeeId: employees[1]?.id ?? "1002", bidderName:"B", bidderStatus:"PT", bidderClassification:"RCA", bidTimestamp: now.toISOString() },
   ];
   const sorted = sortBySeniority(testBids, employees);
-  const comboListMatches = matchText("pri ka", f"{employees[0]?.firstName if employees and employees[0] else 'Priya'} {employees[0]?.lastName if employees and employees[0] else 'Kaur'}");
+  const sampleName = `${employees[0]?.firstName ?? "Priya"} ${employees[0]?.lastName ?? "Kaur"}`;
+  const comboListMatches = matchText("pri ka", sampleName);
   const openOnAug26 = vacancies.filter(v=> v.shiftDate==="2025-08-26" && v.status!=="Awarded").length; // seed is 1
   const rows = [
     { name:"Bucket <2h => 7min", pass: w1===settings.responseWindows.lt2h, value:w1 },
