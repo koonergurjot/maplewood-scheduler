@@ -185,15 +185,20 @@ export default function App(){
   const employeesById = useMemo(()=>Object.fromEntries(employees.map(e=>[e.id,e])),[employees]);
 
   // Recommendation: choose among *bidders* for that vacancy, highest seniority (rank 1 best)
-  const computeRecommendation = (vac: Vacancy) => {
+  const computeRecommendation = (vac: Vacancy): {id?: string; why: string[]} => {
     const rel = bids.filter(b=> b.vacancyId===vac.id);
     const enriched = rel.map(b=> ({ bid:b, emp: employeesById[b.bidderEmployeeId] })).filter(x=> !!x.emp && x.emp.active);
-    if (!enriched.length) return undefined;
+    const why: string[] = [];
+    if (!enriched.length) {
+      why.push("No active bidders");
+      return { id: undefined, why };
+    }
     enriched.sort((a,b)=> (a.emp!.seniorityRank??99999) - (b.emp!.seniorityRank??99999));
-    return enriched[0].emp!.id;
+    why.push("Highest seniority bidder");
+    return { id: enriched[0].emp!.id, why };
   };
   const recommendations = useMemo(()=>{
-    const m:Record<string,string|undefined>={};
+    const m:Record<string,{id?:string; why:string[]}>={};
     vacancies.forEach(v=> m[v.id]=computeRecommendation(v));
     return m;
   },[vacancies,bids,employeesById]);
@@ -539,8 +544,10 @@ export default function App(){
                     </thead>
                     <tbody>
                       {filteredVacancies.map(v=>{
-                        const recId = recommendations[v.id];
+                        const rec = recommendations[v.id];
+                        const recId = rec?.id;
                         const recName = recId ? `${employeesById[recId]?.firstName ?? ""} ${employeesById[recId]?.lastName ?? ""}`.trim() : "—";
+                        const recWhy = rec?.why ?? [];
                         const dl = deadlineFor(v, settings);
                         const msLeft = dl.getTime() - now;
                         const winMin = pickWindowMinutes(v, settings);
@@ -555,6 +562,7 @@ export default function App(){
                             v={v}
                             recId={recId}
                             recName={recName}
+                            recWhy={recWhy}
                             employees={employees}
                             countdownLabel={fmtCountdown(msLeft)}
                             countdownClass={cdClass}
@@ -826,8 +834,8 @@ function MonthlySchedule({ vacancies }:{ vacancies:Vacancy[] }){
 }
 
 // ---------- Small components ----------
-function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClass, isDueNext, onAward, onResetKnownAt, onEdit, onDelete}:{
-  v:Vacancy; recId?:string; recName:string; employees:Employee[]; countdownLabel:string; countdownClass:string; isDueNext:boolean;
+function VacancyRow({v, recId, recName, recWhy, employees, countdownLabel, countdownClass, isDueNext, onAward, onResetKnownAt, onEdit, onDelete}:{
+  v:Vacancy; recId?:string; recName:string; recWhy:string[]; employees:Employee[]; countdownLabel:string; countdownClass:string; isDueNext:boolean;
   onAward:(payload:{empId?:string; reason?:string; overrideUsed?:boolean})=>void; onResetKnownAt:()=>void; onEdit:()=>void; onDelete:()=>void;
 }){
   const [choice, setChoice] = useState<string>("");
@@ -857,7 +865,10 @@ function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClas
       <td>{v.wing ?? ""}</td>
       <td>{v.classification}</td>
       <td>{v.offeringStep}</td>
-      <td>{recName}</td>
+      <td>
+        <div>{recName}</div>
+        {recWhy.length>0 && <div className="subtitle">{recWhy.join(", ")}</div>}
+      </td>
       <td>
         <span className={`cd-chip ${countdownClass}`}>{countdownLabel}</span>
       </td>
