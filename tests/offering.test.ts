@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { nextTier, requiresConfirmation } from '../src/offering/offeringMachine';
 import { createOfferingRound, Vacancy } from '../src/offering/useOfferingRound';
 import { getAuditLogs, clearAuditLogs } from '../src/lib/audit';
+import storage from '../src/lib/storage';
 
 describe('offeringMachine', () => {
   it('nextTier returns correct next/null', () => {
@@ -18,7 +19,7 @@ describe('offeringMachine', () => {
 
 describe('useOfferingRound', () => {
   beforeEach(() => {
-    clearAuditLogs();
+    clearAuditLogs(storage);
     vi.useFakeTimers();
   });
   afterEach(() => {
@@ -41,7 +42,7 @@ describe('useOfferingRound', () => {
     });
     vi.advanceTimersByTime(60000);
     expect(vac.offeringTier).toBe('OT_FULL_TIME');
-    const logs = getAuditLogs();
+    const logs = getAuditLogs(storage);
     expect(logs[0].details.reason).toBe('auto-progress');
     round.dispose();
   });
@@ -60,7 +61,7 @@ describe('useOfferingRound', () => {
       onTick: () => {},
     });
     round.onManualChangeTier('OT_FULL_TIME', 'need coverage');
-    const logs = getAuditLogs();
+    const logs = getAuditLogs(storage);
     expect(logs[0].actor).toBe('manager');
     expect(logs[0].details.from).toBe('CASUALS');
     expect(logs[0].details.to).toBe('OT_FULL_TIME');
