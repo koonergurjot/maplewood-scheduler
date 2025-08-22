@@ -283,6 +283,29 @@ export default function App(){
     setVacancies(prev => prev.map(v => v.id===vacId ? ({...v, knownAt: new Date().toISOString()}) : v));
   };
 
+  const deleteVacancy = (vacId: string) => {
+    if (!confirm("Delete this vacancy?")) return;
+    setVacancies(prev => prev.filter(v => v.id !== vacId));
+  };
+
+  const editVacancy = (vacId: string) => {
+    const current = vacancies.find(v => v.id === vacId);
+    if (!current) return;
+    const shiftDate = prompt("Shift date (YYYY-MM-DD)", current.shiftDate);
+    if (!shiftDate) return;
+    const shiftStart = prompt("Shift start (HH:mm)", current.shiftStart);
+    if (!shiftStart) return;
+    const shiftEnd = prompt("Shift end (HH:mm)", current.shiftEnd);
+    if (!shiftEnd) return;
+    const wing = prompt("Wing", current.wing ?? "") || undefined;
+    const classification = prompt("Classification (RCA/LPN/RN)", current.classification) as Classification | null;
+    if (!classification) return;
+    const offeringStep = prompt("Offering step (Casuals/OT-Regular/OT-Casuals)", current.offeringStep) as Vacancy['offeringStep'];
+    if (!offeringStep) return;
+    if (!confirm("Save changes to this vacancy?")) return;
+    setVacancies(prev => prev.map(v => v.id===vacId ? ({...v, shiftDate, shiftStart, shiftEnd, wing, classification, offeringStep}) : v));
+  };
+
   // Figure out which open vacancy is "due next" (soonest positive deadline)
   const dueNextId = useMemo(()=>{
     let min = Infinity; let id: string | null = null;
@@ -538,6 +561,8 @@ export default function App(){
                             isDueNext={!!isDueNext}
                             onAward={(payload)=> awardVacancy(v.id, payload)}
                             onResetKnownAt={()=> resetKnownAt(v.id)}
+                            onEdit={()=> editVacancy(v.id)}
+                            onDelete={()=> deleteVacancy(v.id)}
                           />
                         );
                       })}
@@ -801,9 +826,9 @@ function MonthlySchedule({ vacancies }:{ vacancies:Vacancy[] }){
 }
 
 // ---------- Small components ----------
-function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClass, isDueNext, onAward, onResetKnownAt}:{
+function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClass, isDueNext, onAward, onResetKnownAt, onEdit, onDelete}:{
   v:Vacancy; recId?:string; recName:string; employees:Employee[]; countdownLabel:string; countdownClass:string; isDueNext:boolean;
-  onAward:(payload:{empId?:string; reason?:string; overrideUsed?:boolean})=>void; onResetKnownAt:()=>void;
+  onAward:(payload:{empId?:string; reason?:string; overrideUsed?:boolean})=>void; onResetKnownAt:()=>void; onEdit:()=>void; onDelete:()=>void;
 }){
   const [choice, setChoice] = useState<string>("");
   const [overrideClass, setOverrideClass] = useState<boolean>(false);
@@ -856,6 +881,8 @@ function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClas
       <td style={{display:'flex', gap:6}}>
         <button className="btn" onClick={onResetKnownAt}>Reset knownAt</button>
         <button className="btn" onClick={handleAward} disabled={!choice}>Award</button>
+        <button className="btn" onClick={onEdit}>Edit</button>
+        <button className="btn" onClick={onDelete}>Delete</button>
       </td>
     </tr>
   );
