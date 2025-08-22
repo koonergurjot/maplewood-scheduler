@@ -1,3 +1,4 @@
+// Parses a CSV string into an array of objects keyed by header names.
 export function parseCSV(input: string): Record<string, string>[] {
   const lines = input.trim().split(/\r?\n/);
   if (lines.length === 0) return [];
@@ -15,6 +16,7 @@ export function parseCSV(input: string): Record<string, string>[] {
   return rows;
 }
 
+// Splits a single CSV line accounting for quoted values and escapes.
 function splitLine(line: string): string[] {
   const result: string[] = [];
   let current = "";
