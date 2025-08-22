@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Vacancy, Employee } from "../App";
+import type { Vacancy, Employee } from "../types";
 import SelectEmployee from "./SelectEmployee";
 import { formatDowShort, formatDateLong } from "../utils/date";
 

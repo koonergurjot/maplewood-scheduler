@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Employee } from "../App";
+import type { Employee } from "../types";
 import { matchText } from "../utils/text";
 
 type Props = { employees: Employee[]; onSelect:(id:string)=>void };
