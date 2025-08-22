@@ -3,7 +3,9 @@ import { timingSafeEqual } from 'crypto';
 export function requireAuth(req, res, next) {
   const token = process.env.ANALYTICS_AUTH_TOKEN;
   if (!token) {
-    return next();
+    return res
+      .status(401)
+      .json({ error: 'Analytics auth token not configured' });
   }
 
   const authHeader = req.headers.authorization;

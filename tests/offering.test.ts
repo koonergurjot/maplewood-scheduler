@@ -36,20 +36,25 @@ describe('useOfferingRound', () => {
       offeringAutoProgress: true,
     };
     const onTick = vi.fn();
+    const updateVacancy = vi.fn();
     const round = createOfferingRound(vac, {
-      updateVacancy: () => {},
+      updateVacancy,
       currentUser: 'system',
       onTick,
     });
     // 59 seconds pass, round should not yet auto-progress
     vi.advanceTimersByTime(59000);
     expect(vac.offeringTier).toBe('CASUALS');
+    expect(updateVacancy).not.toHaveBeenCalled();
     // initial tick + 59 subsequent ticks
     expect(onTick).toHaveBeenCalledTimes(60);
 
     // Next second reaches the end of the round and triggers auto-progress
     vi.advanceTimersByTime(1000);
-    expect(vac.offeringTier).toBe('OT_FULL_TIME');
+    expect(vac.offeringTier).toBe('CASUALS');
+    expect(updateVacancy).toHaveBeenCalledWith(
+      expect.objectContaining({ offeringTier: 'OT_FULL_TIME' }),
+    );
     const logs = getAuditLogs(storage);
     expect(logs[0].details.reason).toBe('auto-progress');
     // final tick calls onTick twice: once when expiring and once after advancing
@@ -87,8 +92,9 @@ describe('useOfferingRound', () => {
       offeringRoundMinutes: 5,
       offeringAutoProgress: true,
     };
+    const updateVacancy = vi.fn();
     const round = createOfferingRound(vac, {
-      updateVacancy: () => {},
+      updateVacancy,
       currentUser: 'manager',
       onTick: () => {},
     });
@@ -110,18 +116,25 @@ describe('useOfferingRound', () => {
       offeringRoundMinutes: 1,
       offeringAutoProgress: true,
     };
+    const updateVacancy = vi.fn();
     const round = createOfferingRound(vac, {
-      updateVacancy: () => {},
+      updateVacancy,
       currentUser: 'manager',
       onTick: () => {},
     });
     round.onToggleAutoProgress(false);
     vi.advanceTimersByTime(60000);
     expect(vac.offeringTier).toBe('CASUALS');
+    // no auto-progress occurred while disabled
+    expect(updateVacancy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ offeringTier: 'OT_FULL_TIME' }),
+    );
     round.onToggleAutoProgress(true);
     round.onResetRound();
     vi.advanceTimersByTime(60000);
-    expect(vac.offeringTier).toBe('OT_FULL_TIME');
+    expect(updateVacancy).toHaveBeenCalledWith(
+      expect.objectContaining({ offeringTier: 'OT_FULL_TIME' }),
+    );
     round.dispose();
   });
 

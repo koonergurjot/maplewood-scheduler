@@ -6,12 +6,14 @@ describe('requireAuth', () => {
     delete process.env.ANALYTICS_AUTH_TOKEN;
   });
 
-  it('allows requests when no token is configured', () => {
+  it('rejects requests when no token is configured', () => {
     const req: any = { headers: {} };
     const res: any = { status: vi.fn().mockReturnThis(), json: vi.fn() };
     const next = vi.fn();
     requireAuth(req, res, next);
-    expect(next).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Analytics auth token not configured' });
+    expect(next).not.toHaveBeenCalled();
   });
 
   it('rejects requests with invalid token', () => {
