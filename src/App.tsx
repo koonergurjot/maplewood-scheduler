@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAppContext } from "./state/AppContext";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3)
@@ -75,13 +76,6 @@ export type Settings = {
   fontScale: number; // 1.0 = 16px base; slider adjusts overall size
 };
 
-// ---------- Constants ----------
-const defaultSettings: Settings = {
-  responseWindows: { lt2h: 7, h2to4: 15, h4to24: 30, h24to72: 120, gt72: 1440 },
-  theme: "dark",
-  fontScale: 1,
-};
-
 const WINGS = ["Shamrock", "Bluebell", "Rosewood", "Front", "Receptionist"] as const;
 
 const OVERRIDE_REASONS = [
@@ -105,6 +99,17 @@ const combineDateTime = (dateISO: string, timeHHmm: string) => new Date(`${dateI
 const formatDateLong = (iso: string) => new Date(iso+"T00:00:00").toLocaleDateString(undefined, { month: "long", day: "2-digit", year: "numeric" });
 const formatDowShort = (iso: string) => new Date(iso+"T00:00:00").toLocaleDateString(undefined, { weekday: "short" });
 const matchText = (q: string, label: string) => q.trim().toLowerCase().split(/\s+/).filter(Boolean).every(p => label.toLowerCase().includes(p));
+
+function parseCSV(text: string){
+  const [header, ...rows] = text.trim().split(/\r?\n/);
+  const cols = header.split(',').map(c=>c.trim());
+  return rows.filter(r=>r.trim().length).map(r=>{
+    const vals = r.split(',');
+    const obj: any = {};
+    cols.forEach((c,i)=> obj[c] = vals[i]);
+    return obj;
+  });
+}
 
 const buildCalendar = (year:number, month:number) => {
   const first = new Date(year, month, 1);
@@ -155,11 +160,9 @@ export default function App(){
   const persisted = loadState();
   const [tab, setTab] = useState<"coverage"|"bids"|"employees"|"calendar"|"alerts"|"archive"|"settings">("coverage");
 
-  const [employees, setEmployees] = useState<Employee[]>(persisted?.employees ?? []);
+  const { employees, setEmployees, vacancies, setVacancies, settings, setSettings } = useAppContext();
   const [vacations, setVacations] = useState<Vacation[]>(persisted?.vacations ?? []);
-  const [vacancies, setVacancies] = useState<Vacancy[]>(persisted?.vacancies ?? []);
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
-  const [settings, setSettings] = useState<Settings>({ ...defaultSettings, ...(persisted?.settings ?? {}) });
 
   // Tick for countdowns
   const [now, setNow] = useState<number>(Date.now());
@@ -238,22 +241,6 @@ export default function App(){
     setVacancies(prev => [...vxs, ...prev]);
 
     setNewVacay({ wing: WINGS[0], shiftStart:"06:30", shiftEnd:"14:30" });
-  };
-
-  const awardVacancy = (vacId: string, payload: { empId?: string; reason?: string; overrideUsed?: boolean }) => {
-    if (!payload.empId) { alert("Pick an employee to award."); return; }
-    setVacancies(prev => prev.map(v => v.id===vacId ? ({
-      ...v,
-      status:"Awarded",
-      awardedTo: payload.empId,
-      awardedAt: new Date().toISOString(),
-      awardReason: payload.reason ?? "",
-      overrideUsed: !!payload.overrideUsed,
-    }) : v));
-  };
-
-  const resetKnownAt = (vacId: string) => {
-    setVacancies(prev => prev.map(v => v.id===vacId ? ({...v, knownAt: new Date().toISOString()}) : v));
   };
 
   // Figure out which open vacancy is "due next" (soonest positive deadline)
@@ -439,12 +426,9 @@ export default function App(){
                             v={v}
                             recId={recId}
                             recName={recName}
-                            employees={employees}
                             countdownLabel={fmtCountdown(msLeft)}
                             countdownClass={cdClass}
                             isDueNext={!!isDueNext}
-                            onAward={(payload)=> awardVacancy(v.id, payload)}
-                            onResetKnownAt={()=> resetKnownAt(v.id)}
                           />
                         );
                       })}
@@ -552,7 +536,7 @@ function SettingsPage({settings,setSettings}:{settings:Settings; setSettings:(u:
     <div className="grid">
       <div className="card"><div className="card-h">Response Windows (minutes)</div><div className="card-c">
         <div className="row cols2">
-          {((["<2h","lt2h"],["2–4h","h2to4"],["4–24h","h4to24"],["24–72h","h24to72"],[">72h","gt72"]) as const).map(([label,key])=> (
+          {([ ["<2h","lt2h"], ["2–4h","h2to4"], ["4–24h","h4to24"], ["24–72h","h24to72"], [">72h","gt72"] ] as const).map(([label,key])=> (
             <div key={key}><label>{label}</label><input type="number" value={(settings.responseWindows as any)[key]} onChange={e=> setSettings((s:any)=>({...s, responseWindows:{...s.responseWindows, [key]: Number(e.target.value)}}))}/></div>
           ))}
         </div>
@@ -619,7 +603,7 @@ function BidsPage({bids,setBids,vacancies,vacations,employees,employeesById}:{bi
             <button className="btn" onClick={()=>{
               if(!newBid.vacancyId||!newBid.bidderEmployeeId) return alert("Vacancy and employee required");
               const ts = newBid.bidDate && newBid.bidTime ? new Date(`${newBid.bidDate}T${newBid.bidTime}:00`).toISOString() : new Date().toISOString();
-              setBids(prev=>[...prev,{
+              setBids((prev: Bid[])=>[...prev,{
                 vacancyId:newBid.vacancyId!,
                 bidderEmployeeId:newBid.bidderEmployeeId!,
                 bidderName:newBid.bidderName ?? "",
@@ -708,10 +692,10 @@ function MonthlySchedule({ vacancies }:{ vacancies:Vacancy[] }){
 }
 
 // ---------- Small components ----------
-function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClass, isDueNext, onAward, onResetKnownAt}:{
-  v:Vacancy; recId?:string; recName:string; employees:Employee[]; countdownLabel:string; countdownClass:string; isDueNext:boolean;
-  onAward:(payload:{empId?:string; reason?:string; overrideUsed?:boolean})=>void; onResetKnownAt:()=>void;
+function VacancyRow({v, recId, recName, countdownLabel, countdownClass, isDueNext}:{
+  v:Vacancy; recId?:string; recName:string; countdownLabel:string; countdownClass:string; isDueNext:boolean;
 }){
+  const { employees, awardVacancy, resetKnownAt } = useAppContext();
   const [choice, setChoice] = useState<string>("");
   const [overrideClass, setOverrideClass] = useState<boolean>(false);
   const [reason, setReason] = useState<string>("");
@@ -729,7 +713,7 @@ function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClas
       alert("Please select a reason for this override.");
       return;
     }
-    onAward({ empId: choice || undefined, reason: reason || undefined, overrideUsed: overrideClass });
+    awardVacancy(v.id, { empId: choice || undefined, reason: reason || undefined, overrideUsed: overrideClass });
     setChoice(""); setReason(""); setOverrideClass(false);
   }
 
@@ -744,7 +728,7 @@ function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClas
         <span className={`cd-chip ${countdownClass}`}>{countdownLabel}</span>
       </td>
       <td style={{minWidth:220}}>
-        <SelectEmployee employees={employees} value={choice} onChange={setChoice}/>
+        <SelectEmployee value={choice} onChange={setChoice}/>
       </td>
       <td style={{whiteSpace:'nowrap'}}>
         <label style={{display:'flex', gap:6, alignItems:'center'}}>
@@ -761,14 +745,15 @@ function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClas
         ) : <span className="subtitle">—</span>}
       </td>
       <td style={{display:'flex', gap:6}}>
-        <button className="btn" onClick={onResetKnownAt}>Reset knownAt</button>
+        <button className="btn" onClick={()=> resetKnownAt(v.id)}>Reset knownAt</button>
         <button className="btn" onClick={handleAward} disabled={!choice}>Award</button>
       </td>
     </tr>
   );
 }
 
-function SelectEmployee({employees, value, onChange}:{employees:Employee[]; value:string; onChange:(v:string)=>void}){
+function SelectEmployee({value, onChange}:{value:string; onChange:(v:string)=>void}){
+  const { employees } = useAppContext();
   const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const ref=useRef<HTMLDivElement>(null);
   const list = useMemo(()=> employees.filter(e=> matchText(q, `${e.firstName} ${e.lastName} ${e.id}`)).slice(0,50), [q,employees]);
   const curr = employees.find(e=>e.id===value);
