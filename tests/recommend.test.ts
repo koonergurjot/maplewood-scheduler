@@ -31,4 +31,40 @@ describe('recommend', () => {
     expect(rec.id).toBeUndefined();
     expect(rec.why[0]).toBe('No eligible bidders');
   });
+
+  it('uses bid order to break ties in seniority', () => {
+    const vac = { id: 'vac1', classification: 'RN', offeringTier: 'CASUALS' };
+    const employeesWithTie = {
+      ...employees,
+      e: { id: 'e', active: true, seniorityRank: 1, classification: 'RN' },
+    };
+    const tieBids = [
+      { vacancyId: 'vac1', bidderEmployeeId: 'e' },
+      { vacancyId: 'vac1', bidderEmployeeId: 'b' },
+    ];
+    const rec = recommend(vac, tieBids, employeesWithTie);
+    expect(rec.id).toBe('e');
+  });
+
+  it('uses timestamp when available to break bid order ties', () => {
+    const vac = { id: 'vac1', classification: 'RN', offeringTier: 'CASUALS' };
+    const employeesWithTie = {
+      ...employees,
+      e: { id: 'e', active: true, seniorityRank: 1, classification: 'RN' },
+    };
+    const tieBids = [
+      {
+        vacancyId: 'vac1',
+        bidderEmployeeId: 'b',
+        placedAt: '2024-01-01T11:00:00Z',
+      },
+      {
+        vacancyId: 'vac1',
+        bidderEmployeeId: 'e',
+        placedAt: '2024-01-01T10:00:00Z',
+      },
+    ];
+    const rec = recommend(vac, tieBids, employeesWithTie);
+    expect(rec.id).toBe('e');
+  });
 });
