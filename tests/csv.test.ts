@@ -42,5 +42,10 @@ describe('parseCSV', () => {
       { id: '1', notes: 'Line1\nLine2' }
     ]);
   });
+
+  it('throws on malformed CSV input', () => {
+    const input = 'id,name\n1,"Unclosed';
+    expect(() => parseCSV(input)).toThrowError(/CSV parsing error/);
+  });
 });
 
