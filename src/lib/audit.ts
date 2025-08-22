@@ -1,4 +1,5 @@
 import { OfferingTier } from '../offering/offeringMachine';
+import type { Storage } from './storage';
 
 export interface AuditLog {
   id: string;
@@ -17,26 +18,17 @@ export interface AuditLog {
 
 const KEY = 'auditLogs';
 
-function read(): AuditLog[] {
-  if (typeof localStorage !== 'undefined') {
-    try {
-      const raw = localStorage.getItem(KEY);
-      return raw ? (JSON.parse(raw) as AuditLog[]) : [];
-    } catch {
-      return [];
-    }
+function read(storage: Storage): AuditLog[] {
+  try {
+    const raw = storage.getItem(KEY);
+    return raw ? (JSON.parse(raw) as AuditLog[]) : [];
+  } catch {
+    return [];
   }
-  // Node/test environment fallback
-  (globalThis as any).__AUDIT__ = (globalThis as any).__AUDIT__ || [];
-  return (globalThis as any).__AUDIT__;
 }
 
-function write(logs: AuditLog[]) {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(KEY, JSON.stringify(logs));
-  } else {
-    (globalThis as any).__AUDIT__ = logs;
-  }
+function write(logs: AuditLog[], storage: Storage) {
+  storage.setItem(KEY, JSON.stringify(logs));
 }
 
 export function logOfferingChange({
@@ -53,7 +45,8 @@ export function logOfferingChange({
   actor: string;
   reason: 'auto-progress' | 'manual';
   note?: string;
-}): AuditLog {
+},
+storage: Storage): AuditLog {
   const log: AuditLog = {
     id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2),
     ts: new Date().toISOString(),
@@ -63,16 +56,16 @@ export function logOfferingChange({
     targetId: vacancyId,
     details: { from, to, reason, note },
   };
-  const logs = read();
+  const logs = read(storage);
   logs.push(log);
-  write(logs);
+  write(logs, storage);
   return log;
 }
 
-export function getAuditLogs(): AuditLog[] {
-  return read();
+export function getAuditLogs(storage: Storage): AuditLog[] {
+  return read(storage);
 }
 
-export function clearAuditLogs() {
-  write([]);
+export function clearAuditLogs(storage: Storage) {
+  write([], storage);
 }

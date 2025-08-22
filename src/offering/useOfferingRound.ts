@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { OfferingTier, nextTier } from './offeringMachine';
 import { logOfferingChange } from '../lib/audit';
+import storage from '../lib/storage';
 
 export interface Vacancy {
   id: string;
@@ -58,7 +59,7 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
           to: next,
           actor: 'system',
           reason: 'auto-progress',
-        });
+        }, storage);
         opts.onTick?.(computeMsLeft());
       }
     }
@@ -88,7 +89,7 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
         actor: opts.currentUser,
         reason: 'manual',
         note,
-      });
+      }, storage);
       opts.onTick?.(computeMsLeft());
     },
     onToggleAutoProgress(enabled: boolean) {
