@@ -33,4 +33,25 @@ describe('requireAuth', () => {
     requireAuth(req, res, next);
     expect(next).toHaveBeenCalled();
   });
+
+  it('allows requests with varied bearer casing', () => {
+    process.env.ANALYTICS_AUTH_TOKEN = 'secret';
+    const variants = ['bearer secret', 'BEARER secret', 'BeArEr secret'];
+    for (const authorization of variants) {
+      const req: any = { headers: { authorization } };
+      const res: any = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+      const next = vi.fn();
+      requireAuth(req, res, next);
+      expect(next).toHaveBeenCalled();
+    }
+  });
+
+  it('allows requests with trailing spaces after token', () => {
+    process.env.ANALYTICS_AUTH_TOKEN = 'secret';
+    const req: any = { headers: { authorization: 'Bearer secret   ' } };
+    const res: any = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const next = vi.fn();
+    requireAuth(req, res, next);
+    expect(next).toHaveBeenCalled();
+  });
 });
