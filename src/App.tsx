@@ -931,7 +931,18 @@ function SelectEmployee({employees, value, onChange, allowEmpty=false}:{employee
     <div className="dropdown" ref={ref}>
       <input placeholder={curr? `${curr.firstName} ${curr.lastName} (${curr.id})`:"Type name or ID…"} value={q} onChange={e=>{ setQ(e.target.value); setOpen(true); }} onFocus={()=> setOpen(true)} />
       {open && (
-        <div className="menu" ref={menuRef} style={{top:dropUp?'auto':'100%',bottom:dropUp?'100%':'auto',maxHeight:rect?window.innerHeight-rect.top-20:undefined,overflow:'auto'}}>
+        <div
+          className="menu"
+          ref={menuRef}
+          style={{
+            top: dropUp ? 'auto' : '100%',
+            bottom: dropUp ? '100%' : 'auto',
+            maxHeight: rect
+              ? Math.min(320, dropUp ? rect.top - 20 : window.innerHeight - rect.top - 20)
+              : 320,
+            overflow: 'auto',
+          }}
+        >
           {allowEmpty && (
             <div className="item" onClick={()=>{ onChange("EMPTY"); setQ(""); setOpen(false); }}>Empty</div>
           )}
