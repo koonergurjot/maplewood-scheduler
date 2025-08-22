@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Analytics from "./Analytics";
 import { recommend, Recommendation } from "./recommend";
+import type { OfferingTier } from "./offering/offeringMachine";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -53,6 +54,10 @@ export type Vacancy = {
   shiftStart: string; // HH:mm
   shiftEnd: string;   // HH:mm
   knownAt: string;    // ISO datetime
+  offeringTier: OfferingTier;
+  offeringRoundStartedAt?: string;
+  offeringRoundMinutes?: number;
+  offeringAutoProgress?: boolean;
   offeringStep: "Casuals" | "OT-Regular" | "OT-Casuals";
   status: "Open" | "Pending Award" | "Awarded";
   awardedTo?: string;        // employeeId
@@ -168,7 +173,15 @@ export default function App(){
 
   const [employees, setEmployees] = useState<Employee[]>(persisted?.employees ?? []);
   const [vacations, setVacations] = useState<Vacation[]>(persisted?.vacations ?? []);
-  const [vacancies, setVacancies] = useState<Vacancy[]>(persisted?.vacancies ?? []);
+  const [vacancies, setVacancies] = useState<Vacancy[]>(
+    (persisted?.vacancies ?? []).map((v: any) => ({
+      offeringTier: 'CASUALS',
+      offeringRoundStartedAt: v.offeringRoundStartedAt ?? new Date().toISOString(),
+      offeringRoundMinutes: v.offeringRoundMinutes ?? 120,
+      offeringAutoProgress: v.offeringAutoProgress ?? true,
+      ...v,
+    }))
+  );
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
   const [settings, setSettings] = useState<Settings>({ ...defaultSettings, ...(persisted?.settings ?? {}) });
 
@@ -250,6 +263,10 @@ export default function App(){
       shiftStart: v.shiftStart ?? SHIFT_PRESETS[0].start,
       shiftEnd: v.shiftEnd ?? SHIFT_PRESETS[0].end,
       knownAt: nowISO,
+      offeringTier: 'CASUALS',
+      offeringRoundStartedAt: nowISO,
+      offeringRoundMinutes: 120,
+      offeringAutoProgress: true,
       offeringStep: "Casuals",
       status: "Open",
     }));
