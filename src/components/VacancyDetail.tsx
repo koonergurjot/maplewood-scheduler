@@ -15,7 +15,7 @@ export default function VacancyDetail({ vacancy }: { vacancy: Vacancy }) {
   return (
     <div>
       <h2>Vacancy Detail</h2>
-      <OfferingControls vacancy={vacancy} round={round} />
+      <OfferingControls vacancy={round.vacancy} round={round} />
     </div>
   );
 }

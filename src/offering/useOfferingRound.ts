@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+/// <reference types="node" />
+import { useEffect, useReducer, useRef, useState } from 'react';
 import { OfferingTier, nextTier } from './offeringMachine';
 import { logOfferingChange } from '../lib/audit';
 
@@ -11,6 +12,7 @@ export interface Vacancy {
 }
 
 export interface UseOfferingRound {
+  vacancy: Vacancy;
   timeLeftMs: number;
   isExpired: boolean;
   onResetRound: () => void;
@@ -20,40 +22,46 @@ export interface UseOfferingRound {
 }
 
 interface RoundOptions {
-  updateVacancy: (patch: Partial<Vacancy>) => void;
   currentUser: string;
   onTick?: (msLeft: number) => void;
+  onUpdate?: (patch: Partial<Vacancy>) => void;
 }
 
 /**
  * Internal non-react implementation for easier testing.
  */
 export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
-  let interval: any;
-  const getRoundMinutes = () => vac.offeringRoundMinutes ?? 120;
+  let state: Vacancy = { ...vac };
+  let interval: NodeJS.Timeout;
+
+  const getRoundMinutes = () => state.offeringRoundMinutes ?? 120;
 
   const computeMsLeft = () => {
-    const started = vac.offeringRoundStartedAt
-      ? new Date(vac.offeringRoundStartedAt).getTime()
+    const started = state.offeringRoundStartedAt
+      ? new Date(state.offeringRoundStartedAt).getTime()
       : Date.now();
     return started + getRoundMinutes() * 60000 - Date.now();
+  };
+
+  const applyPatch = (patch: Partial<Vacancy>) => {
+    state = { ...state, ...patch };
+    opts.onUpdate?.(patch);
   };
 
   const tick = () => {
     const msLeft = computeMsLeft();
     opts.onTick?.(msLeft);
-    if (msLeft <= 0 && vac.offeringAutoProgress !== false) {
-      const next = nextTier(vac.offeringTier);
+    if (msLeft <= 0 && state.offeringAutoProgress !== false) {
+      const next = nextTier(state.offeringTier);
       if (next) {
-        const from = vac.offeringTier;
-        vac.offeringTier = next;
-        vac.offeringRoundStartedAt = new Date().toISOString();
-        opts.updateVacancy({
+        const from = state.offeringTier;
+        const patch = {
           offeringTier: next,
-          offeringRoundStartedAt: vac.offeringRoundStartedAt,
-        });
+          offeringRoundStartedAt: new Date().toISOString(),
+        };
+        applyPatch(patch);
         logOfferingChange({
-          vacancyId: vac.id,
+          vacancyId: state.id,
           from,
           to: next,
           actor: 'system',
@@ -69,20 +77,20 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
 
   return {
     onResetRound() {
-      vac.offeringRoundStartedAt = new Date().toISOString();
-      opts.updateVacancy({ offeringRoundStartedAt: vac.offeringRoundStartedAt });
+      const patch = { offeringRoundStartedAt: new Date().toISOString() };
+      applyPatch(patch);
       opts.onTick?.(computeMsLeft());
+      return patch;
     },
     onManualChangeTier(next: OfferingTier, note?: string) {
-      const from = vac.offeringTier;
-      vac.offeringTier = next;
-      vac.offeringRoundStartedAt = new Date().toISOString();
-      opts.updateVacancy({
+      const from = state.offeringTier;
+      const patch = {
         offeringTier: next,
-        offeringRoundStartedAt: vac.offeringRoundStartedAt,
-      });
+        offeringRoundStartedAt: new Date().toISOString(),
+      };
+      applyPatch(patch);
       logOfferingChange({
-        vacancyId: vac.id,
+        vacancyId: state.id,
         from,
         to: next,
         actor: opts.currentUser,
@@ -90,15 +98,21 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
         note,
       });
       opts.onTick?.(computeMsLeft());
+      return patch;
     },
     onToggleAutoProgress(enabled: boolean) {
-      vac.offeringAutoProgress = enabled;
-      opts.updateVacancy({ offeringAutoProgress: enabled });
+      const patch = { offeringAutoProgress: enabled };
+      applyPatch(patch);
+      return patch;
     },
     setRoundMinutes(mins: number) {
-      vac.offeringRoundMinutes = mins;
-      opts.updateVacancy({ offeringRoundMinutes: mins });
+      const patch = { offeringRoundMinutes: mins };
+      applyPatch(patch);
       opts.onTick?.(computeMsLeft());
+      return patch;
+    },
+    getVacancy() {
+      return state;
     },
     dispose() {
       clearInterval(interval);
@@ -111,25 +125,45 @@ export function useOfferingRound(
   updateVacancy: (patch: Partial<Vacancy>) => void,
   currentUser: string
 ): UseOfferingRound {
+  const [localVac, dispatch] = useReducer(
+    (s: Vacancy, p: Partial<Vacancy>) => ({ ...s, ...p }),
+    vac
+  );
   const roundRef = useRef<ReturnType<typeof createOfferingRound>>();
   const [timeLeftMs, setTimeLeftMs] = useState(0);
 
   useEffect(() => {
+    dispatch(vac);
     roundRef.current?.dispose();
     roundRef.current = createOfferingRound(vac, {
-      updateVacancy,
       currentUser,
       onTick: setTimeLeftMs,
+      onUpdate: (patch) => {
+        dispatch(patch);
+        updateVacancy(patch);
+      },
     });
     return () => roundRef.current?.dispose();
   }, [vac, updateVacancy, currentUser]);
 
+  const call = (
+    fn: keyof ReturnType<typeof createOfferingRound>,
+    ...args: any[]
+  ) => {
+    const patch = (roundRef.current as any)?.[fn](...args);
+    if (patch) {
+      dispatch(patch);
+      updateVacancy(patch);
+    }
+  };
+
   return {
+    vacancy: localVac,
     timeLeftMs,
     isExpired: timeLeftMs <= 0,
-    onResetRound: () => roundRef.current?.onResetRound(),
-    onManualChangeTier: (n, note) => roundRef.current?.onManualChangeTier(n, note),
-    onToggleAutoProgress: (e) => roundRef.current?.onToggleAutoProgress(e),
-    setRoundMinutes: (m) => roundRef.current?.setRoundMinutes(m),
+    onResetRound: () => call('onResetRound'),
+    onManualChangeTier: (n, note) => call('onManualChangeTier', n, note),
+    onToggleAutoProgress: (e) => call('onToggleAutoProgress', e),
+    setRoundMinutes: (m) => call('setRoundMinutes', m),
   };
 }

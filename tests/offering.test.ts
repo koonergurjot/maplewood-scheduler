@@ -35,12 +35,11 @@ describe('useOfferingRound', () => {
       offeringAutoProgress: true,
     };
     const round = createOfferingRound(vac, {
-      updateVacancy: () => {},
       currentUser: 'system',
       onTick: () => {},
     });
     vi.advanceTimersByTime(60000);
-    expect(vac.offeringTier).toBe('OT_FULL_TIME');
+    expect(round.getVacancy().offeringTier).toBe('OT_FULL_TIME');
     const logs = getAuditLogs();
     expect(logs[0].details.reason).toBe('auto-progress');
     round.dispose();
@@ -55,11 +54,11 @@ describe('useOfferingRound', () => {
       offeringAutoProgress: true,
     };
     const round = createOfferingRound(vac, {
-      updateVacancy: () => {},
       currentUser: 'manager',
       onTick: () => {},
     });
-    round.onManualChangeTier('OT_FULL_TIME', 'need coverage');
+    const result = round.onManualChangeTier('OT_FULL_TIME', 'need coverage');
+    expect(result.offeringTier).toBe('OT_FULL_TIME');
     const logs = getAuditLogs();
     expect(logs[0].actor).toBe('manager');
     expect(logs[0].details.from).toBe('CASUALS');
@@ -78,17 +77,16 @@ describe('useOfferingRound', () => {
       offeringAutoProgress: true,
     };
     const round = createOfferingRound(vac, {
-      updateVacancy: () => {},
       currentUser: 'manager',
       onTick: () => {},
     });
     round.onToggleAutoProgress(false);
     vi.advanceTimersByTime(60000);
-    expect(vac.offeringTier).toBe('CASUALS');
+    expect(round.getVacancy().offeringTier).toBe('CASUALS');
     round.onToggleAutoProgress(true);
     round.onResetRound();
     vi.advanceTimersByTime(60000);
-    expect(vac.offeringTier).toBe('OT_FULL_TIME');
+    expect(round.getVacancy().offeringTier).toBe('OT_FULL_TIME');
     round.dispose();
   });
 });
