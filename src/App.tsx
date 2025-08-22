@@ -344,12 +344,13 @@ export default function App(){
       <style>{`
         /* Themes */
         :root{ --baseRadius:14px; }
-        .app{min-height:100vh; background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--text); font-family:Inter,system-ui,Arial,sans-serif; padding:18px}
+        .app{min-height:100vh;min-height:100dvh;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);font-family:Inter,system-ui,Arial,sans-serif;padding:calc(18px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom)) 18px}
+        @supports(-webkit-touch-callout:none){.app{min-height:-webkit-fill-available}}
         [data-theme="dark"]{ --bg1:#0a0c12; --bg2:#0d1117; --card:#141a25; --cardAlt:#0f1622; --stroke:#263145; --text:#ffffff; --muted:#d1d5db; --brand:#4ea1ff; --accent:#2dd4bf; --ok:#16a34a; --warn:#f59e0b; --bad:#ef4444; --chipBg:#1d2736; --chipText:#f0f4ff; }
         [data-theme="light"]{ --bg1:#f5f7fb; --bg2:#ffffff; --card:#ffffff; --cardAlt:#f7f9fc; --stroke:#e1e6ef; --text:#0b1320; --muted:#4a5872; --brand:#0b6bcb; --accent:#0d9488; --ok:#15803d; --warn:#b45309; --bad:#b91c1c; --chipBg:#eef2f9; --chipText:#0b1320; }
 
         *{box-sizing:border-box}
-        body,html,#root{height:100%}
+        body,html,#root{height:100%;margin:0;-webkit-text-size-adjust:100%}
         .container{max-width:min(95vw,1600px); margin:0 auto}
         .nav{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:14px}
         .title{font-size:22px;font-weight:800}
@@ -369,7 +370,7 @@ export default function App(){
         table{width:100%;border-collapse:separate; border-spacing:0}
         th,td{padding:10px;border-bottom:1px solid var(--stroke);text-align:left;vertical-align:middle}
         th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-        input,select,textarea{width:100%;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;padding:10px;color:var(--text)}
+        input,select,textarea{width:100%;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;padding:10px;color:var(--text);-webkit-appearance:none;appearance:none}
         input::placeholder{color:#cbd5e1}
         .row{display:grid;gap:10px}
         .cols2{grid-template-columns:1fr} @media(min-width:900px){.cols2{grid-template-columns:1fr 1fr}}
