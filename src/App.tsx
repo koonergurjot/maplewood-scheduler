@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import Analytics from "./Analytics";
 import VacancyRow from "./components/VacancyRow";
 import EmployeeCombo from "./components/EmployeeCombo";
 import { parseCSV } from "./utils/text";
@@ -107,6 +108,9 @@ const saveState = (state: any) => localStorage.setItem(LS_KEY, JSON.stringify(st
 
 // ---------- Main App ----------
 export default function App(){
+  if (window.location.pathname === '/analytics') {
+    return <Analytics />;
+  }
   const persisted = loadState();
   const [tab, setTab] = useState<"coverage"|"bids"|"employees"|"calendar"|"alerts"|"archive"|"settings">("coverage");
 
