@@ -4,7 +4,8 @@
   gap: 8px;
 }
 
-@media (max-width: 600px) {
+/* Collapse tables and stack form rows on tablets and phones */
+@media (max-width: 900px) {
   .responsive-table thead {
     display: none;
   }
