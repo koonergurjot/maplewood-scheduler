@@ -1,6 +1,5 @@
 import type { Employee, Classification, Status } from "../App";
-
-declare function parseCSV(text: string): any[];
+import { parseCSV } from "../utils/csv";
 
 export default function EmployeesPage({employees, setEmployees}:{employees:Employee[]; setEmployees:(u:any)=>void}){
   return (
