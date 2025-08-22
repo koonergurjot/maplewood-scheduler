@@ -1,8 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import PDFDocument from 'pdfkit';
 import { aggregateByMonth, sampleVacancies } from './metrics.js';
 import { requireAuth } from './auth.js';
+import { createCsv } from './analyticsFormats/csv.ts';
+import { createPdf } from './analyticsFormats/pdf.ts';
 
 const app = express();
 app.use(cors());
@@ -15,29 +16,21 @@ app.get('/api/analytics', requireAuth, (req, res) => {
 app.get('/api/analytics/export', requireAuth, (req, res) => {
   const format = req.query.format;
   const data = aggregateByMonth(sampleVacancies);
-  if (format === 'csv') {
-    const header = 'period,posted,awarded,cancelled,cancellationRate,overtime\n';
-    const rows = data
-      .map(d => `${d.period},${d.posted},${d.awarded},${d.cancelled},${d.cancellationRate},${d.overtime}`)
-      .join('\n');
-    res.setHeader('Content-Type', 'text/csv');
-    res.send(header + rows);
-  } else if (format === 'pdf') {
-    res.setHeader('Content-Type', 'application/pdf');
-    const doc = new PDFDocument();
-    doc.pipe(res);
-    doc.fontSize(16).text('Analytics');
-    data.forEach(row => {
-      doc
-        .fontSize(12)
-        .text(
-          `${row.period}: posted ${row.posted}, awarded ${row.awarded}, cancelled ${row.cancelled}, ` +
-            `cancellationRate ${(row.cancellationRate * 100).toFixed(2)}%, overtime ${row.overtime}`
-        );
-    });
-    doc.end();
-  } else {
-    res.status(400).json({ error: 'format query param required (csv|pdf)' });
+  switch (format) {
+    case 'csv': {
+      res.setHeader('Content-Type', 'text/csv');
+      res.send(createCsv(data));
+      break;
+    }
+    case 'pdf': {
+      res.setHeader('Content-Type', 'application/pdf');
+      const doc = createPdf(data);
+      doc.pipe(res);
+      doc.end();
+      break;
+    }
+    default:
+      res.status(400).json({ error: 'format query param required (csv|pdf)' });
   }
 });
 
