@@ -18,4 +18,12 @@ describe('parseCSV', () => {
       { id: '1', name: 'Doe, John' }
     ]);
   });
+
+  it('preserves spaces inside quoted fields', () => {
+    const input = 'id,name\n1," John "';
+    const rows = parseCSV(input);
+    expect(rows).toEqual([
+      { id: '1', name: ' John ' }
+    ]);
+  });
 });

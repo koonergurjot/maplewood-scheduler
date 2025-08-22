@@ -21,6 +21,7 @@ function splitLine(line: string): string[] {
   const result: string[] = [];
   let current = "";
   let inQuotes = false;
+  let fieldWasQuoted = false;
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
     if (char === '"') {
@@ -29,14 +30,19 @@ function splitLine(line: string): string[] {
         i++; // skip escaped quote
       } else {
         inQuotes = !inQuotes;
+        if (inQuotes) fieldWasQuoted = true;
       }
     } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
+      result.push(fieldWasQuoted ? current : current.trim());
       current = "";
+      fieldWasQuoted = false;
     } else {
+      if (!inQuotes && fieldWasQuoted && (char === ' ' || char === '\t')) {
+        continue;
+      }
       current += char;
     }
   }
-  result.push(current.trim());
+  result.push(fieldWasQuoted ? current : current.trim());
   return result;
 }
