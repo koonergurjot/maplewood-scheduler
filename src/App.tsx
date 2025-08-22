@@ -175,16 +175,20 @@ export const applyAwardVacancy = (
   vacs: Vacancy[],
   vacId: string,
   payload: { empId?: string; reason?: string; overrideUsed?: boolean }
-) => {
+): Vacancy[] => {
   const empId = payload.empId === "EMPTY" ? undefined : payload.empId;
-  return vacs.map(v => v.id === vacId ? ({
-    ...v,
-    status: "Awarded",
-    awardedTo: empId,
-    awardedAt: new Date().toISOString(),
-    awardReason: payload.reason ?? "",
-    overrideUsed: !!payload.overrideUsed,
-  }) : v);
+  return vacs.map<Vacancy>(v =>
+    v.id === vacId
+      ? {
+          ...v,
+          status: "Awarded",
+          awardedTo: empId,
+          awardedAt: new Date().toISOString(),
+          awardReason: payload.reason ?? "",
+          overrideUsed: !!payload.overrideUsed,
+        }
+      : v
+  );
 };
 
 // ---------- Main App ----------
@@ -344,7 +348,7 @@ export default function App(){
         /* Themes */
         :root{ --baseRadius:14px; }
         .app{min-height:100vh; background:linear-gradient(180deg,var(--bg1),var(--bg2)); color:var(--text); font-family:Inter,system-ui,Arial,sans-serif; padding:18px}
-        [data-theme="dark"]{ --bg1:#0a0c12; --bg2:#0d1117; --card:#141a25; --cardAlt:#0f1622; --stroke:#263145; --text:#f2f4f8; --muted:#c7cfdd; --brand:#4ea1ff; --accent:#2dd4bf; --ok:#16a34a; --warn:#f59e0b; --bad:#ef4444; --chipBg:#1d2736; --chipText:#e8eef9; }
+        [data-theme="dark"]{ --bg1:#0a0c12; --bg2:#0d1117; --card:#141a25; --cardAlt:#0f1622; --stroke:#263145; --text:#ffffff; --muted:#d1d5db; --brand:#4ea1ff; --accent:#2dd4bf; --ok:#16a34a; --warn:#f59e0b; --bad:#ef4444; --chipBg:#1d2736; --chipText:#f0f4ff; }
         [data-theme="light"]{ --bg1:#f5f7fb; --bg2:#ffffff; --card:#ffffff; --cardAlt:#f7f9fc; --stroke:#e1e6ef; --text:#0b1320; --muted:#4a5872; --brand:#0b6bcb; --accent:#0d9488; --ok:#15803d; --warn:#b45309; --bad:#b91c1c; --chipBg:#eef2f9; --chipText:#0b1320; }
 
         *{box-sizing:border-box}
@@ -368,7 +372,7 @@ export default function App(){
         th,td{padding:10px;border-bottom:1px solid var(--stroke);text-align:left;vertical-align:middle}
         th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
         input,select,textarea{width:100%;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;padding:10px;color:var(--text)}
-        input::placeholder{color:#a9b3c6}
+        input::placeholder{color:#cbd5e1}
         .row{display:grid;gap:10px}
         .cols2{grid-template-columns:1fr} @media(min-width:900px){.cols2{grid-template-columns:1fr 1fr}}
         .pill{background:var(--chipBg); color:var(--chipText); border:1px solid var(--stroke); padding:4px 8px;border-radius:999px;font-size:12px; font-weight:600}

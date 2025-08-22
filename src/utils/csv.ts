@@ -2,7 +2,7 @@ import Papa from 'papaparse';
 
 // Parses a CSV string into an array of objects keyed by header names.
 export function parseCSV(input: string): Record<string, string>[] {
-  const results = Papa.parse<Record<string, string>>(input, {
+  const results = Papa.parse(input, {
     header: true,
     skipEmptyLines: true,
   });
