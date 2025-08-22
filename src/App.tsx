@@ -678,7 +678,7 @@ function SettingsPage({settings,setSettings}:{settings:Settings; setSettings:(u:
   );
 }
 
-function BidsPage({bids,setBids,vacancies,vacations,employees,employeesById}:{bids:Bid[];setBids:(u:any)=>void;vacancies:Vacancy[];vacations:Vacation[];employees:Employee[];employeesById:Record<string,Employee>}){
+export function BidsPage({bids,setBids,vacancies,vacations,employees,employeesById}:{bids:Bid[];setBids:(u:any)=>void;vacancies:Vacancy[];vacations:Vacation[];employees:Employee[];employeesById:Record<string,Employee>}){
   const [newBid, setNewBid] = useState<Partial<Bid & {bidDate:string; bidTime:string}>>({});
 
   const vacWithCoveredName = (v: Vacancy) => {
@@ -686,6 +686,8 @@ function BidsPage({bids,setBids,vacancies,vacations,employees,employeesById}:{bi
     const covered = vac ? vac.employeeName : "";
     return `${displayVacancyLabel(v)} — covering ${covered}`.trim();
   };
+
+  const openVacancies = vacancies.filter(v => v.status !== "Awarded");
 
   const setNow = () => {
     const now = new Date();
@@ -702,7 +704,10 @@ function BidsPage({bids,setBids,vacancies,vacations,employees,employeesById}:{bi
             <label>Vacancy</label>
             <select onChange={e=> setNewBid(b=>({...b, vacancyId:e.target.value}))} value={newBid.vacancyId ?? ""}>
               <option value="" disabled>Pick vacancy</option>
-              {vacancies.map(v=> <option key={v.id} value={v.id}>{vacWithCoveredName(v)}</option>)}
+              {openVacancies.length
+                ? openVacancies.map(v=> <option key={v.id} value={v.id}>{vacWithCoveredName(v)}</option>)
+                : <option disabled>No open vacancies</option>
+              }
             </select>
           </div>
           <div>
