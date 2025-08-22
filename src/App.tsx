@@ -110,7 +110,15 @@ const OVERRIDE_REASONS = [
 // ---------- Local Storage ----------
 const LS_KEY = "maplewood-scheduler-v3";
 const loadState = () => { try { const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } };
-const saveState = (state: any) => localStorage.setItem(LS_KEY, JSON.stringify(state));
+const saveState = (state: any): boolean => {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    return true;
+  } catch (err) {
+    console.warn("Unable to access localStorage. State not persisted.", err);
+    return false;
+  }
+};
 
 // ---------- Utils ----------
 const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -210,7 +218,11 @@ export default function App(){
   const [now, setNow] = useState<number>(Date.now());
   useEffect(()=>{ const t = setInterval(()=> setNow(Date.now()), 1000); return ()=> clearInterval(t); },[]);
 
-  useEffect(()=>{ saveState({ employees, vacations, vacancies, bids, settings }); },[employees,vacations,vacancies,bids,settings]);
+  useEffect(() => {
+    if (!saveState({ employees, vacations, vacancies, bids, settings })) {
+      // localStorage unavailable; state persistence disabled
+    }
+  }, [employees, vacations, vacancies, bids, settings]);
 
   const employeesById = useMemo(()=>Object.fromEntries(employees.map(e=>[e.id,e])),[employees]);
 
