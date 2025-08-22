@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Bar, Line } from 'react-chartjs-2';
+import { authFetch, setToken } from './utils/api';
 import {
   Chart,
   CategoryScale,
@@ -29,6 +30,12 @@ export default function Analytics() {
 
   const controllerRef = useRef<AbortController | null>(null);
 
+  const promptForToken = () => {
+    const token = window.prompt('Enter API token');
+    if (token) setToken(token);
+    return token;
+  };
+
   const loadData = async () => {
     controllerRef.current?.abort();
     const controller = new AbortController();
@@ -39,7 +46,13 @@ export default function Analytics() {
     const maxRetries = 3;
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        const response = await fetch('/api/analytics', { signal: controller.signal });
+        const response = await authFetch('/api/analytics', { signal: controller.signal });
+        if (response.status === 401) {
+          if (promptForToken()) {
+            continue;
+          }
+          throw new Error('Unauthorized');
+        }
         if (!response.ok) throw new Error(`Request failed: ${response.status}`);
         const data = await response.json();
         setRows(data);
@@ -62,6 +75,30 @@ export default function Analytics() {
     }
   };
 
+  const handleExport = async (format: string) => {
+    try {
+      const response = await authFetch(`/api/analytics/export?format=${format}`);
+      if (response.status === 401) {
+        if (promptForToken()) {
+          return handleExport(format);
+        }
+        throw new Error('Unauthorized');
+      }
+      if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `analytics.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   useEffect(() => {
     loadData();
     return () => controllerRef.current?.abort();
@@ -71,6 +108,7 @@ export default function Analytics() {
     return (
       <div style={{ padding: 20 }}>
         <h1>Analytics</h1>
+        <button onClick={promptForToken} className="btn" style={{ marginBottom: 10 }}>Set API Token</button>
         <p>Loading...</p>
       </div>
     );
@@ -80,6 +118,7 @@ export default function Analytics() {
     return (
       <div style={{ padding: 20 }}>
         <h1>Analytics</h1>
+        <button onClick={promptForToken} className="btn" style={{ marginBottom: 10 }}>Set API Token</button>
         <p>Error loading analytics: {error}</p>
         <button onClick={loadData} className="btn">Retry</button>
       </div>
@@ -94,6 +133,7 @@ export default function Analytics() {
   return (
     <div style={{ padding: 20 }}>
       <h1>Analytics</h1>
+      <button onClick={promptForToken} className="btn" style={{ marginBottom: 10 }}>Set API Token</button>
       <div style={{ width: 600 }}>
         <Bar
           data={{
@@ -117,8 +157,8 @@ export default function Analytics() {
         />
       </div>
       <div style={{ marginTop: 20 }}>
-        <a href="/api/analytics/export?format=csv" className="btn">Export CSV</a>
-        <a href="/api/analytics/export?format=pdf" className="btn" style={{ marginLeft: 10 }}>Export PDF</a>
+        <button onClick={() => handleExport('csv')} className="btn">Export CSV</button>
+        <button onClick={() => handleExport('pdf')} className="btn" style={{ marginLeft: 10 }}>Export PDF</button>
       </div>
     </div>
   );
