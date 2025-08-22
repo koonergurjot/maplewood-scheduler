@@ -1,7 +1,9 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { BidsPage, applyAwardVacancy, type Vacancy } from '../src/App';
+import BidsPage from '../src/components/BidsPage';
+import { applyAwardVacancy } from '../src/utils';
+import type { Vacancy } from '../src/types';
 
 // test verifying that awarded vacancies are excluded from the dropdown
 

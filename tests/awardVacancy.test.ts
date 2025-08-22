@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { applyAwardVacancy, type Vacancy } from '../src/App';
+import { applyAwardVacancy } from '../src/utils';
+import type { Vacancy } from '../src/types';
 
 describe('applyAwardVacancy', () => {
   it('stores undefined when empId is EMPTY', () => {
