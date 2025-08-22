@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { nextTier, requiresConfirmation } from '../src/offering/offeringMachine';
 import { createOfferingRound, Vacancy } from '../src/offering/useOfferingRound';
-import { getAuditLogs, clearAuditLogs } from '../src/lib/audit';
+import { getAuditLogs, clearAuditLogs, logOfferingChange, MAX_LOGS } from '../src/lib/audit';
 import storage from '../src/lib/storage';
 
 describe('offeringMachine', () => {
@@ -91,5 +91,24 @@ describe('useOfferingRound', () => {
     vi.advanceTimersByTime(60000);
     expect(vac.offeringTier).toBe('OT_FULL_TIME');
     round.dispose();
+  });
+
+  it('trims audit log history to MAX_LOGS entries', () => {
+    const overflow = 5;
+    for (let i = 0; i < MAX_LOGS + overflow; i++) {
+      logOfferingChange(
+        {
+          vacancyId: String(i),
+          from: 'CASUALS',
+          to: 'OT_FULL_TIME',
+          actor: 'system',
+          reason: 'manual',
+        },
+        storage,
+      );
+    }
+    const logs = getAuditLogs(storage);
+    expect(logs).toHaveLength(MAX_LOGS);
+    expect(logs[0].targetId).toBe(String(overflow));
   });
 });
