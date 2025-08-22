@@ -34,7 +34,7 @@ export type Vacation = {
   employeeId: string;
   employeeName: string;
   classification: Classification;
-  wing: string; // lives on the vacation now
+  wing: string; // wing where this vacation occurs
   startDate: string; // ISO YYYY-MM-DD
   endDate: string;   // ISO YYYY-MM-DD
   notes?: string;
