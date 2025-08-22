@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { aggregateByMonth, sampleVacancies } from '../server/metrics.js';
+import { aggregateByMonth } from '../server/metrics.js';
+import { sampleVacancies } from '../server/sampleData/vacancies.ts';
 
 describe('aggregateByMonth', () => {
   it('calculates metrics correctly', () => {

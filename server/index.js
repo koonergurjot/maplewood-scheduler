@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import PDFDocument from 'pdfkit';
-import { aggregateByMonth, sampleVacancies } from './metrics.js';
+import { aggregateByMonth } from './metrics.js';
+import { sampleVacancies } from './sampleData/vacancies.ts';
 import { requireAuth } from './auth.js';
 
 const app = express();
