@@ -1,4 +1,4 @@
-import type { OfferingTier } from './offering/offeringMachine';
+import type { OfferingTier } from "./offering/offeringMachine";
 
 export type Recommendation = {
   id?: string;
@@ -30,9 +30,9 @@ export interface Employee {
 export function recommend(
   vac: Vacancy,
   bids: Bid[],
-  employeesById: Record<string, Employee>
+  employeesById: Record<string, Employee>,
 ): Recommendation {
-  const relevant = bids.filter(b => b.vacancyId === vac.id);
+  const relevant = bids.filter((b) => b.vacancyId === vac.id);
   const candidates = relevant
     .map((b, idx) => ({
       emp: employeesById[b.bidderEmployeeId],
@@ -41,10 +41,10 @@ export function recommend(
     }))
     .filter(
       (c): c is { emp: Employee; order: number; time: number | undefined } =>
-        !!c.emp && c.emp.active && c.emp.classification === vac.classification
+        !!c.emp && c.emp.active && c.emp.classification === vac.classification,
     );
   if (!candidates.length) {
-    return { why: ['No eligible bidders'] };
+    return { why: ["No eligible bidders"] };
   }
   candidates.sort((a, b) => {
     // Primary sort by seniority rank. If ranks tie, prefer the earlier bid
@@ -59,9 +59,9 @@ export function recommend(
   });
   const chosen = candidates[0].emp;
   const why = [
-    'Bidder',
-    `Rank ${chosen.seniorityRank ?? '?'}`,
-    `Class ${chosen.classification}`
+    "Bidder",
+    `Rank ${chosen.seniorityRank ?? "?"}`,
+    `Class ${chosen.classification}`,
   ];
   return { id: chosen.id, why };
 }

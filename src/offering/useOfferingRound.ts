@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { OfferingTier, nextTier } from './offeringMachine';
-import { logOfferingChange } from '../lib/audit';
-import storage from '../lib/storage';
+import { useEffect, useRef, useState } from "react";
+import { OfferingTier, nextTier } from "./offeringMachine";
+import { logOfferingChange } from "../lib/audit";
+import storage from "../lib/storage";
 
 export interface Vacancy {
   id: string;
@@ -64,8 +64,8 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
             vacancyId: current.id,
             from,
             to: next,
-            actor: 'system',
-            reason: 'auto-progress',
+            actor: "system",
+            reason: "auto-progress",
           },
           storage,
         );
@@ -97,7 +97,7 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
           from,
           to: next,
           actor: opts.currentUser,
-          reason: 'manual',
+          reason: "manual",
           note,
         },
         storage,
@@ -120,7 +120,7 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
 export function useOfferingRound(
   vac: Vacancy,
   updateVacancy: (patch: Partial<Vacancy>) => void,
-  currentUser: string
+  currentUser: string,
 ): UseOfferingRound {
   const roundRef = useRef<ReturnType<typeof createOfferingRound>>();
   const [timeLeftMs, setTimeLeftMs] = useState(0);
@@ -139,7 +139,8 @@ export function useOfferingRound(
     timeLeftMs,
     isExpired: timeLeftMs <= 0,
     onResetRound: () => roundRef.current?.onResetRound(),
-    onManualChangeTier: (n, note) => roundRef.current?.onManualChangeTier(n, note),
+    onManualChangeTier: (n, note) =>
+      roundRef.current?.onManualChangeTier(n, note),
     onToggleAutoProgress: (e) => roundRef.current?.onToggleAutoProgress(e),
     setRoundMinutes: (m) => roundRef.current?.setRoundMinutes(m),
   };

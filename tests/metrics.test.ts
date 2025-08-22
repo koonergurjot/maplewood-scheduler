@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { aggregateByMonth, sampleVacancies } from '../server/metrics.js';
+import { describe, it, expect } from "vitest";
+import { aggregateByMonth, sampleVacancies } from "../server/metrics.js";
 
-describe('aggregateByMonth', () => {
-  it('calculates metrics correctly', () => {
+describe("aggregateByMonth", () => {
+  it("calculates metrics correctly", () => {
     const result = aggregateByMonth(sampleVacancies);
-    const jan = result.find(r => r.period === '2024-01');
-    const feb = result.find(r => r.period === '2024-02');
+    const jan = result.find((r) => r.period === "2024-01");
+    const feb = result.find((r) => r.period === "2024-02");
     expect(jan?.posted).toBe(3);
     expect(jan?.awarded).toBe(1);
     expect(jan?.cancelled).toBe(1);
@@ -20,10 +20,10 @@ describe('aggregateByMonth', () => {
     expect(feb?.averageHours).toBeCloseTo(25 / 3);
   });
 
-  it('supports custom overtime threshold', () => {
+  it("supports custom overtime threshold", () => {
     const result = aggregateByMonth(sampleVacancies, { overtimeThreshold: 10 });
-    const jan = result.find(r => r.period === '2024-01');
-    const feb = result.find(r => r.period === '2024-02');
+    const jan = result.find((r) => r.period === "2024-01");
+    const feb = result.find((r) => r.period === "2024-02");
     expect(jan?.overtime).toBe(0);
     expect(feb?.overtime).toBe(0);
   });
