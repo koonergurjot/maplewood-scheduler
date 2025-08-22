@@ -1,0 +1,32 @@
+/* base form row layout */
+.form-row {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .responsive-table thead {
+    display: none;
+  }
+  .responsive-table,
+  .responsive-table tbody,
+  .responsive-table tr,
+  .responsive-table td {
+    display: block;
+    width: 100%;
+  }
+  .responsive-table tr {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--stroke);
+    padding-bottom: 0.5rem;
+  }
+  .responsive-table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+}
