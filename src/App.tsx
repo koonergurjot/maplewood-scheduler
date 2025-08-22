@@ -359,7 +359,7 @@ export default function App(){
         .btn:hover{border-color:var(--brand)}
         .btn-sm{padding:4px 8px;font-size:12px}
         .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px}
-        .tab{padding:8px 12px;border-radius:12px;border:1px solid var(--stroke);cursor:pointer;background:var(--cardAlt);font-weight:600}
+        .tab{padding:8px 12px;border-radius:12px;border:1px solid var(--stroke);cursor:pointer;background:var(--cardAlt);font-weight:600;color:var(--text)}
         .tab.active{border-color:var(--brand);box-shadow:0 0 0 2px rgba(94,155,255,.24) inset}
         .grid{display:grid;gap:12px}
         .grid2{grid-template-columns:1fr}
