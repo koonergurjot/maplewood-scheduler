@@ -777,6 +777,7 @@ function SelectEmployee({employees, value, onChange}:{employees:Employee[]; valu
   const list = useMemo(()=> employees.filter(e=> matchText(q, `${e.firstName} ${e.lastName} ${e.id}`)).slice(0,50), [q,employees]);
   const curr = employees.find(e=>e.id===value);
   useEffect(()=>{ const onDoc=(e:MouseEvent)=>{ if(!ref.current) return; if(!ref.current.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", onDoc); return ()=> document.removeEventListener("mousedown", onDoc); },[]);
+  useEffect(()=>{ if(!value) setQ(""); },[value]);
   return (
     <div className="dropdown" ref={ref}>
       <input placeholder={curr? `${curr.firstName} ${curr.lastName} (${curr.id})`:"Type name or ID…"} value={q} onChange={e=>{ setQ(e.target.value); setOpen(true); }} onFocus={()=> setOpen(true)} />
