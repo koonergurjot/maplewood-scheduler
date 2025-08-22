@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Analytics from "./Analytics";
+import EmployeesPage from "./components/EmployeesPage";
+import ArchivePage from "./components/ArchivePage";
+import SettingsPage from "./components/SettingsPage";
+import BidsPage from "./components/BidsPage";
+import MonthlySchedule from "./components/MonthlySchedule";
+import EmployeeCombo from "./components/EmployeeCombo";
+import { formatDateLong, formatDowShort, minutesBetween, dateRangeInclusive } from "./utils/date";
+import { matchText } from "./utils/text";
+import { pickWindowMinutes, deadlineFor, fmtCountdown } from "./utils/vacancy";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -99,57 +108,6 @@ const OVERRIDE_REASONS = [
 const LS_KEY = "maplewood-scheduler-v3";
 const loadState = () => { try { const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } };
 const saveState = (state: any) => localStorage.setItem(LS_KEY, JSON.stringify(state));
-
-// ---------- Utils ----------
-const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const combineDateTime = (dateISO: string, timeHHmm: string) => new Date(`${dateISO}T${timeHHmm}:00`);
-const formatDateLong = (iso: string) => new Date(iso+"T00:00:00").toLocaleDateString(undefined, { month: "long", day: "2-digit", year: "numeric" });
-const formatDowShort = (iso: string) => new Date(iso+"T00:00:00").toLocaleDateString(undefined, { weekday: "short" });
-const matchText = (q: string, label: string) => q.trim().toLowerCase().split(/\s+/).filter(Boolean).every(p => label.toLowerCase().includes(p));
-
-const buildCalendar = (year:number, month:number) => {
-  const first = new Date(year, month, 1);
-  const start = new Date(first); start.setDate(first.getDate() - first.getDay());
-  const days: {date: Date; inMonth: boolean}[] = [];
-  for(let i=0;i<42;i++){ const d=new Date(start); d.setDate(start.getDate()+i); days.push({date:d,inMonth:d.getMonth()===month}); }
-  return days;
-};
-const prevMonth = (setY:Function,setM:Function,y:number,m:number)=>{ if(m===0){setY(y-1); setM(11);} else setM(m-1); };
-const nextMonth = (setY:Function,setM:Function,y:number,m:number)=>{ if(m===11){setY(y+1); setM(0);} else setM(m+1); };
-
-const displayVacancyLabel = (v: Vacancy) => {
-  const d = formatDateLong(v.shiftDate);
-  return `${d} • ${v.shiftStart}–${v.shiftEnd} • ${v.wing ?? ''} • ${v.classification}`.replace(/\s+•\s+$/, "");
-};
-
-function minutesBetween(a: Date, b: Date){ return Math.round((a.getTime() - b.getTime())/60000); }
-
-function pickWindowMinutes(v: Vacancy, settings: Settings){
-  const known = new Date(v.knownAt);
-  const shiftStart = combineDateTime(v.shiftDate, v.shiftStart);
-  const hrsUntilShift = (shiftStart.getTime() - known.getTime()) / 3_600_000;
-  if (hrsUntilShift < 2) return settings.responseWindows.lt2h;
-  if (hrsUntilShift < 4) return settings.responseWindows.h2to4;
-  if (hrsUntilShift < 24) return settings.responseWindows.h4to24;
-  if (hrsUntilShift < 72) return settings.responseWindows.h24to72;
-  return settings.responseWindows.gt72;
-}
-
-function deadlineFor(v: Vacancy, settings: Settings){
-  const winMin = pickWindowMinutes(v, settings);
-  return new Date(new Date(v.knownAt).getTime() + winMin*60000);
-}
-
-function fmtCountdown(msLeft: number){
-  const neg = msLeft < 0; const abs = Math.abs(msLeft);
-  const totalSec = Math.floor(abs/1000);
-  const d = Math.floor(totalSec / 86400);
-  const h = Math.floor((totalSec % 86400) / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  const core = d>0 ? `${d}d ${h}h` : h>0 ? `${h}h ${m}m` : `${m}m ${s}s`;
-  return neg ? `Due ${core} ago` : core;
-}
 
 // ---------- Main App ----------
 export default function App(){
@@ -500,217 +458,6 @@ export default function App(){
   );
 }
 
-// ---------- Pages ----------
-function EmployeesPage({employees, setEmployees}:{employees:Employee[]; setEmployees:(u:any)=>void}){
-  return (
-    <div className="grid">
-      <div className="card"><div className="card-h">Import Staff (CSV)</div><div className="card-c">
-        <input type="file" accept=".csv" onChange={async e=>{
-          const f=e.target.files?.[0]; if(!f) return; const text=await f.text(); const rows=parseCSV(text);
-          const out:Employee[]=rows.map((r:any,i:number)=>({
-            id:String(r.id??r.EmployeeID??`emp_${i}`),
-            firstName:String(r.firstName ?? r.name ?? ""),
-            lastName:String(r.lastName ?? ""),
-            classification:(["RCA","LPN","RN"].includes(String(r.classification)) ? r.classification : "RCA") as Classification,
-            status:(["FT","PT","Casual"].includes(String(r.status)) ? r.status : "FT") as Status,
-            homeWing:String(r.homeWing ?? ""),
-            seniorityRank:Number(r.seniorityRank ?? (i+1)),
-            active:String(r.active ?? "Yes").toLowerCase().startsWith("y")
-          }));
-          setEmployees(out.filter(e=>!!e.id));
-        }}/>
-        <div className="subtitle">Columns: id, firstName, lastName, classification (RCA/LPN/RN), status (FT/PT/Casual), homeWing, seniorityRank, active (Yes/No)</div>
-      </div></div>
-
-      <div className="card"><div className="card-h">Employees</div><div className="card-c">
-        <table className="responsive-table"><thead><tr><th>ID</th><th>Name</th><th>Class</th><th>Status</th><th>Rank</th><th>Active</th></tr></thead>
-          <tbody>{employees.map(e=> (
-            <tr key={e.id}><td>{e.id}</td><td>{e.firstName} {e.lastName}</td><td>{e.classification}</td><td>{e.status}</td><td>{e.seniorityRank}</td><td>{e.active?"Yes":"No"}</td></tr>
-          ))}</tbody>
-        </table>
-      </div></div>
-    </div>
-  );
-}
-
-function ArchivePage({vacations}:{vacations:Vacation[]}){
-  const archived = vacations.filter(v=>v.archived);
-  return (
-    <div className="grid">
-      <div className="card"><div className="card-h">Archived Vacations (fully covered)</div><div className="card-c">
-        <table className="responsive-table"><thead><tr><th>Employee</th><th>Wing</th><th>From</th><th>To</th><th>Archived</th></tr></thead>
-          <tbody>
-            {archived.map(v=> (
-              <tr key={v.id}><td>{v.employeeName}</td><td>{v.wing}</td><td>{formatDateLong(v.startDate)}</td><td>{formatDateLong(v.endDate)}</td><td>{new Date(v.archivedAt||"").toLocaleString()}</td></tr>
-            ))}
-          </tbody>
-        </table>
-        {!archived.length && <div className="subtitle" style={{marginTop:8}}>Nothing here yet.</div>}
-      </div></div>
-    </div>
-  );
-}
-
-function SettingsPage({settings,setSettings}:{settings:Settings; setSettings:(u:any)=>void}){
-  return (
-    <div className="grid">
-      <div className="card"><div className="card-h">Response Windows (minutes)</div><div className="card-c">
-        <div className="row cols2">
-          {((["<2h","lt2h"],["2–4h","h2to4"],["4–24h","h4to24"],["24–72h","h24to72"],[">72h","gt72"]) as const).map(([label,key])=> (
-            <div key={key}><label>{label}</label><input type="number" value={(settings.responseWindows as any)[key]} onChange={e=> setSettings((s:any)=>({...s, responseWindows:{...s.responseWindows, [key]: Number(e.target.value)}}))}/></div>
-          ))}
-        </div>
-      </div></div>
-    </div>
-  );
-}
-
-function BidsPage({bids,setBids,vacancies,vacations,employees,employeesById}:{bids:Bid[];setBids:(u:any)=>void;vacancies:Vacancy[];vacations:Vacation[];employees:Employee[];employeesById:Record<string,Employee>}){
-  const [newBid, setNewBid] = useState<Partial<Bid & {bidDate:string; bidTime:string}>>({});
-
-  const vacWithCoveredName = (v: Vacancy) => {
-    const vac = vacations.find(x=>x.id===v.vacationId);
-    const covered = vac ? vac.employeeName : "";
-    return `${displayVacancyLabel(v)} — covering ${covered}`.trim();
-  };
-
-  const setNow = () => {
-    const now = new Date();
-    const d = isoDate(now);
-    const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    setNewBid(b=>({...b, bidDate:d, bidTime:t}));
-  };
-
-  return (
-    <div className="grid">
-      <div className="card"><div className="card-h">Add Bid</div><div className="card-c">
-        <div className="row cols2">
-          <div>
-            <label>Vacancy</label>
-            <select onChange={e=> setNewBid(b=>({...b, vacancyId:e.target.value}))} value={newBid.vacancyId ?? ""}>
-              <option value="" disabled>Pick vacancy</option>
-              {vacancies.map(v=> <option key={v.id} value={v.id}>{vacWithCoveredName(v)}</option>)}
-            </select>
-          </div>
-          <div>
-            <label>Employee</label>
-            <EmployeeCombo employees={employees} onSelect={(id)=>{
-              const e=employeesById[id];
-              setNewBid(b=>({...b,
-                bidderEmployeeId:id,
-                bidderName: e? `${e.firstName} ${e.lastName}`: "",
-                bidderStatus: e?.status,
-                bidderClassification: e?.classification
-              }));
-            }}/>
-          </div>
-          <div>
-            <label>Bid Date</label>
-            <input type="date" value={newBid.bidDate ?? ""} onChange={e=> setNewBid(b=>({...b, bidDate:e.target.value}))}/>
-          </div>
-          <div>
-            <label>Bid Time</label>
-            <div className="form-row">
-              <input type="time" value={newBid.bidTime ?? ""} onChange={e=> setNewBid(b=>({...b, bidTime:e.target.value}))}/>
-              <button className="btn" onClick={setNow}>Now</button>
-            </div>
-          </div>
-          <div style={{gridColumn:"1 / -1"}}>
-            <label>Notes</label>
-            <input placeholder={'e.g., "available for 06:30-14:30"'} onChange={e=> setNewBid(b=>({...b,notes:e.target.value}))}/>
-          </div>
-          <div style={{gridColumn:"1 / -1"}}>
-            <button className="btn" onClick={()=>{
-              if(!newBid.vacancyId||!newBid.bidderEmployeeId) return alert("Vacancy and employee required");
-              const ts = newBid.bidDate && newBid.bidTime ? new Date(`${newBid.bidDate}T${newBid.bidTime}:00`).toISOString() : new Date().toISOString();
-              setBids(prev=>[...prev,{
-                vacancyId:newBid.vacancyId!,
-                bidderEmployeeId:newBid.bidderEmployeeId!,
-                bidderName:newBid.bidderName ?? "",
-                bidderStatus:(newBid.bidderStatus ?? "Casual") as Status,
-                bidderClassification:(newBid.bidderClassification ?? "RCA") as Classification,
-                bidTimestamp: ts,
-                notes:newBid.notes ?? ""
-              }]);
-              setNewBid({});
-            }}>Add Bid</button>
-          </div>
-        </div>
-      </div></div>
-
-      <div className="card"><div className="card-h">Bids</div><div className="card-c">
-        <table className="responsive-table"><thead><tr><th>Vacancy</th><th>Employee</th><th>Class</th><th>Status</th><th>Bid at</th></tr></thead>
-          <tbody>{bids.map((b,i)=>{ const v = vacancies.find(x=>x.id===b.vacancyId); return (
-            <tr key={i}><td>{v? displayVacancyLabel(v): b.vacancyId}</td><td>{b.bidderName}</td><td>{b.bidderClassification}</td><td>{b.bidderStatus}</td><td>{new Date(b.bidTimestamp).toLocaleString()}</td></tr>
-          );})}</tbody>
-        </table>
-      </div></div>
-    </div>
-  );
-}
-
-function CoverageDayList({dateISO, vacancies}:{dateISO:string; vacancies:Vacancy[]}){
-  return (
-    <div style={{marginTop:12}}>
-      <div className="pill">Open on {formatDateLong(dateISO)}: {vacancies.length}</div>
-      {vacancies.length>0 && (
-        <table className="responsive-table" style={{marginTop:8}}>
-          <thead><tr><th>Shift</th><th>Wing</th><th>Class</th><th>Offering</th><th>Status</th></tr></thead>
-          <tbody>
-            {vacancies.map(v=> (
-              <tr key={v.id}><td>{v.shiftStart}-{v.shiftEnd}</td><td>{v.wing ?? ''}</td><td>{v.classification}</td><td>{v.offeringStep}</td><td>{v.status}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
-
-function MonthlySchedule({ vacancies }:{ vacancies:Vacancy[] }){
-  const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth()); // 0-11
-  const [selectedISO, setSelectedISO] = useState<string>(isoDate(today));
-
-  const calDays = useMemo(()=> buildCalendar(year, month), [year, month]);
-  const openByDay = useMemo(()=> {
-    const m = new Map<string, Vacancy[]>();
-    vacancies.forEach(v=>{ if(v.status!=="Awarded"){ const k=v.shiftDate; const arr=m.get(k)||[]; arr.push(v); m.set(k,arr);} });
-    return m;
-  },[vacancies]);
-
-  const monthLabel = new Date(year, month, 1).toLocaleString(undefined, { month: 'long', year: 'numeric' });
-  const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-
-  return (
-    <div>
-      <div style={{display:'flex',alignItems:'center',gap:8}}>
-        <button className="btn" onClick={()=> prevMonth(setYear,setMonth,year,month)}>&lt;</button>
-        <div className="pill">{monthLabel}</div>
-        <button className="btn" onClick={()=> nextMonth(setYear,setMonth,year,month)}>&gt;</button>
-        <div style={{marginLeft:'auto'}} className="subtitle">Click a day to list open shifts</div>
-      </div>
-      <div className="cal-grid">
-        {dow.map(d=> <div key={d} className="cal-dow">{d}</div>)}
-        {calDays.map(({date, inMonth})=>{
-          const key = isoDate(date);
-          const opens = openByDay.get(key) || [];
-          return (
-            <div key={key} className={`cal-day ${inMonth?"":"mute"}`} onClick={()=> setSelectedISO(key)}>
-              <div className="cal-num">{date.getDate()}</div>
-              <div className="cal-open">
-                {opens.length? <span className="pill">{opens.length} open</span> : <span className="subtitle">—</span>}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <CoverageDayList dateISO={selectedISO} vacancies={openByDay.get(selectedISO)||[]} />
-    </div>
-  );
-}
-
 // ---------- Small components ----------
 function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClass, isDueNext, onAward, onResetKnownAt}:{
   v:Vacancy; recId?:string; recName:string; employees:Employee[]; countdownLabel:string; countdownClass:string; isDueNext:boolean;
@@ -794,34 +541,3 @@ function SelectEmployee({employees, value, onChange}:{employees:Employee[]; valu
     </div>
   );
 }
-
-function EmployeeCombo({ employees, onSelect }:{ employees:Employee[]; onSelect:(id:string)=>void }){
-  const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const ref=useRef<HTMLDivElement>(null);
-  const list = useMemo(()=> employees.filter(e=> matchText(q, `${e.firstName} ${e.lastName} ${e.id}`)).slice(0,50), [q,employees]);
-  useEffect(()=>{ const onDoc=(e:MouseEvent)=>{ if(!ref.current) return; if(!ref.current.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", onDoc); return ()=> document.removeEventListener("mousedown", onDoc); },[]);
-  return (
-    <div className="dropdown" ref={ref}>
-      <input placeholder="Type name or ID…" value={q} onChange={e=>{ setQ(e.target.value); setOpen(true); }} onFocus={()=> setOpen(true)} />
-      {open && (
-        <div className="menu">
-          {list.map(e=> (
-            <div key={e.id} className="item" onClick={()=>{ onSelect(e.id); setQ(`${e.firstName} ${e.lastName} (${e.id})`); setOpen(false); }}>
-              {e.firstName} {e.lastName} <span className="pill" style={{marginLeft:6}}>{e.classification} {e.status}</span>
-            </div>
-          ))}
-          {!list.length && <div className="item" style={{opacity:.7}}>No matches</div>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------- Helpers ----------
-function dateRangeInclusive(startISO: string, endISO: string){
-  const out: string[] = [];
-  const s = new Date(startISO+"T00:00:00");
-  const e = new Date(endISO+"T00:00:00");
-  for (let d = new Date(s); d <= e; d.setDate(d.getDate()+1)) out.push(isoDate(d));
-  return out;
-}
-
