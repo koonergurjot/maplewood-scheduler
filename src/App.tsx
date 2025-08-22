@@ -90,7 +90,12 @@ export type Settings = {
 // ---------- Constants ----------
 const defaultSettings: Settings = {
   responseWindows: { lt2h: 7, h2to4: 15, h4to24: 30, h24to72: 120, gt72: 1440 },
-  theme: "dark",
+  theme:
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light",
   fontScale: 1,
 };
 
@@ -478,6 +483,8 @@ export default function App() {
         .btn{background:var(--cardAlt);border:1px solid var(--stroke);padding:9px 12px;border-radius:12px;color:var(--text);cursor:pointer;font-weight:600}
         .btn:hover{border-color:var(--brand)}
         .btn-sm{padding:4px 8px;font-size:12px}
+        @media(max-width:900px){.nav{flex-direction:column;align-items:flex-start;gap:8px}.toolbar{width:100%;flex-wrap:wrap}}
+        @media(max-width:600px){.toolbar{flex-direction:column;align-items:stretch}}
         .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px}
         .tab{padding:8px 12px;border-radius:12px;border:1px solid var(--stroke);cursor:pointer;background:var(--cardAlt);font-weight:600;color:var(--text)}
         .tab.active{border-color:var(--brand);box-shadow:0 0 0 2px rgba(94,155,255,.24) inset}
@@ -539,7 +546,7 @@ export default function App() {
                 }))
               }
             >
-              {settings.theme === "dark" ? "Light Theme" : "Dark Theme"}
+              {settings.theme === "dark" ? "Light Mode" : "Dark Mode"}
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span className="subtitle">Text size</span>
