@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Bar, Line } from 'react-chartjs-2';
 import {
   Chart,
@@ -27,21 +27,42 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = () => {
+  const controllerRef = useRef<AbortController | null>(null);
+
+  const loadData = async () => {
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
     setLoading(true);
     setError(null);
-    fetch('/api/analytics')
-      .then(r => {
-        if (!r.ok) throw new Error(`Request failed: ${r.status}`);
-        return r.json();
-      })
-      .then(setRows)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+
+    const maxRetries = 3;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const response = await fetch('/api/analytics', { signal: controller.signal });
+        if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+        const data = await response.json();
+        setRows(data);
+        setLoading(false);
+        return;
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          return;
+        }
+        if (attempt < maxRetries - 1) {
+          const delay = 500 * 2 ** attempt;
+          await new Promise(res => setTimeout(res, delay));
+        } else {
+          setError(err.message);
+          setLoading(false);
+        }
+      }
+    }
   };
 
   useEffect(() => {
     loadData();
+    return () => controllerRef.current?.abort();
   }, []);
 
   if (loading) {
