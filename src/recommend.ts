@@ -1,3 +1,5 @@
+import type { OfferingTier } from './offering/offeringMachine';
+
 export type Recommendation = {
   id?: string;
   why: string[];
@@ -6,6 +8,10 @@ export type Recommendation = {
 export interface Vacancy {
   id: string;
   classification: string;
+  offeringTier: OfferingTier;
+  offeringRoundStartedAt?: string;
+  offeringRoundMinutes?: number;
+  offeringAutoProgress?: boolean;
 }
 
 export interface Bid {

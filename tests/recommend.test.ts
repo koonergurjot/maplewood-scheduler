@@ -17,7 +17,7 @@ const bids = [
 
 describe('recommend', () => {
   it('returns highest seniority matching class', () => {
-    const vac = { id: 'vac1', classification: 'RN' };
+    const vac = { id: 'vac1', classification: 'RN', offeringTier: 'CASUALS' };
     const rec = recommend(vac, bids, employees);
     expect(rec.id).toBe('b');
     expect(rec.why).toContain('Bidder');
@@ -26,7 +26,7 @@ describe('recommend', () => {
   });
 
   it('reports when there are no eligible bidders', () => {
-    const vac = { id: 'vac2', classification: 'RN' };
+    const vac = { id: 'vac2', classification: 'RN', offeringTier: 'CASUALS' };
     const rec = recommend(vac, bids, employees);
     expect(rec.id).toBeUndefined();
     expect(rec.why[0]).toBe('No eligible bidders');
