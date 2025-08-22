@@ -26,4 +26,21 @@ describe('parseCSV', () => {
       { id: '1', name: '  John  ' }
     ]);
   });
+
+  it('handles embedded quotes', () => {
+    const input = 'id,quote\n1,"She said ""Hello"""';
+    const rows = parseCSV(input);
+    expect(rows).toEqual([
+      { id: '1', quote: 'She said "Hello"' }
+    ]);
+  });
+
+  it('handles newlines within quoted fields', () => {
+    const input = 'id,notes\n1,"Line1\nLine2"';
+    const rows = parseCSV(input);
+    expect(rows).toEqual([
+      { id: '1', notes: 'Line1\nLine2' }
+    ]);
+  });
 });
+
