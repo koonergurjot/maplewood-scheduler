@@ -166,6 +166,11 @@ export default function App(){
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
   const [settings, setSettings] = useState<Settings>({ ...defaultSettings, ...(persisted?.settings ?? {}) });
 
+  const [filterWing, setFilterWing] = useState<string>("");
+  const [filterClass, setFilterClass] = useState<Classification | "">("");
+  const [filterStart, setFilterStart] = useState<string>("");
+  const [filterEnd, setFilterEnd] = useState<string>("");
+
   // Tick for countdowns
   const [now, setNow] = useState<number>(Date.now());
   useEffect(()=>{ const t = setInterval(()=> setNow(Date.now()), 1000); return ()=> clearInterval(t); },[]);
@@ -271,6 +276,17 @@ export default function App(){
     }
     return id;
   }, [vacancies, now, settings]);
+
+  const filteredVacancies = useMemo(()=>{
+    return vacancies.filter(v => {
+      if (v.status === "Awarded") return false;
+      if (filterWing && v.wing !== filterWing) return false;
+      if (filterClass && v.classification !== filterClass) return false;
+      if (filterStart && v.shiftDate < filterStart) return false;
+      if (filterEnd && v.shiftDate > filterEnd) return false;
+      return true;
+    });
+  }, [vacancies, filterWing, filterClass, filterStart, filterEnd]);
 
   return (
     <div className="app" data-theme={settings.theme} style={{ fontSize: `${(settings.fontScale||1)*16}px` }}>
@@ -411,6 +427,19 @@ export default function App(){
             <div className="card">
               <div className="card-h">Open Vacancies</div>
               <div className="card-c">
+                <div className="toolbar" style={{marginBottom:8}}>
+                  <select value={filterWing} onChange={e=> setFilterWing(e.target.value)}>
+                    <option value="">All Wings</option>
+                    {WINGS.map(w=> <option key={w} value={w}>{w}</option>)}
+                  </select>
+                  <select value={filterClass} onChange={e=> setFilterClass(e.target.value as Classification | "")}> 
+                    <option value="">All Classes</option>
+                    {["RCA","LPN","RN"].map(c=> <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <input type="date" value={filterStart} onChange={e=> setFilterStart(e.target.value)} />
+                  <input type="date" value={filterEnd} onChange={e=> setFilterEnd(e.target.value)} />
+                  <button className="btn" onClick={()=>{ setFilterWing(""); setFilterClass(""); setFilterStart(""); setFilterEnd(""); }}>Clear</button>
+                </div>
                 <table className="vac-table responsive-table">
                     <thead>
                       <tr>
@@ -427,7 +456,7 @@ export default function App(){
                       </tr>
                     </thead>
                     <tbody>
-                      {vacancies.filter(v=>v.status!=="Awarded").map(v=>{
+                      {filteredVacancies.map(v=>{
                         const recId = recommendations[v.id];
                         const recName = recId ? `${employeesById[recId]?.firstName ?? ""} ${employeesById[recId]?.lastName ?? ""}`.trim() : "—";
                         const dl = deadlineFor(v, settings);
@@ -455,7 +484,7 @@ export default function App(){
                       })}
                     </tbody>
                   </table>
-                {!vacancies.some(v=>v.status!=="Awarded") && <div className="subtitle" style={{marginTop:8}}>No open vacancies 🎉</div>}
+                {filteredVacancies.length===0 && <div className="subtitle" style={{marginTop:8}}>No open vacancies 🎉</div>}
               </div>
             </div>
           </div>
