@@ -1,14 +1,14 @@
-import express from 'express';
-import cors from 'cors';
-import { aggregateByMonth, sampleVacancies } from './metrics.js';
-import { requireAuth } from './auth.js';
-import { createCsv } from './analyticsFormats/csv.js';
-import { createPdf } from './analyticsFormats/pdf.js';
+import express from "express";
+import cors from "cors";
+import { aggregateByMonth, sampleVacancies } from "./metrics.js";
+import { requireAuth } from "./auth.js";
+import { createCsv } from "./analyticsFormats/csv.js";
+import { createPdf } from "./analyticsFormats/pdf.js";
 
 const app = express();
 app.use(cors());
 
-app.get('/api/analytics', requireAuth, (req, res) => {
+app.get("/api/analytics", requireAuth, (req, res) => {
   const threshold = parseFloat(req.query.overtimeThreshold);
   const data = aggregateByMonth(sampleVacancies, {
     overtimeThreshold: isNaN(threshold) ? undefined : threshold,
@@ -16,27 +16,27 @@ app.get('/api/analytics', requireAuth, (req, res) => {
   res.json(data);
 });
 
-app.get('/api/analytics/export', requireAuth, (req, res) => {
+app.get("/api/analytics/export", requireAuth, (req, res) => {
   const format = req.query.format;
   const threshold = parseFloat(req.query.overtimeThreshold);
   const data = aggregateByMonth(sampleVacancies, {
     overtimeThreshold: isNaN(threshold) ? undefined : threshold,
   });
   switch (format) {
-    case 'csv': {
-      res.setHeader('Content-Type', 'text/csv');
+    case "csv": {
+      res.setHeader("Content-Type", "text/csv");
       res.send(createCsv(data));
       break;
     }
-    case 'pdf': {
-      res.setHeader('Content-Type', 'application/pdf');
+    case "pdf": {
+      res.setHeader("Content-Type", "application/pdf");
       const doc = createPdf(data);
       doc.pipe(res);
       doc.end();
       break;
     }
     default:
-      res.status(400).json({ error: 'format query param required (csv|pdf)' });
+      res.status(400).json({ error: "format query param required (csv|pdf)" });
   }
 });
 

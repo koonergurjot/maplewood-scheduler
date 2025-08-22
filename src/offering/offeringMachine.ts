@@ -1,6 +1,15 @@
-export type OfferingTier = 'CASUALS' | 'OT_FULL_TIME' | 'OT_CASUALS' | 'LAST_RESORT_RN';
+export type OfferingTier =
+  | "CASUALS"
+  | "OT_FULL_TIME"
+  | "OT_CASUALS"
+  | "LAST_RESORT_RN";
 
-export const TIERS: OfferingTier[] = ['CASUALS', 'OT_FULL_TIME', 'OT_CASUALS', 'LAST_RESORT_RN'];
+export const TIERS: OfferingTier[] = [
+  "CASUALS",
+  "OT_FULL_TIME",
+  "OT_CASUALS",
+  "LAST_RESORT_RN",
+];
 
 /**
  * Return the next tier in the offering sequence or null if at the end.
@@ -15,14 +24,14 @@ export function nextTier(tier: OfferingTier): OfferingTier | null {
  */
 export function tierLabel(tier: OfferingTier): string {
   switch (tier) {
-    case 'CASUALS':
-      return 'Casuals';
-    case 'OT_FULL_TIME':
-      return 'OT – Full-Time';
-    case 'OT_CASUALS':
-      return 'OT – Casuals';
-    case 'LAST_RESORT_RN':
-      return 'Last Resort – RN';
+    case "CASUALS":
+      return "Casuals";
+    case "OT_FULL_TIME":
+      return "OT – Full-Time";
+    case "OT_CASUALS":
+      return "OT – Casuals";
+    case "LAST_RESORT_RN":
+      return "Last Resort – RN";
     default:
       return tier;
   }
@@ -32,5 +41,5 @@ export function tierLabel(tier: OfferingTier): string {
  * Whether switching to the given tier requires a confirmation modal.
  */
 export function requiresConfirmation(tier: OfferingTier): boolean {
-  return tier === 'LAST_RESORT_RN';
+  return tier === "LAST_RESORT_RN";
 }

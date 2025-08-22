@@ -13,11 +13,13 @@ export function createMemoryStorage(): Storage {
   };
 }
 
-const storage: Storage = typeof localStorage !== 'undefined'
-  ? {
-      getItem: (key: string) => localStorage.getItem(key),
-      setItem: (key: string, value: string) => localStorage.setItem(key, value),
-    }
-  : createMemoryStorage();
+const storage: Storage =
+  typeof localStorage !== "undefined"
+    ? {
+        getItem: (key: string) => localStorage.getItem(key),
+        setItem: (key: string, value: string) =>
+          localStorage.setItem(key, value),
+      }
+    : createMemoryStorage();
 
 export default storage;

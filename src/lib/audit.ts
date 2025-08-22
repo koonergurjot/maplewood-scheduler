@@ -1,22 +1,22 @@
-import { OfferingTier } from '../offering/offeringMachine';
-import type { Storage } from './storage';
+import { OfferingTier } from "../offering/offeringMachine";
+import type { Storage } from "./storage";
 
 export interface AuditLog {
   id: string;
   ts: string;
   actor: string; // 'system' or user id
-  action: 'OFFERING_TIER_CHANGED';
-  targetType: 'Vacancy';
+  action: "OFFERING_TIER_CHANGED";
+  targetType: "Vacancy";
   targetId: string;
   details: {
     from: OfferingTier;
     to: OfferingTier;
-    reason: 'auto-progress' | 'manual';
+    reason: "auto-progress" | "manual";
     note?: string;
   };
 }
 
-const KEY = 'auditLogs';
+const KEY = "auditLogs";
 export const MAX_LOGS = 1000;
 
 function read(storage: Storage): AuditLog[] {
@@ -33,28 +33,33 @@ function write(logs: AuditLog[], storage: Storage) {
   storage.setItem(KEY, JSON.stringify(trimmed));
 }
 
-export function logOfferingChange({
-  vacancyId,
-  from,
-  to,
-  actor,
-  reason,
-  note,
-}: {
-  vacancyId: string;
-  from: OfferingTier;
-  to: OfferingTier;
-  actor: string;
-  reason: 'auto-progress' | 'manual';
-  note?: string;
-},
-storage: Storage): AuditLog {
+export function logOfferingChange(
+  {
+    vacancyId,
+    from,
+    to,
+    actor,
+    reason,
+    note,
+  }: {
+    vacancyId: string;
+    from: OfferingTier;
+    to: OfferingTier;
+    actor: string;
+    reason: "auto-progress" | "manual";
+    note?: string;
+  },
+  storage: Storage,
+): AuditLog {
   const log: AuditLog = {
-    id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2),
     ts: new Date().toISOString(),
     actor,
-    action: 'OFFERING_TIER_CHANGED',
-    targetType: 'Vacancy',
+    action: "OFFERING_TIER_CHANGED",
+    targetType: "Vacancy",
     targetId: vacancyId,
     details: { from, to, reason, note },
   };
