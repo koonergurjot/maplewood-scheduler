@@ -708,7 +708,7 @@ function MonthlySchedule({ vacancies }:{ vacancies:Vacancy[] }){
 }
 
 // ---------- Small components ----------
-function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClass, isDueNext, onAward, onResetKnownAt}:{
+export function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClass, isDueNext, onAward, onResetKnownAt}:{
   v:Vacancy; recId?:string; recName:string; employees:Employee[]; countdownLabel:string; countdownClass:string; isDueNext:boolean;
   onAward:(payload:{empId?:string; reason?:string; overrideUsed?:boolean})=>void; onResetKnownAt:()=>void;
 }){
@@ -812,7 +812,7 @@ function EmployeeCombo({ employees, onSelect }:{ employees:Employee[]; onSelect:
 }
 
 // ---------- Helpers ----------
-function dateRangeInclusive(startISO: string, endISO: string){
+export function dateRangeInclusive(startISO: string, endISO: string){
   const out: string[] = [];
   const s = new Date(startISO+"T00:00:00");
   const e = new Date(endISO+"T00:00:00");
