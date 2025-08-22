@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import Analytics from "./Analytics";
 import { recommend, Recommendation } from "./recommend";
 import type { OfferingTier } from "./offering/offeringMachine";
 
@@ -193,9 +192,6 @@ export const applyAwardVacancy = (
 
 // ---------- Main App ----------
 export default function App(){
-  if (window.location.pathname === '/analytics') {
-    return <Analytics />;
-  }
   const persisted = loadState();
   const [tab, setTab] = useState<"coverage"|"bids"|"employees"|"calendar"|"alerts"|"archive"|"settings">("coverage");
 
