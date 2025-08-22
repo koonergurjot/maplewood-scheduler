@@ -1,4 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import VacancyRow from "./components/VacancyRow";
+import EmployeeCombo from "./components/EmployeeCombo";
+import { parseCSV } from "./utils/text";
+import {
+  isoDate,
+  formatDateLong,
+  buildCalendar,
+  prevMonth,
+  nextMonth,
+  displayVacancyLabel,
+  minutesBetween,
+  pickWindowMinutes,
+  deadlineFor,
+  fmtCountdown,
+  dateRangeInclusive,
+} from "./utils/date";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3)
@@ -84,71 +100,10 @@ const defaultSettings: Settings = {
 
 const WINGS = ["Shamrock", "Bluebell", "Rosewood", "Front", "Receptionist"] as const;
 
-const OVERRIDE_REASONS = [
-  "Earlier bidder within step",
-  "Availability mismatch / declined",
-  "Single Site Order / conflict",
-  "Scope of practice / skill mix",
-  "Fatigue risk (back‑to‑back)",
-  "Unit familiarity / continuity",
-  "Manager discretion",
-] as const;
-
 // ---------- Local Storage ----------
 const LS_KEY = "maplewood-scheduler-v3";
 const loadState = () => { try { const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } };
 const saveState = (state: any) => localStorage.setItem(LS_KEY, JSON.stringify(state));
-
-// ---------- Utils ----------
-const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const combineDateTime = (dateISO: string, timeHHmm: string) => new Date(`${dateISO}T${timeHHmm}:00`);
-const formatDateLong = (iso: string) => new Date(iso+"T00:00:00").toLocaleDateString(undefined, { month: "long", day: "2-digit", year: "numeric" });
-const formatDowShort = (iso: string) => new Date(iso+"T00:00:00").toLocaleDateString(undefined, { weekday: "short" });
-const matchText = (q: string, label: string) => q.trim().toLowerCase().split(/\s+/).filter(Boolean).every(p => label.toLowerCase().includes(p));
-
-const buildCalendar = (year:number, month:number) => {
-  const first = new Date(year, month, 1);
-  const start = new Date(first); start.setDate(first.getDate() - first.getDay());
-  const days: {date: Date; inMonth: boolean}[] = [];
-  for(let i=0;i<42;i++){ const d=new Date(start); d.setDate(start.getDate()+i); days.push({date:d,inMonth:d.getMonth()===month}); }
-  return days;
-};
-const prevMonth = (setY:Function,setM:Function,y:number,m:number)=>{ if(m===0){setY(y-1); setM(11);} else setM(m-1); };
-const nextMonth = (setY:Function,setM:Function,y:number,m:number)=>{ if(m===11){setY(y+1); setM(0);} else setM(m+1); };
-
-const displayVacancyLabel = (v: Vacancy) => {
-  const d = formatDateLong(v.shiftDate);
-  return `${d} • ${v.shiftStart}–${v.shiftEnd} • ${v.wing ?? ''} • ${v.classification}`.replace(/\s+•\s+$/, "");
-};
-
-function minutesBetween(a: Date, b: Date){ return Math.round((a.getTime() - b.getTime())/60000); }
-
-function pickWindowMinutes(v: Vacancy, settings: Settings){
-  const known = new Date(v.knownAt);
-  const shiftStart = combineDateTime(v.shiftDate, v.shiftStart);
-  const hrsUntilShift = (shiftStart.getTime() - known.getTime()) / 3_600_000;
-  if (hrsUntilShift < 2) return settings.responseWindows.lt2h;
-  if (hrsUntilShift < 4) return settings.responseWindows.h2to4;
-  if (hrsUntilShift < 24) return settings.responseWindows.h4to24;
-  if (hrsUntilShift < 72) return settings.responseWindows.h24to72;
-  return settings.responseWindows.gt72;
-}
-
-function deadlineFor(v: Vacancy, settings: Settings){
-  const winMin = pickWindowMinutes(v, settings);
-  return new Date(new Date(v.knownAt).getTime() + winMin*60000);
-}
-
-function fmtCountdown(msLeft: number){
-  const neg = msLeft < 0; const abs = Math.abs(msLeft);
-  const totalSec = Math.floor(abs/1000);
-  const d = Math.floor(totalSec / 86400);
-  const h = Math.floor((totalSec % 86400) / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  const core = d>0 ? `${d}d ${h}h` : h>0 ? `${h}h ${m}m` : `${m}m ${s}s`;
-  return neg ? `Due ${core} ago` : core;
-}
 
 // ---------- Main App ----------
 export default function App(){
@@ -548,11 +503,18 @@ function ArchivePage({vacations}:{vacations:Vacation[]}){
 }
 
 function SettingsPage({settings,setSettings}:{settings:Settings; setSettings:(u:any)=>void}){
+  const rows = [
+    ["<2h","lt2h"],
+    ["2–4h","h2to4"],
+    ["4–24h","h4to24"],
+    ["24–72h","h24to72"],
+    [">72h","gt72"],
+  ] as const;
   return (
     <div className="grid">
       <div className="card"><div className="card-h">Response Windows (minutes)</div><div className="card-c">
         <div className="row cols2">
-          {((["<2h","lt2h"],["2–4h","h2to4"],["4–24h","h4to24"],["24–72h","h24to72"],[">72h","gt72"]) as const).map(([label,key])=> (
+          {rows.map(([label,key])=> (
             <div key={key}><label>{label}</label><input type="number" value={(settings.responseWindows as any)[key]} onChange={e=> setSettings((s:any)=>({...s, responseWindows:{...s.responseWindows, [key]: Number(e.target.value)}}))}/></div>
           ))}
         </div>
@@ -561,7 +523,7 @@ function SettingsPage({settings,setSettings}:{settings:Settings; setSettings:(u:
   );
 }
 
-function BidsPage({bids,setBids,vacancies,vacations,employees,employeesById}:{bids:Bid[];setBids:(u:any)=>void;vacancies:Vacancy[];vacations:Vacation[];employees:Employee[];employeesById:Record<string,Employee>}){
+function BidsPage({bids,setBids,vacancies,vacations,employees,employeesById}:{bids:Bid[];setBids:Dispatch<SetStateAction<Bid[]>>;vacancies:Vacancy[];vacations:Vacation[];employees:Employee[];employeesById:Record<string,Employee>}){
   const [newBid, setNewBid] = useState<Partial<Bid & {bidDate:string; bidTime:string}>>({});
 
   const vacWithCoveredName = (v: Vacancy) => {
@@ -705,118 +667,5 @@ function MonthlySchedule({ vacancies }:{ vacancies:Vacancy[] }){
       <CoverageDayList dateISO={selectedISO} vacancies={openByDay.get(selectedISO)||[]} />
     </div>
   );
-}
-
-// ---------- Small components ----------
-function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClass, isDueNext, onAward, onResetKnownAt}:{
-  v:Vacancy; recId?:string; recName:string; employees:Employee[]; countdownLabel:string; countdownClass:string; isDueNext:boolean;
-  onAward:(payload:{empId?:string; reason?:string; overrideUsed?:boolean})=>void; onResetKnownAt:()=>void;
-}){
-  const [choice, setChoice] = useState<string>("");
-  const [overrideClass, setOverrideClass] = useState<boolean>(false);
-  const [reason, setReason] = useState<string>("");
-
-  const chosen = employees.find(e=>e.id===choice);
-  const classMismatch = chosen && chosen.classification !== v.classification;
-  const needReason = (!!recId && choice && choice !== recId) || (classMismatch && overrideClass);
-
-  function handleAward(){
-    if (classMismatch && !overrideClass){
-      alert(`Selected employee is ${chosen?.classification}; vacancy requires ${v.classification}. Check "Allow class override" to proceed.`);
-      return;
-    }
-    if (needReason && !reason){
-      alert("Please select a reason for this override.");
-      return;
-    }
-    onAward({ empId: choice || undefined, reason: reason || undefined, overrideUsed: overrideClass });
-    setChoice(""); setReason(""); setOverrideClass(false);
-  }
-
-  return (
-    <tr className={isDueNext ? "due-next" : ""}>
-      <td><span className="pill">{formatDowShort(v.shiftDate)}</span> {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}</td>
-      <td>{v.wing ?? ""}</td>
-      <td>{v.classification}</td>
-      <td>{v.offeringStep}</td>
-      <td>{recName}</td>
-      <td>
-        <span className={`cd-chip ${countdownClass}`}>{countdownLabel}</span>
-      </td>
-      <td style={{minWidth:220}}>
-        <SelectEmployee employees={employees} value={choice} onChange={setChoice}/>
-      </td>
-      <td style={{whiteSpace:'nowrap'}}>
-        <label style={{display:'flex', gap:6, alignItems:'center'}}>
-          <input type="checkbox" checked={overrideClass} onChange={e=> setOverrideClass(e.target.checked)} />
-          <span className="subtitle">Allow class override</span>
-        </label>
-      </td>
-      <td style={{minWidth:230}}>
-        {(needReason || overrideClass || (recId && choice && choice !== recId)) ? (
-          <select value={reason} onChange={e=> setReason(e.target.value)}>
-            <option value="">Select reason…</option>
-            {OVERRIDE_REASONS.map(r=> <option key={r} value={r}>{r}</option>)}
-          </select>
-        ) : <span className="subtitle">—</span>}
-      </td>
-      <td style={{display:'flex', gap:6}}>
-        <button className="btn" onClick={onResetKnownAt}>Reset knownAt</button>
-        <button className="btn" onClick={handleAward} disabled={!choice}>Award</button>
-      </td>
-    </tr>
-  );
-}
-
-function SelectEmployee({employees, value, onChange}:{employees:Employee[]; value:string; onChange:(v:string)=>void}){
-  const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const ref=useRef<HTMLDivElement>(null);
-  const list = useMemo(()=> employees.filter(e=> matchText(q, `${e.firstName} ${e.lastName} ${e.id}`)).slice(0,50), [q,employees]);
-  const curr = employees.find(e=>e.id===value);
-  useEffect(()=>{ const onDoc=(e:MouseEvent)=>{ if(!ref.current) return; if(!ref.current.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", onDoc); return ()=> document.removeEventListener("mousedown", onDoc); },[]);
-  return (
-    <div className="dropdown" ref={ref}>
-      <input placeholder={curr? `${curr.firstName} ${curr.lastName} (${curr.id})`:"Type name or ID…"} value={q} onChange={e=>{ setQ(e.target.value); setOpen(true); }} onFocus={()=> setOpen(true)} />
-      {open && (
-        <div className="menu">
-          {list.map(e=> (
-            <div key={e.id} className="item" onClick={()=>{ onChange(e.id); setQ(`${e.firstName} ${e.lastName} (${e.id})`); setOpen(false); }}>
-              {e.firstName} {e.lastName} <span className="pill" style={{marginLeft:6}}>{e.classification} {e.status}</span>
-            </div>
-          ))}
-          {!list.length && <div className="item" style={{opacity:.7}}>No matches</div>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EmployeeCombo({ employees, onSelect }:{ employees:Employee[]; onSelect:(id:string)=>void }){
-  const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const ref=useRef<HTMLDivElement>(null);
-  const list = useMemo(()=> employees.filter(e=> matchText(q, `${e.firstName} ${e.lastName} ${e.id}`)).slice(0,50), [q,employees]);
-  useEffect(()=>{ const onDoc=(e:MouseEvent)=>{ if(!ref.current) return; if(!ref.current.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", onDoc); return ()=> document.removeEventListener("mousedown", onDoc); },[]);
-  return (
-    <div className="dropdown" ref={ref}>
-      <input placeholder="Type name or ID…" value={q} onChange={e=>{ setQ(e.target.value); setOpen(true); }} onFocus={()=> setOpen(true)} />
-      {open && (
-        <div className="menu">
-          {list.map(e=> (
-            <div key={e.id} className="item" onClick={()=>{ onSelect(e.id); setQ(`${e.firstName} ${e.lastName} (${e.id})`); setOpen(false); }}>
-              {e.firstName} {e.lastName} <span className="pill" style={{marginLeft:6}}>{e.classification} {e.status}</span>
-            </div>
-          ))}
-          {!list.length && <div className="item" style={{opacity:.7}}>No matches</div>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------- Helpers ----------
-function dateRangeInclusive(startISO: string, endISO: string){
-  const out: string[] = [];
-  const s = new Date(startISO+"T00:00:00");
-  const e = new Date(endISO+"T00:00:00");
-  for (let d = new Date(s); d <= e; d.setDate(d.getDate()+1)) out.push(isoDate(d));
-  return out;
 }
 
