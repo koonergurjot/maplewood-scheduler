@@ -47,6 +47,8 @@ export default function Analytics() {
         return;
       } catch (err: any) {
         if (err.name === 'AbortError') {
+          setLoading(false);
+          controllerRef.current = null;
           return;
         }
         if (attempt < maxRetries - 1) {
