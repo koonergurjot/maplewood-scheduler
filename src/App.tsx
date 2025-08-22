@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { recommend, Recommendation } from "./recommend";
 import type { OfferingTier } from "./offering/offeringMachine";
+import {
+  isoDate,
+  combineDateTime,
+  formatDateLong,
+  formatDowShort,
+  buildCalendar,
+  prevMonth,
+  nextMonth,
+  minutesBetween,
+} from "./lib/dates";
+import { matchText } from "./lib/text";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -139,52 +150,6 @@ const saveState = (state: any): boolean => {
 };
 
 // ---------- Utils ----------
-const isoDate = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const combineDateTime = (dateISO: string, timeHHmm: string) =>
-  new Date(`${dateISO}T${timeHHmm}:00`);
-const formatDateLong = (iso: string) =>
-  new Date(iso + "T00:00:00").toLocaleDateString(undefined, {
-    month: "long",
-    day: "2-digit",
-    year: "numeric",
-  });
-const formatDowShort = (iso: string) =>
-  new Date(iso + "T00:00:00").toLocaleDateString(undefined, {
-    weekday: "short",
-  });
-const matchText = (q: string, label: string) =>
-  q
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .every((p) => label.toLowerCase().includes(p));
-
-const buildCalendar = (year: number, month: number) => {
-  const first = new Date(year, month, 1);
-  const start = new Date(first);
-  start.setDate(first.getDate() - first.getDay());
-  const days: { date: Date; inMonth: boolean }[] = [];
-  for (let i = 0; i < 42; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    days.push({ date: d, inMonth: d.getMonth() === month });
-  }
-  return days;
-};
-const prevMonth = (setY: Function, setM: Function, y: number, m: number) => {
-  if (m === 0) {
-    setY(y - 1);
-    setM(11);
-  } else setM(m - 1);
-};
-const nextMonth = (setY: Function, setM: Function, y: number, m: number) => {
-  if (m === 11) {
-    setY(y + 1);
-    setM(0);
-  } else setM(m + 1);
-};
 
 const displayVacancyLabel = (v: Vacancy) => {
   const d = formatDateLong(v.shiftDate);
@@ -193,10 +158,6 @@ const displayVacancyLabel = (v: Vacancy) => {
     "",
   );
 };
-
-function minutesBetween(a: Date, b: Date) {
-  return Math.round((a.getTime() - b.getTime()) / 60000);
-}
 
 function pickWindowMinutes(v: Vacancy, settings: Settings) {
   const known = new Date(v.knownAt);
