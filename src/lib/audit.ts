@@ -17,6 +17,7 @@ export interface AuditLog {
 }
 
 const KEY = 'auditLogs';
+export const MAX_LOGS = 1000;
 
 function read(storage: Storage): AuditLog[] {
   try {
@@ -28,7 +29,8 @@ function read(storage: Storage): AuditLog[] {
 }
 
 function write(logs: AuditLog[], storage: Storage) {
-  storage.setItem(KEY, JSON.stringify(logs));
+  const trimmed = logs.slice(-MAX_LOGS);
+  storage.setItem(KEY, JSON.stringify(trimmed));
 }
 
 export function logOfferingChange({
