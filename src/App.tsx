@@ -406,7 +406,7 @@ export default function App(){
             <div className="card">
               <div className="card-h">Open Vacancies</div>
               <div className="card-c">
-                <table className="vac-table">
+                <table className="vac-table responsive-table">
                     <thead>
                       <tr>
                         <th>Shift</th>
@@ -519,7 +519,7 @@ function EmployeesPage({employees, setEmployees}:{employees:Employee[]; setEmplo
       </div></div>
 
       <div className="card"><div className="card-h">Employees</div><div className="card-c">
-        <table><thead><tr><th>ID</th><th>Name</th><th>Class</th><th>Status</th><th>Rank</th><th>Active</th></tr></thead>
+        <table className="responsive-table"><thead><tr><th>ID</th><th>Name</th><th>Class</th><th>Status</th><th>Rank</th><th>Active</th></tr></thead>
           <tbody>{employees.map(e=> (
             <tr key={e.id}><td>{e.id}</td><td>{e.firstName} {e.lastName}</td><td>{e.classification}</td><td>{e.status}</td><td>{e.seniorityRank}</td><td>{e.active?"Yes":"No"}</td></tr>
           ))}</tbody>
@@ -534,7 +534,7 @@ function ArchivePage({vacations}:{vacations:Vacation[]}){
   return (
     <div className="grid">
       <div className="card"><div className="card-h">Archived Vacations (fully covered)</div><div className="card-c">
-        <table><thead><tr><th>Employee</th><th>Wing</th><th>From</th><th>To</th><th>Archived</th></tr></thead>
+        <table className="responsive-table"><thead><tr><th>Employee</th><th>Wing</th><th>From</th><th>To</th><th>Archived</th></tr></thead>
           <tbody>
             {archived.map(v=> (
               <tr key={v.id}><td>{v.employeeName}</td><td>{v.wing}</td><td>{formatDateLong(v.startDate)}</td><td>{formatDateLong(v.endDate)}</td><td>{new Date(v.archivedAt||"").toLocaleString()}</td></tr>
@@ -606,7 +606,7 @@ function BidsPage({bids,setBids,vacancies,vacations,employees,employeesById}:{bi
           </div>
           <div>
             <label>Bid Time</label>
-            <div style={{display:'flex', gap:8}}>
+            <div className="form-row">
               <input type="time" value={newBid.bidTime ?? ""} onChange={e=> setNewBid(b=>({...b, bidTime:e.target.value}))}/>
               <button className="btn" onClick={setNow}>Now</button>
             </div>
@@ -635,7 +635,7 @@ function BidsPage({bids,setBids,vacancies,vacations,employees,employeesById}:{bi
       </div></div>
 
       <div className="card"><div className="card-h">Bids</div><div className="card-c">
-        <table><thead><tr><th>Vacancy</th><th>Employee</th><th>Class</th><th>Status</th><th>Bid at</th></tr></thead>
+        <table className="responsive-table"><thead><tr><th>Vacancy</th><th>Employee</th><th>Class</th><th>Status</th><th>Bid at</th></tr></thead>
           <tbody>{bids.map((b,i)=>{ const v = vacancies.find(x=>x.id===b.vacancyId); return (
             <tr key={i}><td>{v? displayVacancyLabel(v): b.vacancyId}</td><td>{b.bidderName}</td><td>{b.bidderClassification}</td><td>{b.bidderStatus}</td><td>{new Date(b.bidTimestamp).toLocaleString()}</td></tr>
           );})}</tbody>
@@ -650,7 +650,7 @@ function CoverageDayList({dateISO, vacancies}:{dateISO:string; vacancies:Vacancy
     <div style={{marginTop:12}}>
       <div className="pill">Open on {formatDateLong(dateISO)}: {vacancies.length}</div>
       {vacancies.length>0 && (
-        <table style={{marginTop:8}}>
+        <table className="responsive-table" style={{marginTop:8}}>
           <thead><tr><th>Shift</th><th>Wing</th><th>Class</th><th>Offering</th><th>Status</th></tr></thead>
           <tbody>
             {vacancies.map(v=> (
