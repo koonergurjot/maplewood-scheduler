@@ -35,15 +35,47 @@ describe('useOfferingRound', () => {
       offeringRoundMinutes: 1,
       offeringAutoProgress: true,
     };
+    const onTick = vi.fn();
     const round = createOfferingRound(vac, {
       updateVacancy: () => {},
       currentUser: 'system',
-      onTick: () => {},
+      onTick,
     });
-    vi.advanceTimersByTime(60000);
+    // 59 seconds pass, round should not yet auto-progress
+    vi.advanceTimersByTime(59000);
+    expect(vac.offeringTier).toBe('CASUALS');
+    // initial tick + 59 subsequent ticks
+    expect(onTick).toHaveBeenCalledTimes(60);
+
+    // Next second reaches the end of the round and triggers auto-progress
+    vi.advanceTimersByTime(1000);
     expect(vac.offeringTier).toBe('OT_FULL_TIME');
     const logs = getAuditLogs(storage);
     expect(logs[0].details.reason).toBe('auto-progress');
+    // final tick calls onTick twice: once when expiring and once after advancing
+    expect(onTick).toHaveBeenCalledTimes(62);
+    round.dispose();
+  });
+
+  it('calls onTick every second', () => {
+    const vac: Vacancy = {
+      id: '1',
+      offeringTier: 'CASUALS',
+      offeringRoundStartedAt: new Date().toISOString(),
+      offeringRoundMinutes: 5,
+      offeringAutoProgress: true,
+    };
+    const onTick = vi.fn();
+    const round = createOfferingRound(vac, {
+      updateVacancy: () => {},
+      currentUser: 'system',
+      onTick,
+    });
+    // initial tick happens immediately
+    expect(onTick).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(3000);
+    // three more ticks after 3 seconds
+    expect(onTick).toHaveBeenCalledTimes(4);
     round.dispose();
   });
 

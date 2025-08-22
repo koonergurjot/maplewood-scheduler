@@ -65,7 +65,8 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
     }
   };
 
-  interval = setInterval(tick, 60000);
+  // tick once per second so consumers get updates at the second level
+  interval = setInterval(tick, 1000);
   tick();
 
   return {
