@@ -9,13 +9,19 @@ const app = express();
 app.use(cors());
 
 app.get('/api/analytics', requireAuth, (req, res) => {
-  const data = aggregateByMonth(sampleVacancies);
+  const threshold = parseFloat(req.query.overtimeThreshold);
+  const data = aggregateByMonth(sampleVacancies, {
+    overtimeThreshold: isNaN(threshold) ? undefined : threshold,
+  });
   res.json(data);
 });
 
 app.get('/api/analytics/export', requireAuth, (req, res) => {
   const format = req.query.format;
-  const data = aggregateByMonth(sampleVacancies);
+  const threshold = parseFloat(req.query.overtimeThreshold);
+  const data = aggregateByMonth(sampleVacancies, {
+    overtimeThreshold: isNaN(threshold) ? undefined : threshold,
+  });
   switch (format) {
     case 'csv': {
       res.setHeader('Content-Type', 'text/csv');
