@@ -85,6 +85,12 @@ const defaultSettings: Settings = {
 
 const WINGS = ["Shamrock", "Bluebell", "Rosewood", "Front", "Receptionist"] as const;
 
+const SHIFT_PRESETS = [
+  { label: "Day", start: "06:30", end: "14:30" },
+  { label: "Evening", start: "14:30", end: "22:30" },
+  { label: "Night", start: "22:30", end: "06:30" },
+] as const;
+
 const OVERRIDE_REASONS = [
   "Earlier bidder within step",
   "Availability mismatch / declined",
@@ -206,12 +212,19 @@ export default function App(){
   }, [vacancies]);
 
   // Coverage form state
-  const [newVacay, setNewVacay] = useState<Partial<Vacation & {shiftStart:string; shiftEnd:string}>>({
-    wing: WINGS[0], shiftStart:"06:30", shiftEnd:"14:30"
+  const [newVacay, setNewVacay] = useState<
+    Partial<Vacation & { shiftStart: string; shiftEnd: string; shiftPreset: string }>
+  >({
+    wing: WINGS[0],
+    shiftStart: SHIFT_PRESETS[0].start,
+    shiftEnd: SHIFT_PRESETS[0].end,
+    shiftPreset: SHIFT_PRESETS[0].label,
   });
 
   // Actions
-  const addVacationAndGenerate = (v: Partial<Vacation & {shiftStart:string; shiftEnd:string}>) => {
+  const addVacationAndGenerate = (
+    v: Partial<Vacation & { shiftStart: string; shiftEnd: string; shiftPreset: string }>
+  ) => {
     if (!v.employeeId || !v.employeeName || !v.classification || !v.startDate || !v.endDate || !v.wing) {
       alert("Employee, wing, start & end are required."); return;
     }
@@ -238,15 +251,20 @@ export default function App(){
       classification: vac.classification,
       wing: vac.wing,
       shiftDate: d,
-      shiftStart: v.shiftStart ?? "06:30",
-      shiftEnd: v.shiftEnd ?? "14:30",
+      shiftStart: v.shiftStart ?? SHIFT_PRESETS[0].start,
+      shiftEnd: v.shiftEnd ?? SHIFT_PRESETS[0].end,
       knownAt: nowISO,
       offeringStep: "Casuals",
       status: "Open",
     }));
     setVacancies(prev => [...vxs, ...prev]);
 
-    setNewVacay({ wing: WINGS[0], shiftStart:"06:30", shiftEnd:"14:30" });
+    setNewVacay({
+      wing: WINGS[0],
+      shiftStart: SHIFT_PRESETS[0].start,
+      shiftEnd: SHIFT_PRESETS[0].end,
+      shiftPreset: SHIFT_PRESETS[0].label,
+    });
   };
 
   const awardVacancy = (vacId: string, payload: { empId?: string; reason?: string; overrideUsed?: boolean }) => {
@@ -405,13 +423,55 @@ export default function App(){
                     <input type="date" onChange={e=> setNewVacay(v=>({...v,endDate:e.target.value}))}/>
                   </div>
                   <div>
-                    <label>Shift Start</label>
-                    <input type="time" value={newVacay.shiftStart ?? "06:30"} onChange={e=> setNewVacay(v=>({...v,shiftStart:e.target.value}))}/>
+                    <label>Shift</label>
+                    <select
+                      value={newVacay.shiftPreset ?? SHIFT_PRESETS[0].label}
+                      onChange={e => {
+                        const preset = SHIFT_PRESETS.find(p => p.label === e.target.value);
+                        if (preset) {
+                          setNewVacay(v => ({
+                            ...v,
+                            shiftPreset: preset.label,
+                            shiftStart: preset.start,
+                            shiftEnd: preset.end,
+                          }));
+                        } else {
+                          setNewVacay(v => ({ ...v, shiftPreset: "Custom" }));
+                        }
+                      }}
+                    >
+                      {SHIFT_PRESETS.map(p => (
+                        <option key={p.label} value={p.label}>
+                          {p.label} ({p.start}–{p.end})
+                        </option>
+                      ))}
+                      <option value="Custom">Custom</option>
+                    </select>
                   </div>
-                  <div>
-                    <label>Shift End</label>
-                    <input type="time" value={newVacay.shiftEnd ?? "14:30"} onChange={e=> setNewVacay(v=>({...v,shiftEnd:e.target.value}))}/>
-                  </div>
+                  {newVacay.shiftPreset === "Custom" && (
+                    <>
+                      <div>
+                        <label>Shift Start</label>
+                        <input
+                          type="time"
+                          value={newVacay.shiftStart ?? ""}
+                          onChange={e =>
+                            setNewVacay(v => ({ ...v, shiftStart: e.target.value }))
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label>Shift End</label>
+                        <input
+                          type="time"
+                          value={newVacay.shiftEnd ?? ""}
+                          onChange={e =>
+                            setNewVacay(v => ({ ...v, shiftEnd: e.target.value }))
+                          }
+                        />
+                      </div>
+                    </>
+                  )}
                   <div style={{gridColumn:"1 / -1"}}>
                     <label>Notes</label>
                     <textarea placeholder="Optional" onChange={e=> setNewVacay(v=>({...v,notes:e.target.value}))}/>
