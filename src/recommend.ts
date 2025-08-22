@@ -23,6 +23,7 @@ export interface Bid {
 export interface Employee {
   id: string;
   active: boolean;
+  seniorityHours?: number;
   seniorityRank?: number;
   classification: string;
 }
@@ -47,8 +48,12 @@ export function recommend(
     return { why: ["No eligible bidders"] };
   }
   candidates.sort((a, b) => {
-    // Primary sort by seniority rank. If ranks tie, prefer the earlier bid
-    // determined by timestamp when present, otherwise by bid order.
+    // Primary sort by seniority hours when available, otherwise rank.
+    // If those tie, prefer the earlier bid determined by timestamp when
+    // present, otherwise by bid order.
+    const hoursDiff =
+      (b.emp.seniorityHours ?? 0) - (a.emp.seniorityHours ?? 0);
+    if (hoursDiff !== 0) return hoursDiff;
     const rankDiff =
       (a.emp.seniorityRank ?? 99999) - (b.emp.seniorityRank ?? 99999);
     if (rankDiff !== 0) return rankDiff;
@@ -60,7 +65,9 @@ export function recommend(
   const chosen = candidates[0].emp;
   const why = [
     "Bidder",
-    `Rank ${chosen.seniorityRank ?? "?"}`,
+    chosen.seniorityHours !== undefined
+      ? `Hours ${chosen.seniorityHours}`
+      : `Rank ${chosen.seniorityRank ?? "?"}`,
     `Class ${chosen.classification}`,
   ];
   return { id: chosen.id, why };

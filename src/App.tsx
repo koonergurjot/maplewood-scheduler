@@ -37,6 +37,8 @@ export type Employee = {
   classification: Classification;
   status: Status;
   homeWing?: string; // not used for coverage now
+  startDate?: string; // ISO YYYY-MM-DD
+  seniorityHours?: number;
   seniorityRank: number; // 1 = most senior
   active: boolean;
 };
@@ -950,6 +952,8 @@ function EmployeesPage({
                   ? r.status
                   : "FT") as Status,
                 homeWing: String(r.homeWing ?? ""),
+                startDate: String(r.startDate ?? ""),
+                seniorityHours: Number(r.seniorityHours ?? 0),
                 seniorityRank: Number(r.seniorityRank ?? i + 1),
                 active: String(r.active ?? "Yes")
                   .toLowerCase()
@@ -960,8 +964,70 @@ function EmployeesPage({
           />
           <div className="subtitle">
             Columns: id, firstName, lastName, classification (RCA/LPN/RN),
-            status (FT/PT/Casual), homeWing, seniorityRank, active (Yes/No)
+            status (FT/PT/Casual), homeWing, startDate, seniorityHours,
+            seniorityRank, active (Yes/No)
           </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-h">Add Employee</div>
+        <div className="card-c">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const name = (form.elements.namedItem("name") as HTMLInputElement)
+                .value;
+              const start = (
+                form.elements.namedItem("start") as HTMLInputElement
+              ).value;
+              const hours = Number(
+                (form.elements.namedItem("hours") as HTMLInputElement).value,
+              );
+              if (!name) return;
+              const [first, ...rest] = name.trim().split(" ");
+              const newEmp: Employee = {
+                id: `emp_${Date.now()}`,
+                firstName: first ?? "",
+                lastName: rest.join(" "),
+                classification: "RCA",
+                status: "FT",
+                startDate: start,
+                seniorityHours: hours || 0,
+                seniorityRank: employees.length + 1,
+                active: true,
+              };
+              const sorted = [...employees, newEmp]
+                .sort((a, b) => {
+                  const hDiff =
+                    (b.seniorityHours ?? 0) - (a.seniorityHours ?? 0);
+                  if (hDiff !== 0) return hDiff;
+                  return (a.seniorityRank ?? 99999) - (b.seniorityRank ?? 99999);
+                })
+                .map((e, i) => ({ ...e, seniorityRank: i + 1 }));
+              setEmployees(sorted);
+              form.reset();
+            }}
+          >
+            <div className="row cols3">
+              <div>
+                <label>Name</label>
+                <input name="name" type="text" />
+              </div>
+              <div>
+                <label>Start Date</label>
+                <input name="start" type="date" />
+              </div>
+              <div>
+                <label>Seniority Hours</label>
+                <input name="hours" type="number" />
+              </div>
+            </div>
+            <button type="submit" style={{ marginTop: 8 }}>
+              Add
+            </button>
+          </form>
         </div>
       </div>
 
@@ -973,6 +1039,8 @@ function EmployeesPage({
               <tr>
                 <th>ID</th>
                 <th>Name</th>
+                <th>Start Date</th>
+                <th>Seniority Hrs</th>
                 <th>Class</th>
                 <th>Status</th>
                 <th>Rank</th>
@@ -986,6 +1054,8 @@ function EmployeesPage({
                   <td>
                     {e.firstName} {e.lastName}
                   </td>
+                  <td>{e.startDate}</td>
+                  <td>{e.seniorityHours ?? 0}</td>
                   <td>{e.classification}</td>
                   <td>{e.status}</td>
                   <td>{e.seniorityRank}</td>
