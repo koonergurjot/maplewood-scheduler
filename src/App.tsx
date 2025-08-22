@@ -163,6 +163,22 @@ function fmtCountdown(msLeft: number){
   return neg ? `Due ${core} ago` : core;
 }
 
+export const applyAwardVacancy = (
+  vacs: Vacancy[],
+  vacId: string,
+  payload: { empId?: string; reason?: string; overrideUsed?: boolean }
+) => {
+  const empId = payload.empId === "EMPTY" ? undefined : payload.empId;
+  return vacs.map(v => v.id === vacId ? ({
+    ...v,
+    status: "Awarded",
+    awardedTo: empId,
+    awardedAt: new Date().toISOString(),
+    awardReason: payload.reason ?? "",
+    overrideUsed: !!payload.overrideUsed,
+  }) : v);
+};
+
 // ---------- Main App ----------
 export default function App(){
   if (window.location.pathname === '/analytics') {
@@ -281,15 +297,7 @@ export default function App(){
   };
 
   const awardVacancy = (vacId: string, payload: { empId?: string; reason?: string; overrideUsed?: boolean }) => {
-    if (!payload.empId) { alert("Pick an employee to award."); return; }
-    setVacancies(prev => prev.map(v => v.id===vacId ? ({
-      ...v,
-      status:"Awarded",
-      awardedTo: payload.empId,
-      awardedAt: new Date().toISOString(),
-      awardReason: payload.reason ?? "",
-      overrideUsed: !!payload.overrideUsed,
-    }) : v));
+    setVacancies(prev => applyAwardVacancy(prev, vacId, payload));
   };
 
   const resetKnownAt = (vacId: string) => {
@@ -860,7 +868,7 @@ function VacancyRow({v, recId, recName, recWhy, employees, countdownLabel, count
         <span className={`cd-chip ${countdownClass}`}>{countdownLabel}</span>
       </td>
       <td style={{minWidth:220}}>
-        <SelectEmployee employees={employees} value={choice} onChange={setChoice}/>
+        <SelectEmployee allowEmpty employees={employees} value={choice} onChange={setChoice}/>
       </td>
       <td style={{whiteSpace:'nowrap'}}>
         <label style={{display:'flex', gap:6, alignItems:'center'}}>
@@ -884,7 +892,7 @@ function VacancyRow({v, recId, recName, recWhy, employees, countdownLabel, count
   );
 }
 
-function SelectEmployee({employees, value, onChange}:{employees:Employee[]; value:string; onChange:(v:string)=>void}){
+function SelectEmployee({employees, value, onChange, allowEmpty=false}:{employees:Employee[]; value:string; onChange:(v:string)=>void; allowEmpty?:boolean}){
   const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const ref=useRef<HTMLDivElement>(null);
   const list = useMemo(()=> employees.filter(e=> matchText(q, `${e.firstName} ${e.lastName} ${e.id}`)).slice(0,50), [q,employees]);
   const curr = employees.find(e=>e.id===value);
@@ -895,6 +903,9 @@ function SelectEmployee({employees, value, onChange}:{employees:Employee[]; valu
       <input placeholder={curr? `${curr.firstName} ${curr.lastName} (${curr.id})`:"Type name or ID…"} value={q} onChange={e=>{ setQ(e.target.value); setOpen(true); }} onFocus={()=> setOpen(true)} />
       {open && (
         <div className="menu">
+          {allowEmpty && (
+            <div className="item" onClick={()=>{ onChange("EMPTY"); setQ(""); setOpen(false); }}>Empty</div>
+          )}
           {list.map(e=> (
             <div key={e.id} className="item" onClick={()=>{ onChange(e.id); setQ(`${e.firstName} ${e.lastName} (${e.id})`); setOpen(false); }}>
               {e.firstName} {e.lastName} <span className="pill" style={{marginLeft:6}}>{e.classification} {e.status}</span>
