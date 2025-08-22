@@ -213,6 +213,7 @@ export default function App(){
   const [filterClass, setFilterClass] = useState<Classification | "">("");
   const [filterStart, setFilterStart] = useState<string>("");
   const [filterEnd, setFilterEnd] = useState<string>("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Tick for countdowns
   const [now, setNow] = useState<number>(Date.now());
@@ -356,6 +357,7 @@ export default function App(){
         .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
         .btn{background:var(--cardAlt);border:1px solid var(--stroke);padding:9px 12px;border-radius:12px;color:var(--text);cursor:pointer;font-weight:600}
         .btn:hover{border-color:var(--brand)}
+        .btn-sm{padding:4px 8px;font-size:12px}
         .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px}
         .tab{padding:8px 12px;border-radius:12px;border:1px solid var(--stroke);cursor:pointer;background:var(--cardAlt);font-weight:600}
         .tab.active{border-color:var(--brand);box-shadow:0 0 0 2px rgba(94,155,255,.24) inset}
@@ -519,19 +521,24 @@ export default function App(){
             <div className="card">
               <div className="card-h">Open Vacancies</div>
               <div className="card-c">
-                <div className="toolbar" style={{marginBottom:8}}>
-                  <select value={filterWing} onChange={e=> setFilterWing(e.target.value)}>
-                    <option value="">All Wings</option>
-                    {WINGS.map(w=> <option key={w} value={w}>{w}</option>)}
-                  </select>
-                  <select value={filterClass} onChange={e=> setFilterClass(e.target.value as Classification | "")}> 
-                    <option value="">All Classes</option>
-                    {["RCA","LPN","RN"].map(c=> <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <input type="date" value={filterStart} onChange={e=> setFilterStart(e.target.value)} />
-                  <input type="date" value={filterEnd} onChange={e=> setFilterEnd(e.target.value)} />
-                  <button className="btn" onClick={()=>{ setFilterWing(""); setFilterClass(""); setFilterStart(""); setFilterEnd(""); }}>Clear</button>
-                </div>
+                <button className="btn btn-sm" style={{marginBottom:8}} onClick={()=> setFiltersOpen(o=>!o)}>
+                  {filtersOpen ? 'Hide Filters ▲' : 'Show Filters ▼'}
+                </button>
+                {filtersOpen && (
+                  <div className="toolbar" style={{marginBottom:8}}>
+                    <select value={filterWing} onChange={e=> setFilterWing(e.target.value)}>
+                      <option value="">All Wings</option>
+                      {WINGS.map(w=> <option key={w} value={w}>{w}</option>)}
+                    </select>
+                    <select value={filterClass} onChange={e=> setFilterClass(e.target.value as Classification | "")}> 
+                      <option value="">All Classes</option>
+                      {["RCA","LPN","RN"].map(c=> <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <input type="date" value={filterStart} onChange={e=> setFilterStart(e.target.value)} />
+                    <input type="date" value={filterEnd} onChange={e=> setFilterEnd(e.target.value)} />
+                    <button className="btn" onClick={()=>{ setFilterWing(""); setFilterClass(""); setFilterStart(""); setFilterEnd(""); }}>Clear</button>
+                  </div>
+                )}
                 <table className="vac-table responsive-table">
                     <thead>
                       <tr>
