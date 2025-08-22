@@ -27,7 +27,12 @@ app.get('/api/analytics/export', (req, res) => {
     doc.pipe(res);
     doc.fontSize(16).text('Analytics');
     data.forEach(row => {
-      doc.fontSize(12).text(`${row.period}: posted ${row.posted}, awarded ${row.awarded}, cancelled ${row.cancelled}, cancellationRate ${(row.cancellationRate * 100).toFixed(2)}%, overtime ${row.overtime}`);
+      doc
+        .fontSize(12)
+        .text(
+          `${row.period}: posted ${row.posted}, awarded ${row.awarded}, cancelled ${row.cancelled}, ` +
+            `cancellationRate ${(row.cancellationRate * 100).toFixed(2)}%, overtime ${row.overtime}`
+        );
     });
     doc.end();
   } else {
