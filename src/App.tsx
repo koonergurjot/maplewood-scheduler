@@ -452,6 +452,8 @@ export default function App() {
         th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
         input,select,textarea{width:100%;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;padding:10px;color:var(--text);-webkit-appearance:none;appearance:none}
         input::placeholder{color:#cbd5e1}
+        input[type=date]{cursor:pointer}
+        input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer}
         .row{display:grid;gap:10px}
         .cols2{grid-template-columns:1fr} @media(min-width:900px){.cols2{grid-template-columns:1fr 1fr}}
         .pill{background:var(--chipBg); color:var(--chipText); border:1px solid var(--stroke); padding:4px 8px;border-radius:999px;font-size:12px; font-weight:600}
@@ -618,9 +620,11 @@ export default function App() {
                     </select>
                   </div>
                   <div>
-                    <label>Start Date</label>
+                    <label htmlFor="vac-start">Start Date</label>
                     <input
+                      id="vac-start"
                       type="date"
+                      value={newVacay.startDate ?? ""}
                       onChange={(e) =>
                         setNewVacay((v) => ({
                           ...v,
@@ -630,9 +634,11 @@ export default function App() {
                     />
                   </div>
                   <div>
-                    <label>End Date</label>
+                    <label htmlFor="vac-end">End Date</label>
                     <input
+                      id="vac-end"
                       type="date"
+                      value={newVacay.endDate ?? ""}
                       onChange={(e) =>
                         setNewVacay((v) => ({ ...v, endDate: e.target.value }))
                       }
