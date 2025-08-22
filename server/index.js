@@ -6,12 +6,22 @@ import { aggregateByMonth, sampleVacancies } from './metrics.js';
 const app = express();
 app.use(cors());
 
-app.get('/api/analytics', (req, res) => {
+const AUTH_TOKEN = process.env.ANALYTICS_AUTH_TOKEN;
+
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!AUTH_TOKEN || authHeader !== `Bearer ${AUTH_TOKEN}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+app.get('/api/analytics', requireAuth, (req, res) => {
   const data = aggregateByMonth(sampleVacancies);
   res.json(data);
 });
 
-app.get('/api/analytics/export', (req, res) => {
+app.get('/api/analytics/export', requireAuth, (req, res) => {
   const format = req.query.format;
   const data = aggregateByMonth(sampleVacancies);
   if (format === 'csv') {
