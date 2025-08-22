@@ -349,7 +349,7 @@ export default function App(){
         .tab.active{border-color:var(--brand);box-shadow:0 0 0 2px rgba(94,155,255,.24) inset}
         .grid{display:grid;gap:12px}
         .grid2{grid-template-columns:1fr}
-        .card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--baseRadius);overflow:hidden}
+        .card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--baseRadius);overflow:visible}
         .card-h{padding:10px 14px;border-bottom:1px solid var(--stroke);font-weight:800;display:flex;align-items:center;justify-content:space-between}
         .card-c{padding:14px}
         table{width:100%;border-collapse:separate; border-spacing:0}
@@ -893,16 +893,17 @@ function VacancyRow({v, recId, recName, recWhy, employees, countdownLabel, count
 }
 
 function SelectEmployee({employees, value, onChange, allowEmpty=false}:{employees:Employee[]; value:string; onChange:(v:string)=>void; allowEmpty?:boolean}){
-  const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const ref=useRef<HTMLDivElement>(null);
+  const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const ref=useRef<HTMLDivElement>(null); const menuRef=useRef<HTMLDivElement>(null); const [dropUp,setDropUp]=useState(false); const [rect,setRect]=useState<DOMRect|null>(null);
   const list = useMemo(()=> employees.filter(e=> matchText(q, `${e.firstName} ${e.lastName} ${e.id}`)).slice(0,50), [q,employees]);
   const curr = employees.find(e=>e.id===value);
   useEffect(()=>{ const onDoc=(e:MouseEvent)=>{ if(!ref.current) return; if(!ref.current.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", onDoc); return ()=> document.removeEventListener("mousedown", onDoc); },[]);
   useEffect(()=>{ if(!value) setQ(""); },[value]);
+  useEffect(()=>{ if(open && menuRef.current){ const r=menuRef.current.getBoundingClientRect(); setDropUp(r.bottom>window.innerHeight); setRect(r);} },[open]);
   return (
     <div className="dropdown" ref={ref}>
       <input placeholder={curr? `${curr.firstName} ${curr.lastName} (${curr.id})`:"Type name or ID…"} value={q} onChange={e=>{ setQ(e.target.value); setOpen(true); }} onFocus={()=> setOpen(true)} />
       {open && (
-        <div className="menu">
+        <div className="menu" ref={menuRef} style={{top:dropUp?'auto':'100%',bottom:dropUp?'100%':'auto',maxHeight:rect?window.innerHeight-rect.top-20:undefined,overflow:'auto'}}>
           {allowEmpty && (
             <div className="item" onClick={()=>{ onChange("EMPTY"); setQ(""); setOpen(false); }}>Empty</div>
           )}
