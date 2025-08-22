@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
- * Maplewood Scheduler — Coverage-first (v2.3)
+ * Maplewood Scheduler — Coverage-first (v2.3.0)
  *
- * New in v2.3 (per your request):
+ * New in v2.3.0 (per your request):
  * ✔ Live countdown timers on each vacancy row (color shifts to yellow/red as deadline nears)
  * ✔ Auto "knownAt" (already existed) + per-row “Reset knownAt” button for re‑announcing
  * ✔ Sticky table header for Open Vacancies + scrollable panel; highlight the row that’s “due next”
