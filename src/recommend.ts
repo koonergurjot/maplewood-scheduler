@@ -17,6 +17,7 @@ export interface Vacancy {
 export interface Bid {
   vacancyId: string;
   bidderEmployeeId: string;
+  placedAt?: string;
 }
 
 export interface Employee {
@@ -33,18 +34,30 @@ export function recommend(
 ): Recommendation {
   const relevant = bids.filter(b => b.vacancyId === vac.id);
   const candidates = relevant
-    .map(b => employeesById[b.bidderEmployeeId])
+    .map((b, idx) => ({
+      emp: employeesById[b.bidderEmployeeId],
+      order: idx,
+      time: b.placedAt ? Date.parse(b.placedAt) : undefined,
+    }))
     .filter(
-      (e): e is Employee =>
-        !!e && e.active && e.classification === vac.classification
+      (c): c is { emp: Employee; order: number; time: number | undefined } =>
+        !!c.emp && c.emp.active && c.emp.classification === vac.classification
     );
   if (!candidates.length) {
     return { why: ['No eligible bidders'] };
   }
-  candidates.sort(
-    (a, b) => (a.seniorityRank ?? 99999) - (b.seniorityRank ?? 99999)
-  );
-  const chosen = candidates[0];
+  candidates.sort((a, b) => {
+    // Primary sort by seniority rank. If ranks tie, prefer the earlier bid
+    // determined by timestamp when present, otherwise by bid order.
+    const rankDiff =
+      (a.emp.seniorityRank ?? 99999) - (b.emp.seniorityRank ?? 99999);
+    if (rankDiff !== 0) return rankDiff;
+    if (a.time !== undefined && b.time !== undefined && a.time !== b.time) {
+      return a.time - b.time;
+    }
+    return a.order - b.order;
+  });
+  const chosen = candidates[0].emp;
   const why = [
     'Bidder',
     `Rank ${chosen.seniorityRank ?? '?'}`,
