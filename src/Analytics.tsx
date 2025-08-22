@@ -22,12 +22,14 @@ export type AnalyticsRow = {
   overtime: number;
 };
 
+export let controllerRef: React.MutableRefObject<AbortController | null>;
+
 export default function Analytics() {
   const [rows, setRows] = useState<AnalyticsRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const controllerRef = useRef<AbortController | null>(null);
+  controllerRef = useRef<AbortController | null>(null);
 
   const loadData = async () => {
     controllerRef.current?.abort();
@@ -36,29 +38,30 @@ export default function Analytics() {
     setLoading(true);
     setError(null);
 
-    const maxRetries = 3;
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        const response = await fetch('/api/analytics', { signal: controller.signal });
-        if (!response.ok) throw new Error(`Request failed: ${response.status}`);
-        const data = await response.json();
-        setRows(data);
-        setLoading(false);
-        return;
-      } catch (err: any) {
-        if (err.name === 'AbortError') {
-          setLoading(false);
-          controllerRef.current = null;
+    try {
+      const maxRetries = 3;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const response = await fetch('/api/analytics', { signal: controller.signal });
+          if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+          const data = await response.json();
+          setRows(data);
           return;
-        }
-        if (attempt < maxRetries - 1) {
-          const delay = 500 * 2 ** attempt;
-          await new Promise(res => setTimeout(res, delay));
-        } else {
-          setError(err.message);
-          setLoading(false);
+        } catch (err: any) {
+          if (err.name === 'AbortError') {
+            return;
+          }
+          if (attempt < maxRetries - 1) {
+            const delay = 500 * 2 ** attempt;
+            await new Promise(res => setTimeout(res, delay));
+          } else {
+            setError(err.message);
+          }
         }
       }
+    } finally {
+      setLoading(false);
+      controllerRef.current = null;
     }
   };
 
