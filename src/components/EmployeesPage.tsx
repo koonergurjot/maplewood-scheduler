@@ -7,7 +7,7 @@ export default function EmployeesPage({employees, setEmployees}:{employees:Emplo
       <div className="card"><div className="card-h">Import Staff (CSV)</div><div className="card-c">
         <input type="file" accept=".csv" onChange={async e=>{
           const f=e.target.files?.[0]; if(!f) return; const text=await f.text(); const rows=parseCSV(text);
-          const out:Employee[]=rows.map((r:any,i:number)=>({
+          const out:Employee[]=rows.map((r,i)=>({
             id:String(r.id??r.EmployeeID??`emp_${i}`),
             firstName:String(r.firstName ?? r.name ?? ""),
             lastName:String(r.lastName ?? ""),
