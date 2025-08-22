@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { fetchState, saveState } from "./services/api";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3)
@@ -94,10 +95,14 @@ const OVERRIDE_REASONS = [
   "Manager discretion",
 ] as const;
 
-// ---------- Local Storage ----------
-const LS_KEY = "maplewood-scheduler-v3";
-const loadState = () => { try { const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } };
-const saveState = (state: any) => localStorage.setItem(LS_KEY, JSON.stringify(state));
+// ---------- Persistence via API ----------
+const loadInitialState = async () => {
+  try {
+    return await fetchState();
+  } catch {
+    return null;
+  }
+};
 
 // ---------- Utils ----------
 const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -105,6 +110,17 @@ const combineDateTime = (dateISO: string, timeHHmm: string) => new Date(`${dateI
 const formatDateLong = (iso: string) => new Date(iso+"T00:00:00").toLocaleDateString(undefined, { month: "long", day: "2-digit", year: "numeric" });
 const formatDowShort = (iso: string) => new Date(iso+"T00:00:00").toLocaleDateString(undefined, { weekday: "short" });
 const matchText = (q: string, label: string) => q.trim().toLowerCase().split(/\s+/).filter(Boolean).every(p => label.toLowerCase().includes(p));
+
+function parseCSV(text: string){
+  const lines = text.trim().split(/\r?\n/);
+  const headers = lines.shift()?.split(',').map(h=>h.trim()) ?? [];
+  return lines.map(line => {
+    const cols = line.split(',');
+    const obj:any = {};
+    headers.forEach((h,i)=>{ obj[h] = cols[i]; });
+    return obj;
+  });
+}
 
 const buildCalendar = (year:number, month:number) => {
   const first = new Date(year, month, 1);
@@ -152,20 +168,37 @@ function fmtCountdown(msLeft: number){
 
 // ---------- Main App ----------
 export default function App(){
-  const persisted = loadState();
   const [tab, setTab] = useState<"coverage"|"bids"|"employees"|"calendar"|"alerts"|"archive"|"settings">("coverage");
 
-  const [employees, setEmployees] = useState<Employee[]>(persisted?.employees ?? []);
-  const [vacations, setVacations] = useState<Vacation[]>(persisted?.vacations ?? []);
-  const [vacancies, setVacancies] = useState<Vacancy[]>(persisted?.vacancies ?? []);
-  const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
-  const [settings, setSettings] = useState<Settings>({ ...defaultSettings, ...(persisted?.settings ?? {}) });
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [vacations, setVacations] = useState<Vacation[]>([]);
+  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
+  const [bids, setBids] = useState<Bid[]>([]);
+  const [settings, setSettings] = useState<Settings>({ ...defaultSettings });
+
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    loadInitialState().then(persisted => {
+      if (persisted) {
+        setEmployees(persisted.employees ?? []);
+        setVacations(persisted.vacations ?? []);
+        setVacancies(persisted.vacancies ?? []);
+        setBids(persisted.bids ?? []);
+        setSettings({ ...defaultSettings, ...(persisted.settings ?? {}) });
+      }
+      setLoaded(true);
+    });
+  }, []);
 
   // Tick for countdowns
   const [now, setNow] = useState<number>(Date.now());
   useEffect(()=>{ const t = setInterval(()=> setNow(Date.now()), 1000); return ()=> clearInterval(t); },[]);
 
-  useEffect(()=>{ saveState({ employees, vacations, vacancies, bids, settings }); },[employees,vacations,vacancies,bids,settings]);
+  useEffect(()=>{
+    if (!loaded) return;
+    saveState({ employees, vacations, vacancies, bids, settings });
+  },[loaded,employees,vacations,vacancies,bids,settings]);
 
   const employeesById = useMemo(()=>Object.fromEntries(employees.map(e=>[e.id,e])),[employees]);
 
@@ -342,7 +375,7 @@ export default function App(){
                 onChange={e=> setSettings(s=> ({...s, fontScale: Number(e.target.value)}))} />
             </div>
             <button className="btn" onClick={()=>{ const blob=new Blob([JSON.stringify({employees,vacations,vacancies,bids,settings},null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="maplewood-scheduler-backup.json"; a.click(); URL.revokeObjectURL(url); }}>Export</button>
-            <button className="btn" onClick={()=>{ if(confirm("Reset ALL data?")){ localStorage.removeItem(LS_KEY); location.reload(); } }}>Reset</button>
+            <button className="btn" onClick={()=>{ if(confirm("Reset ALL data?")){ saveState({employees:[],vacations:[],vacancies:[],bids:[],settings:defaultSettings}).then(()=>location.reload()); } }}>Reset</button>
           </div>
         </div>
 
@@ -552,7 +585,7 @@ function SettingsPage({settings,setSettings}:{settings:Settings; setSettings:(u:
     <div className="grid">
       <div className="card"><div className="card-h">Response Windows (minutes)</div><div className="card-c">
         <div className="row cols2">
-          {((["<2h","lt2h"],["2–4h","h2to4"],["4–24h","h4to24"],["24–72h","h24to72"],[">72h","gt72"]) as const).map(([label,key])=> (
+          {([ ["<2h","lt2h"], ["2–4h","h2to4"], ["4–24h","h4to24"], ["24–72h","h24to72"], [">72h","gt72"] ] as const).map(([label,key])=> (
             <div key={key}><label>{label}</label><input type="number" value={(settings.responseWindows as any)[key]} onChange={e=> setSettings((s:any)=>({...s, responseWindows:{...s.responseWindows, [key]: Number(e.target.value)}}))}/></div>
           ))}
         </div>
@@ -619,7 +652,7 @@ function BidsPage({bids,setBids,vacancies,vacations,employees,employeesById}:{bi
             <button className="btn" onClick={()=>{
               if(!newBid.vacancyId||!newBid.bidderEmployeeId) return alert("Vacancy and employee required");
               const ts = newBid.bidDate && newBid.bidTime ? new Date(`${newBid.bidDate}T${newBid.bidTime}:00`).toISOString() : new Date().toISOString();
-              setBids(prev=>[...prev,{
+              setBids((prev: Bid[])=>[...prev,{
                 vacancyId:newBid.vacancyId!,
                 bidderEmployeeId:newBid.bidderEmployeeId!,
                 bidderName:newBid.bidderName ?? "",

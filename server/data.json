@@ -1,0 +1,17 @@
+{
+  "employees": [
+    {
+      "id": "1",
+      "firstName": "A",
+      "lastName": "B",
+      "classification": "RCA",
+      "status": "FT",
+      "seniorityRank": 1,
+      "active": true
+    }
+  ],
+  "vacations": [],
+  "vacancies": [],
+  "bids": [],
+  "settings": null
+}
