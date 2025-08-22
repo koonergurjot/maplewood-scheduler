@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import Analytics from "./Analytics";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3)
@@ -152,6 +153,9 @@ function fmtCountdown(msLeft: number){
 
 // ---------- Main App ----------
 export default function App(){
+  if (window.location.pathname === '/analytics') {
+    return <Analytics />;
+  }
   const persisted = loadState();
   const [tab, setTab] = useState<"coverage"|"bids"|"employees"|"calendar"|"alerts"|"archive"|"settings">("coverage");
 
