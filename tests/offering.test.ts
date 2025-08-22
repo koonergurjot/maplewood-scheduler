@@ -92,4 +92,24 @@ describe('useOfferingRound', () => {
     expect(vac.offeringTier).toBe('OT_FULL_TIME');
     round.dispose();
   });
+
+  it('clamps round minutes to 1-1440 and ignores non-numeric', () => {
+    const vac: Vacancy = { id: '1', offeringTier: 'CASUALS', offeringRoundMinutes: 120 };
+    const updateVacancy = vi.fn();
+    const round = createOfferingRound(vac, {
+      updateVacancy,
+      currentUser: 'manager',
+      onTick: () => {},
+    });
+    round.setRoundMinutes(-5);
+    expect(vac.offeringRoundMinutes).toBe(1);
+    expect(updateVacancy).toHaveBeenLastCalledWith({ offeringRoundMinutes: 1 });
+    round.setRoundMinutes(2000);
+    expect(vac.offeringRoundMinutes).toBe(1440);
+    expect(updateVacancy).toHaveBeenLastCalledWith({ offeringRoundMinutes: 1440 });
+    round.setRoundMinutes(NaN as any);
+    expect(vac.offeringRoundMinutes).toBe(1440);
+    expect(updateVacancy).toHaveBeenCalledTimes(2);
+    round.dispose();
+  });
 });

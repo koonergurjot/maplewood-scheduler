@@ -97,8 +97,10 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
       opts.updateVacancy({ offeringAutoProgress: enabled });
     },
     setRoundMinutes(mins: number) {
-      vac.offeringRoundMinutes = mins;
-      opts.updateVacancy({ offeringRoundMinutes: mins });
+      if (!Number.isFinite(mins)) return;
+      const clamped = Math.min(1440, Math.max(1, Math.round(mins)));
+      vac.offeringRoundMinutes = clamped;
+      opts.updateVacancy({ offeringRoundMinutes: clamped });
       opts.onTick?.(computeMsLeft());
     },
     dispose() {

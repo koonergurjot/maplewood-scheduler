@@ -35,6 +35,12 @@ export default function OfferingControls({ vacancy, round }: Props) {
     }
   };
 
+  const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(e.target.value);
+    if (Number.isNaN(value)) return;
+    round.setRoundMinutes(value);
+  };
+
   const mins = Math.max(0, Math.floor(round.timeLeftMs / 60000));
   const secs = Math.max(0, Math.floor((round.timeLeftMs % 60000) / 1000));
 
@@ -72,8 +78,11 @@ export default function OfferingControls({ vacancy, round }: Props) {
         Round length (min)
         <input
           type="number"
+          min={1}
+          max={1440}
+          step={1}
           value={vacancy.offeringRoundMinutes ?? 120}
-          onChange={(e) => round.setRoundMinutes(Number(e.target.value))}
+          onChange={handleMinutesChange}
         />
       </label>
       {pendingTier && (
