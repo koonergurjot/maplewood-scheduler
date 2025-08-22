@@ -5,7 +5,7 @@ import Analytics from "./Analytics";
  * Maplewood Scheduler — Coverage-first (v2.3.0)
  *
  * New in v2.3.0 (per your request):
- * ✔ Live countdown timers on each vacancy row (color shifts to yellow/red as deadline nears)
+ * ✔ Live countdown timers on each vacancy row (green >24h, yellow 24–6h, red <6h, grey when expired)
  * ✔ Auto "knownAt" (already existed) + per-row “Reset knownAt” button for re‑announcing
  * ✔ Sticky table header for Open Vacancies + scrollable panel; highlight the row that’s “due next”
  * ✔ Theme toggle (Dark/Light) + text size slider (great for wall displays)
@@ -127,8 +127,6 @@ const displayVacancyLabel = (v: Vacancy) => {
   const d = formatDateLong(v.shiftDate);
   return `${d} • ${v.shiftStart}–${v.shiftEnd} • ${v.wing ?? ''} • ${v.classification}`.replace(/\s+•\s+$/, "");
 };
-
-function minutesBetween(a: Date, b: Date){ return Math.round((a.getTime() - b.getTime())/60000); }
 
 function pickWindowMinutes(v: Vacancy, settings: Settings){
   const known = new Date(v.knownAt);
@@ -361,6 +359,7 @@ export default function App(){
         .cd-green{background:rgba(22,163,74,.12)}
         .cd-yellow{background:rgba(245,158,11,.12)}
         .cd-red{background:rgba(239,68,68,.12)}
+        .cd-grey{background:rgba(156,163,175,.12)}
 
         /* Due next highlight */
         .due-next{ box-shadow: 0 0 0 2px var(--brand) inset; }
@@ -518,13 +517,13 @@ export default function App(){
                       {filteredVacancies.map(v=>{
                         const recId = recommendations[v.id];
                         const recName = recId ? `${employeesById[recId]?.firstName ?? ""} ${employeesById[recId]?.lastName ?? ""}`.trim() : "—";
-                        const dl = deadlineFor(v, settings);
-                        const msLeft = dl.getTime() - now;
-                        const winMin = pickWindowMinutes(v, settings);
-                        const sinceKnownMin = minutesBetween(new Date(), new Date(v.knownAt));
-                        const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin)); // 1→0 over window
+                        const shiftStart = combineDateTime(v.shiftDate, v.shiftStart);
+                        const msLeft = shiftStart.getTime() - now;
+                        const hrsLeft = msLeft / 3_600_000;
                         let cdClass = "cd-green";
-                        if (msLeft <= 0) cdClass = "cd-red"; else if (pct < 0.25) cdClass = "cd-yellow";
+                        if (msLeft <= 0) cdClass = "cd-grey";
+                        else if (hrsLeft < 6) cdClass = "cd-red";
+                        else if (hrsLeft < 24) cdClass = "cd-yellow";
                         const isDueNext = dueNextId === v.id;
                         return (
                           <VacancyRow
