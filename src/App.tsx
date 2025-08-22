@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Analytics from "./Analytics";
-import { parseCSV } from "./utils/csv";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -536,7 +535,7 @@ function EmployeesPage({employees, setEmployees}:{employees:Employee[]; setEmplo
     <div className="grid">
       <div className="card"><div className="card-h">Import Staff (CSV)</div><div className="card-c">
         <input type="file" accept=".csv" onChange={async e=>{
-          const f=e.target.files?.[0]; if(!f) return; const text=await f.text(); const rows=parseCSV(text);
+          const f=e.target.files?.[0]; if(!f) return; const text=await f.text(); const { parseCSV } = await import("./utils/csv"); const rows=parseCSV(text);
           const out:Employee[]=rows.map((r:any,i:number)=>({
             id:String(r.id??r.EmployeeID??`emp_${i}`),
             firstName:String(r.firstName ?? r.name ?? ""),
