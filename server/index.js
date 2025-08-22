@@ -4,9 +4,14 @@ import { aggregateByMonth, sampleVacancies } from "./metrics.js";
 import { requireAuth } from "./auth.js";
 import { createCsv } from "./analyticsFormats/csv.js";
 import { createPdf } from "./analyticsFormats/pdf.js";
+import multer from "multer";
+import { initAgreement, loadAgreement, searchAgreement } from "./collectiveAgreement.js";
 
 const app = express();
 app.use(cors());
+const upload = multer({ dest: new URL("./uploads", import.meta.url).pathname });
+
+initAgreement();
 
 app.get("/api/analytics", requireAuth, (req, res) => {
   const threshold = parseFloat(req.query.overtimeThreshold);
@@ -38,6 +43,27 @@ app.get("/api/analytics/export", requireAuth, (req, res) => {
     default:
       res.status(400).json({ error: "format query param required (csv|pdf)" });
   }
+});
+
+app.post(
+  "/api/collective-agreement/upload",
+  requireAuth,
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      await loadAgreement(req.file.path);
+      res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Failed to process agreement" });
+    }
+  },
+);
+
+app.get("/api/collective-agreement/search", requireAuth, (req, res) => {
+  const q = req.query.q;
+  if (typeof q !== "string" || !q) return res.json({ matches: [] });
+  res.json({ matches: searchAgreement(q) });
 });
 
 const port = process.env.PORT || 3000;
