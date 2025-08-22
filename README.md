@@ -26,6 +26,18 @@ export ANALYTICS_AUTH_TOKEN=mys3cret
 npm run server
 ```
 
+## Analytics API options
+
+Analytics endpoints accept an optional `overtimeThreshold` query parameter to
+control how overtime hours are calculated. The default threshold is **8** hours.
+
+Example:
+
+```bash
+curl -H "Authorization: Bearer $ANALYTICS_AUTH_TOKEN" \
+  "http://localhost:3000/api/analytics?overtimeThreshold=10"
+```
+
 ## Responsive design
 - Mobile breakpoint at **600px** is defined in `src/styles/responsive.css`.
 - Use the `responsive-table` class on tables and `form-row` for grouped form inputs to stack vertically on narrow screens.
