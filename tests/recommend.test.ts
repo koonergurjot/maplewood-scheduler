@@ -67,4 +67,19 @@ describe("recommend", () => {
     const rec = recommend(vac, tieBids, employeesWithTie);
     expect(rec.id).toBe("e");
   });
+
+  it("prefers higher seniority hours when present", () => {
+    const vac = { id: "vac1", classification: "RN", offeringTier: "CASUALS" };
+    const employeesWithHours = {
+      x: { id: "x", active: true, seniorityHours: 200, classification: "RN" },
+      y: { id: "y", active: true, seniorityHours: 100, classification: "RN" },
+    };
+    const hourBids = [
+      { vacancyId: "vac1", bidderEmployeeId: "y" },
+      { vacancyId: "vac1", bidderEmployeeId: "x" },
+    ];
+    const rec = recommend(vac, hourBids, employeesWithHours);
+    expect(rec.id).toBe("x");
+    expect(rec.why).toContain("Hours 200");
+  });
 });
