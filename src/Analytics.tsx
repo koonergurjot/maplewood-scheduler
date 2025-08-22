@@ -24,9 +24,45 @@ export type AnalyticsRow = {
 
 export default function Analytics() {
   const [rows, setRows] = useState<AnalyticsRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadData = () => {
+    setLoading(true);
+    setError(null);
+    fetch('/api/analytics')
+      .then(r => {
+        if (!r.ok) throw new Error(`Request failed: ${r.status}`);
+        return r.json();
+      })
+      .then(setRows)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  };
+
   useEffect(() => {
-    fetch('/api/analytics').then(r => r.json()).then(setRows);
+    loadData();
   }, []);
+
+  if (loading) {
+    return (
+      <div style={{ padding: 20 }}>
+        <h1>Analytics</h1>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 20 }}>
+        <h1>Analytics</h1>
+        <p>Error loading analytics: {error}</p>
+        <button onClick={loadData} className="btn">Retry</button>
+      </div>
+    );
+  }
+
   const labels = rows.map(r => r.period);
   const posted = rows.map(r => r.posted);
   const awarded = rows.map(r => r.awarded);
