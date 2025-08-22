@@ -1,13 +1,9 @@
 import { useState } from 'react';
 import { TIERS, tierLabel, OfferingTier, requiresConfirmation } from '../offering/offeringMachine';
-import { UseOfferingRound } from '../offering/useOfferingRound';
+import { UseOfferingRound, Vacancy } from '../offering/useOfferingRound';
 
 interface Props {
-  vacancy: {
-    offeringTier: OfferingTier;
-    offeringAutoProgress?: boolean;
-    offeringRoundMinutes?: number;
-  };
+  vacancy: Vacancy;
   round: UseOfferingRound;
 }
 
@@ -18,6 +14,7 @@ interface Props {
 export default function OfferingControls({ vacancy, round }: Props) {
   const [pendingTier, setPendingTier] = useState<OfferingTier | null>(null);
   const [note, setNote] = useState('');
+  const tierName = `tier-${vacancy.id}`;
 
   const onSelect = (tier: OfferingTier) => {
     if (requiresConfirmation(tier)) {
@@ -49,7 +46,7 @@ export default function OfferingControls({ vacancy, round }: Props) {
           <label key={t} style={{ marginRight: '0.5rem' }}>
             <input
               type="radio"
-              name="tier"
+              name={tierName}
               checked={vacancy.offeringTier === t}
               onChange={() => onSelect(t)}
             />

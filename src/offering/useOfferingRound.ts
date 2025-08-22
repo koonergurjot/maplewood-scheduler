@@ -31,35 +31,44 @@ interface RoundOptions {
  */
 export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
   let interval: any;
-  const getRoundMinutes = () => vac.offeringRoundMinutes ?? 120;
+  let current = { ...vac };
+
+  const getRoundMinutes = () => current.offeringRoundMinutes ?? 120;
 
   const computeMsLeft = () => {
-    const started = vac.offeringRoundStartedAt
-      ? new Date(vac.offeringRoundStartedAt).getTime()
+    const started = current.offeringRoundStartedAt
+      ? new Date(current.offeringRoundStartedAt).getTime()
       : Date.now();
     return started + getRoundMinutes() * 60000 - Date.now();
+  };
+
+  const applyPatch = (patch: Partial<Vacancy>) => {
+    current = { ...current, ...patch };
+    opts.updateVacancy(patch);
   };
 
   const tick = () => {
     const msLeft = computeMsLeft();
     opts.onTick?.(msLeft);
-    if (msLeft <= 0 && vac.offeringAutoProgress !== false) {
-      const next = nextTier(vac.offeringTier);
+    if (msLeft <= 0 && current.offeringAutoProgress !== false) {
+      const next = nextTier(current.offeringTier);
       if (next) {
-        const from = vac.offeringTier;
-        vac.offeringTier = next;
-        vac.offeringRoundStartedAt = new Date().toISOString();
-        opts.updateVacancy({
+        const from = current.offeringTier;
+        const startedAt = new Date().toISOString();
+        applyPatch({
           offeringTier: next,
-          offeringRoundStartedAt: vac.offeringRoundStartedAt,
+          offeringRoundStartedAt: startedAt,
         });
-        logOfferingChange({
-          vacancyId: vac.id,
-          from,
-          to: next,
-          actor: 'system',
-          reason: 'auto-progress',
-        }, storage);
+        logOfferingChange(
+          {
+            vacancyId: current.id,
+            from,
+            to: next,
+            actor: 'system',
+            reason: 'auto-progress',
+          },
+          storage,
+        );
         opts.onTick?.(computeMsLeft());
       }
     }
@@ -71,35 +80,35 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
 
   return {
     onResetRound() {
-      vac.offeringRoundStartedAt = new Date().toISOString();
-      opts.updateVacancy({ offeringRoundStartedAt: vac.offeringRoundStartedAt });
+      const startedAt = new Date().toISOString();
+      applyPatch({ offeringRoundStartedAt: startedAt });
       opts.onTick?.(computeMsLeft());
     },
     onManualChangeTier(next: OfferingTier, note?: string) {
-      const from = vac.offeringTier;
-      vac.offeringTier = next;
-      vac.offeringRoundStartedAt = new Date().toISOString();
-      opts.updateVacancy({
+      const from = current.offeringTier;
+      const startedAt = new Date().toISOString();
+      applyPatch({
         offeringTier: next,
-        offeringRoundStartedAt: vac.offeringRoundStartedAt,
+        offeringRoundStartedAt: startedAt,
       });
-      logOfferingChange({
-        vacancyId: vac.id,
-        from,
-        to: next,
-        actor: opts.currentUser,
-        reason: 'manual',
-        note,
-      }, storage);
+      logOfferingChange(
+        {
+          vacancyId: current.id,
+          from,
+          to: next,
+          actor: opts.currentUser,
+          reason: 'manual',
+          note,
+        },
+        storage,
+      );
       opts.onTick?.(computeMsLeft());
     },
     onToggleAutoProgress(enabled: boolean) {
-      vac.offeringAutoProgress = enabled;
-      opts.updateVacancy({ offeringAutoProgress: enabled });
+      applyPatch({ offeringAutoProgress: enabled });
     },
     setRoundMinutes(mins: number) {
-      vac.offeringRoundMinutes = mins;
-      opts.updateVacancy({ offeringRoundMinutes: mins });
+      applyPatch({ offeringRoundMinutes: mins });
       opts.onTick?.(computeMsLeft());
     },
     dispose() {
