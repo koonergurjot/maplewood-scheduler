@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { recommend, Recommendation } from "./recommend";
 import type { OfferingTier } from "./offering/offeringMachine";
 import {
@@ -515,6 +516,9 @@ export default function App() {
             >
               {settings.theme === "dark" ? "Light Mode" : "Dark Mode"}
             </button>
+            <Link to="/agreement" className="btn">
+              Agreement
+            </Link>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span className="subtitle">Text size</span>
               <input
