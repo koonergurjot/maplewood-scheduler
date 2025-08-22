@@ -2,8 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import { aggregateByMonth, sampleVacancies } from './metrics.js';
 import { requireAuth } from './auth.js';
-import { createCsv } from './analyticsFormats/csv.ts';
-import { createPdf } from './analyticsFormats/pdf.ts';
+import { createCsv } from './analyticsFormats/csv.js';
+import { createPdf } from './analyticsFormats/pdf.js';
 
 const app = express();
 app.use(cors());

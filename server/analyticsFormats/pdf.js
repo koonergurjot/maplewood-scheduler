@@ -1,15 +1,6 @@
 import PDFDocument from 'pdfkit';
 
-export interface AnalyticsRow {
-  period: string;
-  posted: number;
-  awarded: number;
-  cancelled: number;
-  cancellationRate: number;
-  overtime: number;
-}
-
-export function createPdf(data: AnalyticsRow[]) {
+export function createPdf(data) {
   const doc = new PDFDocument();
   doc.fontSize(16).text('Analytics');
   data.forEach(row => {
