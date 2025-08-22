@@ -1,7 +1,7 @@
 {
   "name": "maplewood-scheduler",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.3.0",
   "type": "module",
   "engines": {
     "node": "18.20.8"
