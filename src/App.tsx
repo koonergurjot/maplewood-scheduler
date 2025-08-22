@@ -465,6 +465,8 @@ export default function App() {
         .cal-dow{opacity:.85;font-size:12px;text-align:center;color:var(--muted);font-weight:700}
         .cal-day{border:1px solid var(--stroke);border-radius:10px;padding:8px;min-height:92px;background:var(--cardAlt);display:flex;flex-direction:column}
         .cal-day.mute{opacity:.45}
+        .cal-day.today{border-color:var(--brand)}
+        .cal-day.selected{box-shadow:0 0 0 2px var(--brand) inset}
         .cal-num{font-weight:800;margin-bottom:6px}
         .cal-open{margin-top:auto;font-size:12px}
         .cal-chip{display:inline-block;border:1px solid var(--stroke);border-radius:999px;padding:2px 6px;margin-right:6px;margin-bottom:6px}
@@ -1299,6 +1301,7 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth()); // 0-11
   const [selectedISO, setSelectedISO] = useState<string>(isoDate(today));
+  const todayISO = isoDate(today);
 
   const calDays = useMemo(() => buildCalendar(year, month), [year, month]);
   const openByDay = useMemo(() => {
@@ -1349,16 +1352,28 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
         {calDays.map(({ date, inMonth }) => {
           const key = isoDate(date);
           const opens = openByDay.get(key) || [];
+          const isToday = key === todayISO;
+          const isSelected = key === selectedISO;
           return (
             <div
               key={key}
-              className={`cal-day ${inMonth ? "" : "mute"}`}
+              className={`cal-day ${inMonth ? "" : "mute"} ${isToday ? "today" : ""} ${isSelected ? "selected" : ""}`}
               onClick={() => setSelectedISO(key)}
             >
               <div className="cal-num">{date.getDate()}</div>
               <div className="cal-open">
                 {opens.length ? (
-                  <span className="pill">{opens.length} open</span>
+                  <>
+                    {opens.slice(0, 3).map((v) => (
+                      <span key={v.id} className="cal-chip">
+                        {v.wing ? `${v.wing} ` : ""}
+                        {v.classification}
+                      </span>
+                    ))}
+                    {opens.length > 3 && (
+                      <span className="cal-chip">+{opens.length - 3} more</span>
+                    )}
+                  </>
                 ) : (
                   <span className="subtitle">—</span>
                 )}
