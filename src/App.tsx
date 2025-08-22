@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import SelectEmployee from "./components/SelectEmployee";
+import EmployeeCombo from "./components/EmployeeCombo";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3)
@@ -104,7 +106,6 @@ const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padSta
 const combineDateTime = (dateISO: string, timeHHmm: string) => new Date(`${dateISO}T${timeHHmm}:00`);
 const formatDateLong = (iso: string) => new Date(iso+"T00:00:00").toLocaleDateString(undefined, { month: "long", day: "2-digit", year: "numeric" });
 const formatDowShort = (iso: string) => new Date(iso+"T00:00:00").toLocaleDateString(undefined, { weekday: "short" });
-const matchText = (q: string, label: string) => q.trim().toLowerCase().split(/\s+/).filter(Boolean).every(p => label.toLowerCase().includes(p));
 
 const buildCalendar = (year:number, month:number) => {
   const first = new Date(year, month, 1);
@@ -765,49 +766,6 @@ function VacancyRow({v, recId, recName, employees, countdownLabel, countdownClas
         <button className="btn" onClick={handleAward} disabled={!choice}>Award</button>
       </td>
     </tr>
-  );
-}
-
-function SelectEmployee({employees, value, onChange}:{employees:Employee[]; value:string; onChange:(v:string)=>void}){
-  const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const ref=useRef<HTMLDivElement>(null);
-  const list = useMemo(()=> employees.filter(e=> matchText(q, `${e.firstName} ${e.lastName} ${e.id}`)).slice(0,50), [q,employees]);
-  const curr = employees.find(e=>e.id===value);
-  useEffect(()=>{ const onDoc=(e:MouseEvent)=>{ if(!ref.current) return; if(!ref.current.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", onDoc); return ()=> document.removeEventListener("mousedown", onDoc); },[]);
-  return (
-    <div className="dropdown" ref={ref}>
-      <input placeholder={curr? `${curr.firstName} ${curr.lastName} (${curr.id})`:"Type name or ID…"} value={q} onChange={e=>{ setQ(e.target.value); setOpen(true); }} onFocus={()=> setOpen(true)} />
-      {open && (
-        <div className="menu">
-          {list.map(e=> (
-            <div key={e.id} className="item" onClick={()=>{ onChange(e.id); setQ(`${e.firstName} ${e.lastName} (${e.id})`); setOpen(false); }}>
-              {e.firstName} {e.lastName} <span className="pill" style={{marginLeft:6}}>{e.classification} {e.status}</span>
-            </div>
-          ))}
-          {!list.length && <div className="item" style={{opacity:.7}}>No matches</div>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EmployeeCombo({ employees, onSelect }:{ employees:Employee[]; onSelect:(id:string)=>void }){
-  const [open,setOpen]=useState(false); const [q,setQ]=useState(""); const ref=useRef<HTMLDivElement>(null);
-  const list = useMemo(()=> employees.filter(e=> matchText(q, `${e.firstName} ${e.lastName} ${e.id}`)).slice(0,50), [q,employees]);
-  useEffect(()=>{ const onDoc=(e:MouseEvent)=>{ if(!ref.current) return; if(!ref.current.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", onDoc); return ()=> document.removeEventListener("mousedown", onDoc); },[]);
-  return (
-    <div className="dropdown" ref={ref}>
-      <input placeholder="Type name or ID…" value={q} onChange={e=>{ setQ(e.target.value); setOpen(true); }} onFocus={()=> setOpen(true)} />
-      {open && (
-        <div className="menu">
-          {list.map(e=> (
-            <div key={e.id} className="item" onClick={()=>{ onSelect(e.id); setQ(`${e.firstName} ${e.lastName} (${e.id})`); setOpen(false); }}>
-              {e.firstName} {e.lastName} <span className="pill" style={{marginLeft:6}}>{e.classification} {e.status}</span>
-            </div>
-          ))}
-          {!list.length && <div className="item" style={{opacity:.7}}>No matches</div>}
-        </div>
-      )}
-    </div>
   );
 }
 
