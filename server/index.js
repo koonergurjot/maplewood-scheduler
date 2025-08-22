@@ -2,19 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import PDFDocument from 'pdfkit';
 import { aggregateByMonth, sampleVacancies } from './metrics.js';
+import { requireAuth } from './auth.js';
 
 const app = express();
 app.use(cors());
-
-const AUTH_TOKEN = process.env.ANALYTICS_AUTH_TOKEN;
-
-function requireAuth(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!AUTH_TOKEN || authHeader !== `Bearer ${AUTH_TOKEN}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-}
 
 app.get('/api/analytics', requireAuth, (req, res) => {
   const data = aggregateByMonth(sampleVacancies);
