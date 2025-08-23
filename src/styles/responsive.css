@@ -78,6 +78,7 @@
 .toggle-input {
   position: absolute;
   opacity: 0;
+  pointer-events: none;
 }
 
 .toggle-box {
@@ -88,11 +89,9 @@
   border: 1px solid var(--stroke);
   border-radius: 4px;
   cursor: pointer;
-  position: relative;
 }
 
-.toggle-box::before {
-  content: "";
+.toggle-indicator {
   width: 16px;
   height: 16px;
   border: 1px solid var(--stroke);
@@ -100,24 +99,7 @@
   background: var(--bg2);
 }
 
-.toggle-box::after {
-  content: "";
-  position: absolute;
-  left: 9px;
-  top: 5px;
-  width: 5px;
-  height: 10px;
-  border: solid var(--bg1);
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-  opacity: 0;
-}
-
-.toggle-input:checked + .toggle-box {
+.toggle-box.checked .toggle-indicator {
   background: var(--brand);
   border-color: var(--brand);
-}
-
-.toggle-input:checked + .toggle-box::after {
-  opacity: 1;
 }
