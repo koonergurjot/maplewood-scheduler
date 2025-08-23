@@ -41,7 +41,7 @@ app.get("/api/analytics/export", requireAuth, (req, res) => {
       break;
     }
     default:
-      res.status(400).json({ error: "format query param required (csv|pdf)" });
+      res.status(400).json({ error: "format query parameter required (csv|pdf)" });
   }
 });
 
