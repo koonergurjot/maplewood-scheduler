@@ -18,7 +18,11 @@ export async function initAgreement() {
 
 export async function loadAgreement(filePath) {
   const buffer = fs.readFileSync(filePath);
-  if (filePath.toLowerCase().endsWith(".pdf")) {
+  // Detect PDFs by signature rather than relying on the file extension so
+  // previously uploaded agreements without an extension can still be parsed
+  // correctly on startup.
+  const isPdf = buffer.slice(0, 4).toString() === "%PDF";
+  if (isPdf) {
     const data = await pdfParse(buffer);
     agreementText = data.text;
   } else {
