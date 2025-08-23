@@ -9,24 +9,36 @@ export function aggregateByMonth(vacancies, options = {}) {
   return Object.entries(groups)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([period, items]) => {
-      const posted = items.length;
-      const awarded = items.filter((i) => i.status === "awarded").length;
-      const cancelled = items.filter((i) => i.status === "cancelled").length;
-      const cancellationRate = posted ? cancelled / posted : 0;
-      const overtime = items
-        .filter((i) => i.status === "awarded")
-        .reduce((sum, i) => sum + Math.max(0, i.hours - overtimeThreshold), 0);
-      const avgHours = items.length
-        ? items.reduce((sum, i) => sum + i.hours, 0) / items.length
+      const stats = items.reduce(
+        (acc, item) => {
+          acc.posted++;
+          acc.totalHours += item.hours;
+          if (item.status === "awarded") {
+            acc.awarded++;
+            acc.overtime += Math.max(0, item.hours - overtimeThreshold);
+          } else if (item.status === "cancelled") {
+            acc.cancelled++;
+          }
+          return acc;
+        },
+        { posted: 0, awarded: 0, cancelled: 0, overtime: 0, totalHours: 0 },
+      );
+
+      const cancellationRate = stats.posted
+        ? stats.cancelled / stats.posted
         : 0;
+      const averageHours = stats.posted
+        ? stats.totalHours / stats.posted
+        : 0;
+
       return {
         period,
-        posted,
-        awarded,
-        cancelled,
+        posted: stats.posted,
+        awarded: stats.awarded,
+        cancelled: stats.cancelled,
         cancellationRate,
-        overtime,
-        averageHours: avgHours,
+        overtime: stats.overtime,
+        averageHours,
       };
     });
 }
