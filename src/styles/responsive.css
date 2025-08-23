@@ -31,3 +31,18 @@
     flex-direction: column;
   }
 }
+
+/* vacation multi-day toggle */
+.toggle-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.toggle-box.checked {
+  background-color: #f0f0f0;
+}
