@@ -35,11 +35,15 @@ export function recommend(
 ): Recommendation {
   const relevant = bids.filter((b) => b.vacancyId === vac.id);
   const candidates = relevant
-    .map((b, idx) => ({
-      emp: employeesById[b.bidderEmployeeId],
-      order: idx,
-      time: b.placedAt ? Date.parse(b.placedAt) : undefined,
-    }))
+    .map((b, idx) => {
+      const parsed = b.placedAt ? Date.parse(b.placedAt) : undefined;
+      return {
+        emp: employeesById[b.bidderEmployeeId],
+        order: idx,
+        time:
+          parsed !== undefined && !Number.isNaN(parsed) ? parsed : undefined,
+      };
+    })
     .filter(
       (c): c is { emp: Employee; order: number; time: number | undefined } =>
         !!c.emp && c.emp.active && c.emp.classification === vac.classification,
@@ -57,7 +61,13 @@ export function recommend(
     const rankDiff =
       (a.emp.seniorityRank ?? 99999) - (b.emp.seniorityRank ?? 99999);
     if (rankDiff !== 0) return rankDiff;
-    if (a.time !== undefined && b.time !== undefined && a.time !== b.time) {
+    if (
+      a.time !== undefined &&
+      b.time !== undefined &&
+      !Number.isNaN(a.time) &&
+      !Number.isNaN(b.time) &&
+      a.time !== b.time
+    ) {
       return a.time - b.time;
     }
     return a.order - b.order;

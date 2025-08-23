@@ -68,6 +68,28 @@ describe("recommend", () => {
     expect(rec.id).toBe("e");
   });
 
+  it("falls back to bid order when timestamp is invalid", () => {
+    const vac = { id: "vac1", classification: "RN", offeringTier: "CASUALS" };
+    const employeesWithTie = {
+      ...employees,
+      e: { id: "e", active: true, seniorityRank: 1, classification: "RN" },
+    };
+    const tieBids = [
+      {
+        vacancyId: "vac1",
+        bidderEmployeeId: "e",
+        placedAt: "not-a-date",
+      },
+      {
+        vacancyId: "vac1",
+        bidderEmployeeId: "b",
+        placedAt: "2024-01-01T09:00:00Z",
+      },
+    ];
+    const rec = recommend(vac, tieBids, employeesWithTie);
+    expect(rec.id).toBe("e");
+  });
+
   it("prefers higher seniority hours when present", () => {
     const vac = { id: "vac1", classification: "RN", offeringTier: "CASUALS" };
     const employeesWithHours = {
