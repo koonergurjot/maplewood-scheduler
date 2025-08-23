@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { authFetch } from "./utils/api";
 
 export default function Agreement() {
   const [uploaded, setUploaded] = useState(false);
@@ -10,18 +11,16 @@ export default function Agreement() {
     if (!file) return;
     const form = new FormData();
     form.append("file", file);
-    await fetch("/api/collective-agreement/upload", {
+    await authFetch("/api/collective-agreement/upload", {
       method: "POST",
       body: form,
-      headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
     });
     setUploaded(true);
   };
 
   const search = async () => {
-    const res = await fetch(
+    const res = await authFetch(
       `/api/collective-agreement/search?q=${encodeURIComponent(query)}`,
-      { headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` } },
     );
     const data = await res.json();
     setResults(data.matches || []);
