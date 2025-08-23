@@ -33,6 +33,15 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
   let interval: any;
   let current = { ...vac };
 
+  const dispose = () => {
+    if (interval) {
+      clearInterval(interval);
+      interval = null;
+    }
+  };
+
+  const isRunning = () => interval != null;
+
   const getRoundMinutes = () => current.offeringRoundMinutes ?? 120;
 
   const computeMsLeft = () => {
@@ -50,9 +59,9 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
   const tick = () => {
     const msLeft = computeMsLeft();
     opts.onTick?.(msLeft);
-    if (msLeft <= 0 && current.offeringAutoProgress !== false) {
+    if (msLeft <= 0) {
       const next = nextTier(current.offeringTier);
-      if (next) {
+      if (current.offeringAutoProgress !== false && next) {
         const from = current.offeringTier;
         const startedAt = new Date().toISOString();
         applyPatch({
@@ -70,6 +79,8 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
           storage,
         );
         opts.onTick?.(computeMsLeft());
+      } else {
+        dispose();
       }
     }
   };
@@ -83,6 +94,9 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
       const startedAt = new Date().toISOString();
       applyPatch({ offeringRoundStartedAt: startedAt });
       opts.onTick?.(computeMsLeft());
+      if (!isRunning()) {
+        interval = setInterval(tick, 1000);
+      }
     },
     onManualChangeTier(next: OfferingTier, note?: string) {
       const from = current.offeringTier;
@@ -111,9 +125,8 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
       applyPatch({ offeringRoundMinutes: mins });
       opts.onTick?.(computeMsLeft());
     },
-    dispose() {
-      clearInterval(interval);
-    },
+    dispose,
+    isRunning,
   };
 }
 
