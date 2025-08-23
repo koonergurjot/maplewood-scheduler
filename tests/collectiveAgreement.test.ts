@@ -24,7 +24,38 @@ describe("collectiveAgreement", () => {
     try {
       await loadAgreement(tmpPath);
       const matches = searchAgreement("Hello");
-      expect(matches[0]).toContain("Hello Agreement");
+      expect(matches[0].line).toContain("Hello Agreement");
+    } finally {
+      fs.unlinkSync(tmpPath);
+    }
+  });
+
+  it("indexes text and returns context with line numbers", async () => {
+    const { loadAgreement, searchAgreement } = await import(
+      "../server/collectiveAgreement.js"
+    );
+    const text = [
+      "first line",
+      "second keyword line",
+      "third line",
+      "fourth keyword line",
+    ].join("\n");
+    const tmpPath = path.join(process.cwd(), "temp-agreement.txt");
+    fs.writeFileSync(tmpPath, text);
+    try {
+      await loadAgreement(tmpPath);
+      const matches = searchAgreement("keyword");
+      expect(matches).toHaveLength(2);
+      expect(matches[0]).toEqual({
+        lineNumber: 2,
+        line: "second keyword line",
+        context: ["first line", "second keyword line", "third line"],
+      });
+      expect(matches[1]).toEqual({
+        lineNumber: 4,
+        line: "fourth keyword line",
+        context: ["third line", "fourth keyword line"],
+      });
     } finally {
       fs.unlinkSync(tmpPath);
     }
