@@ -1736,12 +1736,14 @@ function VacancyRow({
         />
       </td>
       <td style={{ whiteSpace: "nowrap" }}>
-        <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <input
-            type="checkbox"
-            checked={overrideClass}
-            onChange={(e) => setOverrideClass(e.target.checked)}
-          />
+        <input
+          id="override-toggle"
+          className="toggle-input"
+          type="checkbox"
+          checked={overrideClass}
+          onChange={(e) => setOverrideClass(e.target.checked)}
+        />
+        <label htmlFor="override-toggle" className="toggle-box">
           <span className="subtitle">Allow class override</span>
         </label>
       </td>
