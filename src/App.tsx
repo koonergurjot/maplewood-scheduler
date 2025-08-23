@@ -13,6 +13,7 @@ import {
   minutesBetween,
 } from "./lib/dates";
 import { matchText } from "./lib/text";
+import { reorder } from "./utils/reorder";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -99,9 +100,21 @@ export type Settings = {
   };
   theme: "dark" | "light";
   fontScale: number; // 1.0 = 16px base; slider adjusts overall size
+  tabOrder: string[];
+  defaultShiftPreset: string;
 };
 
 // ---------- Constants ----------
+const TAB_KEYS = [
+  "coverage",
+  "calendar",
+  "bids",
+  "employees",
+  "archive",
+  "alerts",
+  "settings",
+] as const;
+
 const defaultSettings: Settings = {
   responseWindows: { lt2h: 7, h2to4: 15, h4to24: 30, h24to72: 120, gt72: 1440 },
   theme:
@@ -111,6 +124,8 @@ const defaultSettings: Settings = {
       ? "dark"
       : "light",
   fontScale: 1,
+  tabOrder: [...TAB_KEYS],
+  defaultShiftPreset: "Day",
 };
 
 const WINGS = [
@@ -218,15 +233,7 @@ export const applyAwardVacancy = (
 // ---------- Main App ----------
 export default function App() {
   const persisted = loadState();
-  const [tab, setTab] = useState<
-    | "coverage"
-    | "bids"
-    | "employees"
-    | "calendar"
-    | "alerts"
-    | "archive"
-    | "settings"
-  >("coverage");
+  const [tab, setTab] = useState<typeof TAB_KEYS[number]>("coverage");
 
   const [employees, setEmployees] = useState<Employee[]>(
     persisted?.employees ?? [],
@@ -245,9 +252,16 @@ export default function App() {
     })),
   );
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
+  const persistedSettings = persisted?.settings ?? {};
+  const storedOrder: string[] = persistedSettings.tabOrder || [];
+  const mergedOrder = [
+    ...storedOrder,
+    ...TAB_KEYS.filter((k) => !storedOrder.includes(k)),
+  ];
   const [settings, setSettings] = useState<Settings>({
     ...defaultSettings,
-    ...(persisted?.settings ?? {}),
+    ...persistedSettings,
+    tabOrder: mergedOrder,
   });
 
   const [filterWing, setFilterWing] = useState<string>("");
@@ -310,6 +324,13 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vacancies]);
 
+  const defaultShift = useMemo(
+    () =>
+      SHIFT_PRESETS.find((p) => p.label === settings.defaultShiftPreset) ||
+      SHIFT_PRESETS[0],
+    [settings.defaultShiftPreset],
+  );
+
   // Coverage form state
   const [newVacay, setNewVacay] = useState<
     Partial<
@@ -317,10 +338,20 @@ export default function App() {
     >
   >({
     wing: WINGS[0],
-    shiftStart: SHIFT_PRESETS[0].start,
-    shiftEnd: SHIFT_PRESETS[0].end,
-    shiftPreset: SHIFT_PRESETS[0].label,
+    shiftStart: defaultShift.start,
+    shiftEnd: defaultShift.end,
+    shiftPreset: defaultShift.label,
   });
+
+  useEffect(() => {
+    setNewVacay((v) => ({
+      ...v,
+      shiftStart: defaultShift.start,
+      shiftEnd: defaultShift.end,
+      shiftPreset: defaultShift.label,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultShift]);
 
   // Actions
   const addVacationAndGenerate = (
@@ -362,8 +393,8 @@ export default function App() {
       classification: vac.classification,
       wing: vac.wing,
       shiftDate: d,
-      shiftStart: v.shiftStart ?? SHIFT_PRESETS[0].start,
-      shiftEnd: v.shiftEnd ?? SHIFT_PRESETS[0].end,
+      shiftStart: v.shiftStart ?? defaultShift.start,
+      shiftEnd: v.shiftEnd ?? defaultShift.end,
       knownAt: nowISO,
       offeringTier: "CASUALS",
       offeringRoundStartedAt: nowISO,
@@ -376,9 +407,9 @@ export default function App() {
 
     setNewVacay({
       wing: WINGS[0],
-      shiftStart: SHIFT_PRESETS[0].start,
-      shiftEnd: SHIFT_PRESETS[0].end,
-      shiftPreset: SHIFT_PRESETS[0].label,
+      shiftStart: defaultShift.start,
+      shiftEnd: defaultShift.end,
+      shiftPreset: defaultShift.label,
     });
   };
 
@@ -573,15 +604,7 @@ export default function App() {
         </div>
 
         <div className="tabs">
-          {[
-            "coverage",
-            "calendar",
-            "bids",
-            "employees",
-            "archive",
-            "alerts",
-            "settings",
-          ].map((k) => (
+          {settings.tabOrder.map((k) => (
             <button
               key={k}
               className={`tab ${tab === k ? "active" : ""}`}
@@ -660,7 +683,7 @@ export default function App() {
                   <div>
                     <label>Shift</label>
                     <select
-                      value={newVacay.shiftPreset ?? SHIFT_PRESETS[0].label}
+                      value={newVacay.shiftPreset ?? defaultShift.label}
                       onChange={(e) => {
                         const preset = SHIFT_PRESETS.find(
                           (p) => p.label === e.target.value,
@@ -1124,6 +1147,62 @@ function SettingsPage({
   return (
     <div className="grid">
       <div className="card">
+        <div className="card-h">Appearance & Defaults</div>
+        <div className="card-c">
+          <div className="row cols2">
+            <div>
+              <label>Theme</label>
+              <select
+                value={settings.theme}
+                onChange={(e) =>
+                  setSettings((s: any) => ({
+                    ...s,
+                    theme: e.target.value as "dark" | "light",
+                  }))
+                }
+              >
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </div>
+            <div>
+              <label>Default Shift Template</label>
+              <select
+                value={settings.defaultShiftPreset}
+                onChange={(e) =>
+                  setSettings((s: any) => ({
+                    ...s,
+                    defaultShiftPreset: e.target.value,
+                  }))
+                }
+              >
+                {SHIFT_PRESETS.map((p) => (
+                  <option key={p.label} value={p.label}>
+                    {p.label} ({p.start}–{p.end})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-h">Dashboard Order</div>
+        <div className="card-c">
+          <TabOrderEditor
+            order={settings.tabOrder}
+            setOrder={(o) =>
+              setSettings((s: any) => ({ ...s, tabOrder: o }))
+            }
+          />
+          <div className="subtitle" style={{ marginTop: 8 }}>
+            Drag items to reorder tabs.
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
         <div className="card-h">Response Windows (minutes)</div>
         <div className="card-c">
           <div className="row cols2">
@@ -1157,6 +1236,43 @@ function SettingsPage({
         </div>
       </div>
     </div>
+  );
+}
+
+function TabOrderEditor({
+  order,
+  setOrder,
+}: {
+  order: string[];
+  setOrder: (o: string[]) => void;
+}) {
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  return (
+    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+      {order.map((item, idx) => (
+        <li
+          key={item}
+          draggable
+          onDragStart={() => setDragIndex(idx)}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={() => {
+            if (dragIndex === null) return;
+            setOrder(reorder(order, dragIndex, idx));
+            setDragIndex(null);
+          }}
+          style={{
+            padding: "8px 10px",
+            border: "1px solid var(--stroke)",
+            borderRadius: "8px",
+            background: "var(--cardAlt)",
+            marginBottom: 6,
+            cursor: "move",
+          }}
+        >
+          {item[0].toUpperCase() + item.slice(1)}
+        </li>
+      ))}
+    </ul>
   );
 }
 
