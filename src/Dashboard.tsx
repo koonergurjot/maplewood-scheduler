@@ -63,61 +63,63 @@ export default function Dashboard() {
   };
 
   return (
-    <div>
+    <div className="dashboard">
       <header className="maplewood-header">
         <img src="/maplewood-logo.svg" alt="Maplewood logo" height={40} />
         <h1>Shift Dashboard</h1>
       </header>
 
-      <section>
-        <h2>Awarded Shifts</h2>
-        <div className="shift-list">
-          {awarded.map((v) => (
-            <div key={v.id} className="shift-card awarded">
-              {v.shiftDate} {v.shiftStart}–{v.shiftEnd} • {v.wing ?? ""} • {v.classification}
-            </div>
-          ))}
-          {awarded.length === 0 && <p>No awarded shifts.</p>}
-        </div>
-      </section>
-
-      <section>
-        <h2>Open Shifts</h2>
-        <div className="shift-list">
-          {open.map((v) => (
-            <div key={v.id} className="shift-card open">
-              {v.shiftDate} {v.shiftStart}–{v.shiftEnd} • {v.wing ?? ""} • {v.classification}
-            </div>
-          ))}
-          {open.length === 0 && <p>No open shifts.</p>}
-        </div>
-      </section>
-
-      <section className="employee-list">
-        <h2>Recent Assignments</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Employee</th>
-              <th>Last Assigned</th>
-            </tr>
-          </thead>
-          <tbody>
-            {employeesWithLast.map((e) => (
-              <tr key={e.id} className={isRecent(e.lastAssigned) ? "recent" : undefined}>
-                <td>
-                  {e.firstName} {e.lastName}
-                </td>
-                <td>
-                  {e.lastAssigned
-                    ? new Date(e.lastAssigned).toLocaleDateString()
-                    : "—"}
-                </td>
-              </tr>
+      <main className="dashboard-content">
+        <section>
+          <h2>Awarded Shifts</h2>
+          <div className="shift-list">
+            {awarded.map((v) => (
+              <div key={v.id} className="shift-card awarded">
+                {v.shiftDate} {v.shiftStart}–{v.shiftEnd} • {v.wing ?? ""} • {v.classification}
+              </div>
             ))}
-          </tbody>
-        </table>
-      </section>
+            {awarded.length === 0 && <p>No awarded shifts.</p>}
+          </div>
+        </section>
+
+        <section>
+          <h2>Open Shifts</h2>
+          <div className="shift-list">
+            {open.map((v) => (
+              <div key={v.id} className="shift-card open">
+                {v.shiftDate} {v.shiftStart}–{v.shiftEnd} • {v.wing ?? ""} • {v.classification}
+              </div>
+            ))}
+            {open.length === 0 && <p>No open shifts.</p>}
+          </div>
+        </section>
+
+        <section className="employee-list">
+          <h2>Recent Assignments</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Last Assigned</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employeesWithLast.map((e) => (
+                <tr key={e.id} className={isRecent(e.lastAssigned) ? "recent" : undefined}>
+                  <td>
+                    {e.firstName} {e.lastName}
+                  </td>
+                  <td>
+                    {e.lastAssigned
+                      ? new Date(e.lastAssigned).toLocaleDateString()
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </main>
     </div>
   );
 }
