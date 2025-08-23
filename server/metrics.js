@@ -1,7 +1,13 @@
+const ALLOWED_STATUSES = new Set(["awarded", "cancelled", "posted"]);
+
 export function aggregateByMonth(vacancies, options = {}) {
   const { overtimeThreshold = 8 } = options;
   const groups = {};
   for (const v of vacancies) {
+    if (!ALLOWED_STATUSES.has(v.status)) {
+      console.warn(`Unknown status: ${v.status}`);
+      continue;
+    }
     const month = v.date.slice(0, 7);
     groups[month] = groups[month] || [];
     groups[month].push(v);
