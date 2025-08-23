@@ -49,7 +49,7 @@ curl -H "Authorization: Bearer $ANALYTICS_AUTH_TOKEN" \
 
 ## Responsive design
 
-- Mobile breakpoint at **600px** is defined in `src/styles/responsive.css`.
+- `src/styles/responsive.css` defines a tablet breakpoint at **≤900px** where tables collapse and form rows stack, and a phone breakpoint at **≤600px** that further reduces the calendar to a single column.
 - Use the `responsive-table` class on tables and `form-row` for grouped form inputs to stack vertically on narrow screens.
 
 ### Deploy options
