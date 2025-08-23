@@ -554,6 +554,9 @@ export default function App() {
             <Link to="/agreement" className="btn">
               Agreement
             </Link>
+            <Link to="/audit-log" className="btn">
+              Audit Log
+            </Link>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span className="subtitle">Text size</span>
               <input

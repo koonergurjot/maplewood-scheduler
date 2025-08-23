@@ -73,6 +73,16 @@ export function getAuditLogs(storage: Storage): AuditLog[] {
   return read(storage);
 }
 
+export function filterAuditLogs(
+  storage: Storage,
+  { date, vacancyId }: { date?: string; vacancyId?: string },
+): AuditLog[] {
+  let logs = getAuditLogs(storage);
+  if (date) logs = logs.filter((l) => l.ts.startsWith(date));
+  if (vacancyId) logs = logs.filter((l) => l.targetId === vacancyId);
+  return logs;
+}
+
 export function clearAuditLogs(storage: Storage) {
   write([], storage);
 }
