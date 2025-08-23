@@ -1510,7 +1510,7 @@ function CoverageDayList({
   return (
     <div style={{ marginTop: 12 }}>
       <div className="pill">
-        Open on {formatDateLong(dateISO)}: {vacancies.length}
+        Vacancies on {formatDateLong(dateISO)}: {vacancies.length}
       </div>
       {vacancies.length > 0 && (
         <table className="responsive-table" style={{ marginTop: 8 }}>
@@ -1550,10 +1550,10 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
   const todayISO = isoDate(today);
 
   const calDays = useMemo(() => buildCalendar(year, month), [year, month]);
-  const openByDay = useMemo(() => {
+  const vacanciesByDay = useMemo(() => {
     const m = new Map<string, Vacancy[]>();
     vacancies.forEach((v) => {
-      if (v.status !== "Awarded") {
+      if (v.status !== "Awarded" || v.shiftDate >= todayISO) {
         const k = v.shiftDate;
         const arr = m.get(k) || [];
         arr.push(v);
@@ -1561,7 +1561,7 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
       }
     });
     return m;
-  }, [vacancies]);
+  }, [vacancies, todayISO]);
 
   const monthLabel = new Date(year, month, 1).toLocaleString(undefined, {
     month: "long",
@@ -1586,7 +1586,7 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
           &gt;
         </button>
         <div style={{ marginLeft: "auto" }} className="subtitle">
-          Click a day to list open shifts
+          Click a day to list shifts
         </div>
       </div>
       <div className="cal-grid">
@@ -1597,7 +1597,7 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
         ))}
         {calDays.map(({ date, inMonth }) => {
           const key = isoDate(date);
-          const opens = openByDay.get(key) || [];
+          const dayVacancies = vacanciesByDay.get(key) || [];
           const isToday = key === todayISO;
           const isSelected = key === selectedISO;
           return (
@@ -1608,16 +1608,16 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
             >
               <div className="cal-num">{date.getDate()}</div>
               <div className="cal-open">
-                {opens.length ? (
+                {dayVacancies.length ? (
                   <>
-                    {opens.slice(0, 3).map((v) => (
+                    {dayVacancies.slice(0, 3).map((v) => (
                       <span key={v.id} className="cal-chip">
                         {v.wing ? `${v.wing} ` : ""}
                         {v.classification}
                       </span>
                     ))}
-                    {opens.length > 3 && (
-                      <span className="cal-chip">+{opens.length - 3} more</span>
+                    {dayVacancies.length > 3 && (
+                      <span className="cal-chip">+{dayVacancies.length - 3} more</span>
                     )}
                   </>
                 ) : (
@@ -1630,7 +1630,7 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
       </div>
       <CoverageDayList
         dateISO={selectedISO}
-        vacancies={openByDay.get(selectedISO) || []}
+        vacancies={vacanciesByDay.get(selectedISO) || []}
       />
     </div>
   );
