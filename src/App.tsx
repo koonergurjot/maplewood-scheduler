@@ -670,12 +670,10 @@ export default function App() {
                         onChange={(e) => {
                           const checked = e.target.checked;
                           setMultiDay(checked);
-                          if (!checked) {
-                            setNewVacay((v) => ({
-                              ...v,
-                              endDate: v.startDate,
-                            }));
-                          }
+                          setNewVacay((v) => ({
+                            ...v,
+                            endDate: checked ? "" : v.startDate,
+                          }));
                         }}
                       />{" "}
                       {multiDay ? ">1 day" : "1 day"}
