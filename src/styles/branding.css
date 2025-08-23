@@ -1,0 +1,49 @@
+.maplewood-header {
+  background-color: #2a7a2a;
+  color: white;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shift-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.shift-card {
+  padding: 10px;
+  border-radius: 4px;
+  border-left: 6px solid transparent;
+}
+
+.shift-card.awarded {
+  background-color: #e6f4ea;
+  border-color: #2a7a2a;
+}
+
+.shift-card.open {
+  background-color: #fff8e1;
+  border-color: #ffc107;
+}
+
+.employee-list {
+  margin-top: 20px;
+}
+
+.employee-list table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.employee-list th, .employee-list td {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.employee-list tr.recent td {
+  background-color: #fff8e1;
+}
