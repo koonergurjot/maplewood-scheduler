@@ -18,7 +18,7 @@ npm run build
 The analytics endpoints require a bearer token for access.
 
 1. Set a secret token in the `ANALYTICS_AUTH_TOKEN` environment variable.
-2. Include an `Authorization: Bearer <token>` header on requests to `/api/analytics` and `/api/analytics/export`.
+2. Include an `Authorization: Bearer <token>` header on requests to `/api/analytics`, `/api/analytics/export`, `/api/collective-agreement/upload`, and `/api/collective-agreement/search`.
 3. Requests missing or providing an invalid token will receive `401 Unauthorized`.
 
 Example:
@@ -26,6 +26,13 @@ Example:
 ```bash
 export ANALYTICS_AUTH_TOKEN=mys3cret
 npm run server
+```
+
+Example request:
+
+```bash
+curl -H "Authorization: Bearer $ANALYTICS_AUTH_TOKEN" \
+  "http://localhost:3000/api/collective-agreement/search?query=benefits"
 ```
 
 ## Analytics API options
