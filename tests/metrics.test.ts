@@ -27,4 +27,17 @@ describe("aggregateByMonth", () => {
     expect(jan?.overtime).toBe(0);
     expect(feb?.overtime).toBe(0);
   });
+
+  it("ignores vacancies with unknown status", () => {
+    const extra = {
+      date: "2024-01-10",
+      status: "pending",
+      hours: 5,
+    };
+    const result = aggregateByMonth([...sampleVacancies, extra]);
+    const jan = result.find((r) => r.period === "2024-01");
+    expect(jan?.posted).toBe(3);
+    expect(jan?.awarded).toBe(1);
+    expect(jan?.cancelled).toBe(1);
+  });
 });
