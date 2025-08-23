@@ -57,7 +57,7 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
   };
 
   const tick = () => {
-    const msLeft = computeMsLeft();
+    const msLeft = Math.max(0, computeMsLeft());
     opts.onTick?.(msLeft);
     if (msLeft <= 0) {
       const next = nextTier(current.offeringTier);
@@ -78,7 +78,7 @@ export function createOfferingRound(vac: Vacancy, opts: RoundOptions) {
           },
           storage,
         );
-        opts.onTick?.(computeMsLeft());
+        opts.onTick?.(Math.max(0, computeMsLeft()));
       } else {
         dispose();
       }

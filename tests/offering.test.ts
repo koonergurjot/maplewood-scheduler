@@ -67,6 +67,9 @@ describe("useOfferingRound", () => {
     expect(logs[0].details.reason).toBe("auto-progress");
     // final tick calls onTick twice: once when expiring and once after advancing
     expect(onTick).toHaveBeenCalledTimes(62);
+    // the expired tick should clamp the remaining time to zero
+    const expiringCall = onTick.mock.calls[onTick.mock.calls.length - 2];
+    expect(expiringCall[0]).toBe(0);
     round.dispose();
   });
 
