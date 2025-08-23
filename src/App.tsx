@@ -72,7 +72,7 @@ export type Vacancy = {
   offeringRoundStartedAt?: string;
   offeringRoundMinutes?: number;
   offeringAutoProgress?: boolean;
-  offeringStep: "Casuals" | "OT-Regular" | "OT-Casuals";
+  offeringStep: "Casuals" | "OT-Full-Time" | "OT-Casuals";
   status: "Open" | "Pending Award" | "Awarded";
   awardedTo?: string; // employeeId
   awardedAt?: string; // ISO datetime
