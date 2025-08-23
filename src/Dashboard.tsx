@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Employee, Vacancy } from "./App";
+import CalendarView from "./components/CalendarView";
 import "./styles/branding.css";
 
 const LS_KEY = "maplewood-scheduler-v3";
@@ -20,6 +21,8 @@ type State = {
 export default function Dashboard() {
   const data: State = loadState() || { employees: [], vacancies: [] };
   const { employees, vacancies } = data;
+
+  const [view, setView] = useState<"list" | "calendar">("list");
 
   const awarded = useMemo(
     () => vacancies.filter((v) => v.status === "Awarded"),
@@ -69,56 +72,77 @@ export default function Dashboard() {
         <h1>Shift Dashboard</h1>
       </header>
 
+      <nav className="dashboard-nav">
+        <button onClick={() => setView("list")} disabled={view === "list"}>
+          List View
+        </button>
+        <button
+          onClick={() => setView("calendar")}
+          disabled={view === "calendar"}
+        >
+          Calendar View
+        </button>
+      </nav>
+
       <main className="dashboard-content">
-        <section>
-          <h2>Awarded Shifts</h2>
-          <div className="shift-list">
-            {awarded.map((v) => (
-              <div key={v.id} className="shift-card awarded">
-                {v.shiftDate} {v.shiftStart}–{v.shiftEnd} • {v.wing ?? ""} • {v.classification}
+        {view === "calendar" ? (
+          <CalendarView vacancies={vacancies} />
+        ) : (
+          <>
+            <section>
+              <h2>Awarded Shifts</h2>
+              <div className="shift-list">
+                {awarded.map((v) => (
+                  <div key={v.id} className="shift-card awarded">
+                    {v.shiftDate} {v.shiftStart}–{v.shiftEnd} • {v.wing ?? ""} • {v.classification}
+                  </div>
+                ))}
+                {awarded.length === 0 && <p>No awarded shifts.</p>}
               </div>
-            ))}
-            {awarded.length === 0 && <p>No awarded shifts.</p>}
-          </div>
-        </section>
+            </section>
 
-        <section>
-          <h2>Open Shifts</h2>
-          <div className="shift-list">
-            {open.map((v) => (
-              <div key={v.id} className="shift-card open">
-                {v.shiftDate} {v.shiftStart}–{v.shiftEnd} • {v.wing ?? ""} • {v.classification}
+            <section>
+              <h2>Open Shifts</h2>
+              <div className="shift-list">
+                {open.map((v) => (
+                  <div key={v.id} className="shift-card open">
+                    {v.shiftDate} {v.shiftStart}–{v.shiftEnd} • {v.wing ?? ""} • {v.classification}
+                  </div>
+                ))}
+                {open.length === 0 && <p>No open shifts.</p>}
               </div>
-            ))}
-            {open.length === 0 && <p>No open shifts.</p>}
-          </div>
-        </section>
+            </section>
 
-        <section className="employee-list">
-          <h2>Recent Assignments</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Employee</th>
-                <th>Last Assigned</th>
-              </tr>
-            </thead>
-            <tbody>
-              {employeesWithLast.map((e) => (
-                <tr key={e.id} className={isRecent(e.lastAssigned) ? "recent" : undefined}>
-                  <td>
-                    {e.firstName} {e.lastName}
-                  </td>
-                  <td>
-                    {e.lastAssigned
-                      ? new Date(e.lastAssigned).toLocaleDateString()
-                      : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+            <section className="employee-list">
+              <h2>Recent Assignments</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Last Assigned</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employeesWithLast.map((e) => (
+                    <tr
+                      key={e.id}
+                      className={isRecent(e.lastAssigned) ? "recent" : undefined}
+                    >
+                      <td>
+                        {e.firstName} {e.lastName}
+                      </td>
+                      <td>
+                        {e.lastAssigned
+                          ? new Date(e.lastAssigned).toLocaleDateString()
+                          : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          </>
+        )}
       </main>
     </div>
   );

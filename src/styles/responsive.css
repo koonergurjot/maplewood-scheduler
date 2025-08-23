@@ -4,6 +4,38 @@
   gap: 8px;
 }
 
+/* calendar layout */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-cell {
+  border: 1px solid var(--stroke);
+  min-height: 80px;
+  padding: 4px;
+}
+
+.calendar-cell .date-label {
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.vacancy-block {
+  margin-top: 2px;
+  padding: 2px;
+  font-size: 0.75rem;
+  border-radius: 2px;
+}
+
 /* Collapse tables and stack form rows on tablets and phones */
 @media (max-width: 900px) {
   .responsive-table thead {
@@ -29,5 +61,15 @@
 
   .form-row {
     flex-direction: column;
+  }
+
+  .calendar-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .calendar-grid {
+    grid-template-columns: 1fr;
   }
 }
