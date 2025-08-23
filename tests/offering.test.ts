@@ -92,6 +92,29 @@ describe("useOfferingRound", () => {
     round.dispose();
   });
 
+  it("stops ticking after final tier expires", () => {
+    const vac: Vacancy = {
+      id: "1",
+      offeringTier: "LAST_RESORT_RN",
+      offeringRoundStartedAt: new Date().toISOString(),
+      offeringRoundMinutes: 1,
+      offeringAutoProgress: true,
+    };
+    const onTick = vi.fn();
+    const round = createOfferingRound(vac, {
+      updateVacancy: () => {},
+      currentUser: "system",
+      onTick,
+    });
+    expect(round.isRunning()).toBe(true);
+    vi.advanceTimersByTime(60000);
+    expect(round.isRunning()).toBe(false);
+    const calls = onTick.mock.calls.length;
+    vi.advanceTimersByTime(2000);
+    expect(onTick).toHaveBeenCalledTimes(calls);
+    round.dispose();
+  });
+
   it("manual change writes AuditLog with actor, from, to, reason", () => {
     const vac: Vacancy = {
       id: "1",
