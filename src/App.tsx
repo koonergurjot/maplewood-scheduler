@@ -353,6 +353,8 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultShift]);
 
+  const [multiDay, setMultiDay] = useState(false);
+
   // Actions
   const addVacationAndGenerate = (
     v: Partial<
@@ -411,6 +413,7 @@ export default function App() {
       shiftEnd: defaultShift.end,
       shiftPreset: defaultShift.label,
     });
+    setMultiDay(false);
   };
 
   const awardVacancy = (
@@ -655,31 +658,71 @@ export default function App() {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label htmlFor="vac-start">Start Date</label>
-                    <input
-                      id="vac-start"
-                      type="date"
-                      value={newVacay.startDate ?? ""}
-                      onChange={(e) =>
-                        setNewVacay((v) => ({
-                          ...v,
-                          startDate: e.target.value,
-                        }))
-                      }
-                    />
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={multiDay}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setMultiDay(checked);
+                          if (!checked) {
+                            setNewVacay((v) => ({
+                              ...v,
+                              endDate: v.startDate,
+                            }));
+                          }
+                        }}
+                      />{" "}
+                      {multiDay ? ">1 day" : "1 day"}
+                    </label>
                   </div>
-                  <div>
-                    <label htmlFor="vac-end">End Date</label>
-                    <input
-                      id="vac-end"
-                      type="date"
-                      value={newVacay.endDate ?? ""}
-                      onChange={(e) =>
-                        setNewVacay((v) => ({ ...v, endDate: e.target.value }))
-                      }
-                    />
-                  </div>
+                  {!multiDay && (
+                    <div style={{ gridColumn: "1 / -1" }}>
+                      <label htmlFor="vac-date">Date</label>
+                      <input
+                        id="vac-date"
+                        type="date"
+                        value={newVacay.startDate ?? ""}
+                        onChange={(e) =>
+                          setNewVacay((v) => ({
+                            ...v,
+                            startDate: e.target.value,
+                            endDate: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  )}
+                  {multiDay && (
+                    <>
+                      <div>
+                        <label htmlFor="vac-start">Start Date</label>
+                        <input
+                          id="vac-start"
+                          type="date"
+                          value={newVacay.startDate ?? ""}
+                          onChange={(e) =>
+                            setNewVacay((v) => ({
+                              ...v,
+                              startDate: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="vac-end">End Date</label>
+                        <input
+                          id="vac-end"
+                          type="date"
+                          value={newVacay.endDate ?? ""}
+                          onChange={(e) =>
+                            setNewVacay((v) => ({ ...v, endDate: e.target.value }))
+                          }
+                        />
+                      </div>
+                    </>
+                  )}
                   <div>
                     <label>Shift</label>
                     <select
