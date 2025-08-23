@@ -663,9 +663,12 @@ export default function App() {
                     </select>
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
-                    <label>
+                    <label
+                      className={`toggle-box${multiDay ? " checked" : ""}`}
+                    >
                       <input
                         type="checkbox"
+                        className="toggle-input"
                         checked={multiDay}
                         onChange={(e) => {
                           const checked = e.target.checked;
@@ -675,7 +678,8 @@ export default function App() {
                             endDate: checked ? "" : v.startDate,
                           }));
                         }}
-                      />{" "}
+                      />
+                      <span className="toggle-indicator" />
                       {multiDay ? ">1 day" : "1 day"}
                     </label>
                   </div>
