@@ -5,6 +5,8 @@ const uploadDir = new URL("./uploads", import.meta.url);
 const storedPath = new URL("./uploads/agreement", import.meta.url);
 
 let agreementText = "";
+let agreementLines = [];
+let agreementIndex = new Map();
 
 export async function initAgreement() {
   try {
@@ -28,13 +30,42 @@ export async function loadAgreement(filePath) {
   } else {
     agreementText = buffer.toString();
   }
+  agreementLines = agreementText.split(/\r?\n/);
+  agreementIndex = new Map();
+  agreementLines.forEach((line, idx) => {
+    const tokens = line.toLowerCase().split(/\W+/).filter(Boolean);
+    for (const token of tokens) {
+      if (!agreementIndex.has(token)) {
+        agreementIndex.set(token, new Set());
+      }
+      agreementIndex.get(token).add(idx);
+    }
+  });
   fs.mkdirSync(uploadDir, { recursive: true });
   fs.copyFileSync(filePath, storedPath);
 }
 
 export function searchAgreement(query) {
   if (!agreementText) return [];
-  const lines = agreementText.split(/\r?\n/);
   const q = query.toLowerCase();
-  return lines.filter((l) => l.toLowerCase().includes(q)).slice(0, 5);
+  const tokens = q.split(/\W+/).filter(Boolean);
+  const lineSet = new Set();
+  for (const token of tokens) {
+    const lines = agreementIndex.get(token);
+    if (lines) {
+      for (const idx of lines) lineSet.add(idx);
+    }
+  }
+  const results = [];
+  const candidates = Array.from(lineSet).sort((a, b) => a - b);
+  for (const idx of candidates) {
+    const line = agreementLines[idx];
+    if (!line || !line.toLowerCase().includes(q)) continue;
+    const start = Math.max(0, idx - 1);
+    const end = Math.min(agreementLines.length, idx + 2);
+    const context = agreementLines.slice(start, end);
+    results.push({ lineNumber: idx + 1, line, context });
+    if (results.length >= 5) break;
+  }
+  return results;
 }
