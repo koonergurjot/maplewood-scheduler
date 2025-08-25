@@ -304,31 +304,11 @@ export default function App() {
 
   const [filterWing, setFilterWing] = useState<string>("");
   const [filterClass, setFilterClass] = useState<Classification | "">("");
+  const [filterShift, setFilterShift] = useState<string>("");
+  const [filterCountdown, setFilterCountdown] = useState<string>("");
   const [filterStart, setFilterStart] = useState<string>("");
   const [filterEnd, setFilterEnd] = useState<string>("");
   const [filtersOpen, setFiltersOpen] = useState(false);
-
-  const archiveBids = (vacancyIds: string[]) => {
-    setBids((prev) => {
-      const remaining: Bid[] = [];
-      const archivedGroups: Record<string, Bid[]> = {};
-      for (const bid of prev) {
-        if (vacancyIds.includes(bid.vacancyId)) {
-          (archivedGroups[bid.vacancyId] ??= []).push(bid);
-        } else {
-          remaining.push(bid);
-        }
-      }
-      setArchivedBids((prevArchived) => {
-        const merged = { ...prevArchived };
-        for (const [vacId, bids] of Object.entries(archivedGroups)) {
-          merged[vacId] = [...(merged[vacId] ?? []), ...bids];
-        }
-        return merged;
-      });
-      return remaining;
-    });
-  };
 
   // Tick for countdowns
   const [now, setNow] = useState<number>(Date.now());
@@ -554,11 +534,45 @@ export default function App() {
       if (v.status === "Filled" || v.status === "Awarded") return false;
       if (filterWing && v.wing !== filterWing) return false;
       if (filterClass && v.classification !== filterClass) return false;
+      if (filterShift) {
+        const preset = SHIFT_PRESETS.find((p) => p.label === filterShift);
+        if (
+          preset &&
+          (v.shiftStart !== preset.start || v.shiftEnd !== preset.end)
+        )
+          return false;
+      }
+      if (filterCountdown) {
+        const msLeft = deadlineFor(v, settings).getTime() - now;
+        const winMin = pickWindowMinutes(v, settings);
+        const sinceKnownMin = minutesBetween(
+          new Date(),
+          new Date(v.knownAt),
+        );
+        const pct = Math.max(
+          0,
+          Math.min(1, (winMin - sinceKnownMin) / winMin),
+        );
+        let cdClass = "green";
+        if (msLeft <= 0) cdClass = "red";
+        else if (pct < 0.25) cdClass = "yellow";
+        if (filterCountdown !== cdClass) return false;
+      }
       if (filterStart && v.shiftDate < filterStart) return false;
       if (filterEnd && v.shiftDate > filterEnd) return false;
       return true;
     });
-  }, [vacancies, filterWing, filterClass, filterStart, filterEnd]);
+  }, [
+    vacancies,
+    filterWing,
+    filterClass,
+    filterShift,
+    filterCountdown,
+    filterStart,
+    filterEnd,
+    now,
+    settings,
+  ]);
 
   const toggleAllVacancies = (checked: boolean) => {
     setSelectedVacancyIds(
@@ -995,6 +1009,26 @@ export default function App() {
                         </option>
                       ))}
                     </select>
+                    <select
+                      value={filterShift}
+                      onChange={(e) => setFilterShift(e.target.value)}
+                    >
+                      <option value="">All Shifts</option>
+                      {SHIFT_PRESETS.map((s) => (
+                        <option key={s.label} value={s.label}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={filterCountdown}
+                      onChange={(e) => setFilterCountdown(e.target.value)}
+                    >
+                      <option value="">All Countdowns</option>
+                      <option value="green">Green</option>
+                      <option value="yellow">Yellow</option>
+                      <option value="red">Red</option>
+                    </select>
                     <input
                       type="date"
                       value={filterStart}
@@ -1010,6 +1044,8 @@ export default function App() {
                       onClick={() => {
                         setFilterWing("");
                         setFilterClass("");
+                        setFilterShift("");
+                        setFilterCountdown("");
                         setFilterStart("");
                         setFilterEnd("");
                       }}
