@@ -270,6 +270,8 @@ export default function App() {
   const [filterEnd, setFilterEnd] = useState<string>("");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  const [selectedVacancyIds, setSelectedVacancyIds] = useState<Set<string>>(new Set());
+
   // Tick for countdowns
   const [now, setNow] = useState<number>(Date.now());
   useEffect(() => {
@@ -282,6 +284,10 @@ export default function App() {
       // localStorage unavailable; state persistence disabled
     }
   }, [employees, vacations, vacancies, bids, settings]);
+
+  useEffect(() => {
+    clearSelectedVacancies();
+  }, [tab]);
 
   const employeesById = useMemo(
     () => Object.fromEntries(employees.map((e) => [e.id, e])),
@@ -456,6 +462,27 @@ export default function App() {
       return true;
     });
   }, [vacancies, filterWing, filterClass, filterStart, filterEnd]);
+
+  const allSelected =
+    filteredVacancies.length > 0 &&
+    filteredVacancies.every((v) => selectedVacancyIds.has(v.id));
+
+  const toggleVacancySelection = (id: string, checked: boolean) => {
+    setSelectedVacancyIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const toggleAllVacancies = (checked: boolean) => {
+    if (checked)
+      setSelectedVacancyIds(new Set(filteredVacancies.map((v) => v.id)));
+    else clearSelectedVacancies();
+  };
+
+  const clearSelectedVacancies = () => setSelectedVacancyIds(new Set()); // clear selections after bulk actions
 
   return (
     <div
@@ -870,6 +897,13 @@ export default function App() {
                 <table className="vac-table responsive-table">
                   <thead>
                     <tr>
+                      <th>
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={(e) => toggleAllVacancies(e.target.checked)}
+                        />
+                      </th>
                       <th>Shift</th>
                       <th>Wing</th>
                       <th>Class</th>
@@ -916,6 +950,8 @@ export default function App() {
                           countdownLabel={fmtCountdown(msLeft)}
                           countdownClass={cdClass}
                           isDueNext={!!isDueNext}
+                          selected={selectedVacancyIds.has(v.id)}
+                          onSelect={(checked) => toggleVacancySelection(v.id, checked)}
                           onAward={(payload) => awardVacancy(v.id, payload)}
                           onResetKnownAt={() => resetKnownAt(v.id)}
                         />
@@ -923,6 +959,19 @@ export default function App() {
                     })}
                   </tbody>
                 </table>
+                {selectedVacancyIds.size > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <button
+                      className="btn"
+                      onClick={() => {
+                        selectedVacancyIds.forEach((id) => resetKnownAt(id));
+                        clearSelectedVacancies();
+                      }}
+                    >
+                      Reset knownAt for selected
+                    </button>
+                  </div>
+                )}
                 {filteredVacancies.length === 0 && (
                   <div className="subtitle" style={{ marginTop: 8 }}>
                     No open vacancies 🎉
@@ -1645,6 +1694,8 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
 // ---------- Small components ----------
 function VacancyRow({
   v,
+  selected,
+  onSelect,
   recId,
   recName,
   recWhy,
@@ -1656,6 +1707,8 @@ function VacancyRow({
   onResetKnownAt,
 }: {
   v: Vacancy;
+  selected: boolean;
+  onSelect: (checked: boolean) => void;
   recId?: string;
   recName: string;
   recWhy: string[];
@@ -1702,6 +1755,13 @@ function VacancyRow({
 
   return (
     <tr className={isDueNext ? "due-next" : ""}>
+      <td>
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={(e) => onSelect(e.target.checked)}
+        />
+      </td>
       <td>
         <span className="pill">{formatDowShort(v.shiftDate)}</span>{" "}
         {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}
