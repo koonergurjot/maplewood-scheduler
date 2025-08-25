@@ -74,7 +74,7 @@ export type Vacancy = {
   offeringRoundMinutes?: number;
   offeringAutoProgress?: boolean;
   offeringStep: "Casuals" | "OT-Full-Time" | "OT-Casuals";
-  status: "Open" | "Pending Award" | "Awarded";
+  status: "Open" | "Pending Award" | "Awarded" | "Filled";
   awardedTo?: string; // employeeId
   awardedAt?: string; // ISO datetime
   awardReason?: string; // audit note when overriding recommendation or class
@@ -221,7 +221,7 @@ export const applyAwardVacancy = (
     v.id === vacId
       ? {
           ...v,
-          status: "Awarded",
+          status: "Filled",
           awardedTo: empId,
           awardedAt: new Date().toISOString(),
           awardReason: payload.reason ?? "",
@@ -379,9 +379,10 @@ export default function App() {
     setVacations((prev) =>
       prev.map((vac) => {
         const list = byVacation.get(vac.id) || [];
-        const allAwarded =
-          list.length > 0 && list.every((x) => x.status === "Awarded");
-        if (allAwarded && !vac.archived)
+        const allFilled =
+          list.length > 0 &&
+          list.every((x) => x.status === "Filled" || x.status === "Awarded");
+        if (allFilled && !vac.archived)
           return {
             ...vac,
             archived: true,
@@ -514,7 +515,7 @@ export default function App() {
     let min = Infinity;
     let id: string | null = null;
     for (const v of vacancies) {
-      if (v.status === "Awarded") continue;
+      if (v.status === "Filled" || v.status === "Awarded") continue;
       const dl = deadlineFor(v, settings).getTime() - now;
       if (dl > 0 && dl < min) {
         min = dl;
@@ -526,7 +527,7 @@ export default function App() {
 
   const filteredVacancies = useMemo(() => {
     return vacancies.filter((v) => {
-      if (v.status === "Awarded") return false;
+      if (v.status === "Filled" || v.status === "Awarded") return false;
       if (filterWing && v.wing !== filterWing) return false;
       if (filterClass && v.classification !== filterClass) return false;
       if (filterStart && v.shiftDate < filterStart) return false;
@@ -1115,7 +1116,11 @@ export default function App() {
               <div className="card-h">Quick Stats</div>
               <div className="card-c">
                 <div className="pill">
-                  Open: {vacancies.filter((v) => v.status !== "Awarded").length}
+                  Open: {
+                    vacancies.filter(
+                      (v) => v.status !== "Filled" && v.status !== "Awarded",
+                    ).length
+                  }
                 </div>
                 <div className="pill" style={{ marginLeft: 6 }}>
                   Archived vacations:{" "}
@@ -1513,7 +1518,9 @@ export function BidsPage({
     return `${displayVacancyLabel(v)} — covering ${covered}`.trim();
   };
 
-  const openVacancies = vacancies.filter((v) => v.status !== "Awarded");
+  const openVacancies = vacancies.filter(
+    (v) => v.status !== "Filled" && v.status !== "Awarded",
+  );
 
   const removeBid = (index: number) => {
     setBids((prev: Bid[]) => prev.filter((_, idx) => idx !== index));
@@ -1738,7 +1745,10 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
   const vacanciesByDay = useMemo(() => {
     const m = new Map<string, Vacancy[]>();
     vacancies.forEach((v) => {
-      if (v.status !== "Awarded" || v.shiftDate >= todayISO) {
+      if (
+        (v.status !== "Filled" && v.status !== "Awarded") ||
+        v.shiftDate >= todayISO
+      ) {
         const k = v.shiftDate;
         const arr = m.get(k) || [];
         arr.push(v);

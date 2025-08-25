@@ -153,7 +153,7 @@ export default function Analytics() {
 
   const labels = rows.map((r) => r.period);
   const posted = rows.map((r) => r.posted);
-  const awarded = rows.map((r) => r.awarded);
+  const filled = rows.map((r) => r.awarded);
   const cancellationRate = rows.map((r) => r.cancellationRate * 100);
   const overtime = rows.map((r) => r.overtime);
   return (
@@ -177,8 +177,8 @@ export default function Analytics() {
                 backgroundColor: "rgba(54,162,235,0.5)",
               },
               {
-                label: "Awarded",
-                data: awarded,
+                label: "Filled",
+                data: filled,
                 backgroundColor: "rgba(75,192,192,0.5)",
               },
             ],

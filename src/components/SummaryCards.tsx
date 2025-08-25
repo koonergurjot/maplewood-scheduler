@@ -1,11 +1,11 @@
 
 type Props = {
   openCount: number;
-  awardedToday: number;
+  filledToday: number;
   pendingRequests: number;
 };
 
-export default function SummaryCards({ openCount, awardedToday, pendingRequests }: Props) {
+export default function SummaryCards({ openCount, filledToday, pendingRequests }: Props) {
   return (
     <section className="summary-grid" aria-label="Summary">
       <div className="card" role="status">
@@ -14,8 +14,8 @@ export default function SummaryCards({ openCount, awardedToday, pendingRequests 
         <div className="delta">Awaiting award</div>
       </div>
       <div className="card">
-        <div className="label">Awarded Today</div>
-        <div className="value">{awardedToday}</div>
+        <div className="label">Filled Today</div>
+        <div className="value">{filledToday}</div>
         <div className="delta">Congrats &amp; notifications sent</div>
       </div>
       <div className="card">
