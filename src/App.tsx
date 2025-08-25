@@ -1010,17 +1010,18 @@ export default function App() {
           </div>
         )}
 
-        {tab === "settings" && (
-          <SettingsPage settings={settings} setSettings={setSettings} />
-        )}
-        <BulkAwardDialog
-          open={bulkAwardOpen}
-          employees={employees}
-          onClose={() => setBulkAwardOpen(false)}
-          onConfirm={(payload) => {
-            setVacancies((prev) =>
-              applyAwardVacancies(prev, selectedVacancyIds, payload),
-            );
+          {tab === "settings" && (
+            <SettingsPage settings={settings} setSettings={setSettings} />
+          )}
+          <BulkAwardDialog
+            open={bulkAwardOpen}
+            employees={employees}
+            vacancies={vacancies.filter((v) => selectedVacancyIds.includes(v.id))}
+            onClose={() => setBulkAwardOpen(false)}
+            onConfirm={(payload) => {
+              setVacancies((prev) =>
+                applyAwardVacancies(prev, selectedVacancyIds, payload),
+              );
             setSelectedVacancyIds([]);
             setBulkAwardOpen(false);
           }}
