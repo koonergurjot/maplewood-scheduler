@@ -45,27 +45,36 @@ export async function loadAgreement(filePath) {
   fs.copyFileSync(filePath, storedPath);
 }
 
-export function searchAgreement(query) {
+export function searchAgreement(
+  query,
+  { caseSensitive = false, limit = 5, context = 1 } = {},
+) {
   if (!agreementText) return [];
-  const q = query.toLowerCase();
-  const tokens = q.split(/\W+/).filter(Boolean);
-  const lineSet = new Set();
-  for (const token of tokens) {
-    const lines = agreementIndex.get(token);
-    if (lines) {
-      for (const idx of lines) lineSet.add(idx);
+  const q = caseSensitive ? query : query.toLowerCase();
+  let candidates;
+  if (caseSensitive) {
+    candidates = agreementLines.map((_, idx) => idx);
+  } else {
+    const tokens = q.split(/\W+/).filter(Boolean);
+    const lineSet = new Set();
+    for (const token of tokens) {
+      const lines = agreementIndex.get(token);
+      if (lines) {
+        for (const idx of lines) lineSet.add(idx);
+      }
     }
+    candidates = Array.from(lineSet).sort((a, b) => a - b);
   }
   const results = [];
-  const candidates = Array.from(lineSet).sort((a, b) => a - b);
   for (const idx of candidates) {
     const line = agreementLines[idx];
-    if (!line || !line.toLowerCase().includes(q)) continue;
-    const start = Math.max(0, idx - 1);
-    const end = Math.min(agreementLines.length, idx + 2);
-    const context = agreementLines.slice(start, end);
-    results.push({ lineNumber: idx + 1, line, context });
-    if (results.length >= 5) break;
+    const haystack = caseSensitive ? line : line.toLowerCase();
+    if (!line || !haystack.includes(q)) continue;
+    const start = Math.max(0, idx - context);
+    const end = Math.min(agreementLines.length, idx + context + 1);
+    const ctx = agreementLines.slice(start, end);
+    results.push({ lineNumber: idx + 1, line, context: ctx });
+    if (results.length >= limit) break;
   }
   return results;
 }

@@ -67,7 +67,16 @@ app.post(
 app.get("/api/collective-agreement/search", requireAuth, (req, res) => {
   const q = req.query.q;
   if (typeof q !== "string" || !q) return res.json({ matches: [] });
-  res.json({ matches: searchAgreement(q) });
+  const caseSensitive = req.query.caseSensitive === "true";
+  const limit = parseInt(req.query.limit);
+  const context = parseInt(req.query.context);
+  res.json({
+    matches: searchAgreement(q, {
+      caseSensitive,
+      limit: isNaN(limit) ? undefined : limit,
+      context: isNaN(context) ? undefined : context,
+    }),
+  });
 });
 
 const port = process.env.PORT || 3000;
