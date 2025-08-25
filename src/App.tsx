@@ -242,6 +242,27 @@ export const applyAwardVacancies = (
   );
 };
 
+export const archiveBidsForVacancy = (
+  bids: Bid[],
+  archived: Record<string, Bid[]>,
+  vacancyId: string,
+): { bids: Bid[]; archived: Record<string, Bid[]> } => {
+  const remaining: Bid[] = [];
+  const moved: Bid[] = [];
+  for (const b of bids) {
+    if (b.vacancyId === vacancyId) moved.push(b);
+    else remaining.push(b);
+  }
+  if (!moved.length) return { bids: remaining, archived };
+  return {
+    bids: remaining,
+    archived: {
+      ...archived,
+      [vacancyId]: [...(archived[vacancyId] ?? []), ...moved],
+    },
+  };
+};
+
 // ---------- Main App ----------
 export default function App() {
   const persisted = loadState();
@@ -264,6 +285,9 @@ export default function App() {
     })),
   );
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
+  const [archivedBids, setArchivedBids] = useState<Record<string, Bid[]>>(
+    persisted?.archivedBids ?? {},
+  );
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
   const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
   const persistedSettings = persisted?.settings ?? {};
@@ -284,6 +308,20 @@ export default function App() {
   const [filterEnd, setFilterEnd] = useState<string>("");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  const archiveBids = (vacIds: string[]) => {
+    setBids((prevBids) => {
+      let b = prevBids;
+      let a = archivedBids;
+      vacIds.forEach((id) => {
+        const res = archiveBidsForVacancy(b, a, id);
+        b = res.bids;
+        a = res.archived;
+      });
+      setArchivedBids(a);
+      return b;
+    });
+  };
+
   // Tick for countdowns
   const [now, setNow] = useState<number>(Date.now());
   useEffect(() => {
@@ -292,10 +330,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!saveState({ employees, vacations, vacancies, bids, settings })) {
+    if (
+      !saveState({
+        employees,
+        vacations,
+        vacancies,
+        bids,
+        archivedBids,
+        settings,
+      })
+    ) {
       // localStorage unavailable; state persistence disabled
     }
-  }, [employees, vacations, vacancies, bids, settings]);
+  }, [employees, vacations, vacancies, bids, archivedBids, settings]);
 
   const employeesById = useMemo(
     () => Object.fromEntries(employees.map((e) => [e.id, e])),
@@ -442,6 +489,7 @@ export default function App() {
     vacId: string,
     payload: { empId?: string; reason?: string; overrideUsed?: boolean },
   ) => {
+    archiveBids([vacId]);
     setVacancies((prev) => applyAwardVacancy(prev, vacId, payload));
   };
 
@@ -1082,6 +1130,7 @@ export default function App() {
             setVacancies((prev) =>
               applyAwardVacancies(prev, selectedVacancyIds, payload),
             );
+            archiveBids(selectedVacancyIds);
             setSelectedVacancyIds([]);
             setBulkAwardOpen(false);
           }}
