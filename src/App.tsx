@@ -266,9 +266,86 @@ export default function App() {
 
   const [filterWing, setFilterWing] = useState<string>("");
   const [filterClass, setFilterClass] = useState<Classification | "">("");
+  const [filterStatus, setFilterStatus] = useState<"" | "Open" | "Pending Award" | "Awarded">("");
   const [filterStart, setFilterStart] = useState<string>("");
   const [filterEnd, setFilterEnd] = useState<string>("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  type SavedView = {
+    name: string;
+    wing: string;
+    classification: Classification | "";
+    status: "" | "Open" | "Pending Award" | "Awarded";
+    start: string;
+    end: string;
+  };
+
+  const loadSavedViews = (): SavedView[] => {
+    try {
+      const raw = localStorage.getItem("mw.savedViews");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const [savedViews, setSavedViews] = useState<SavedView[]>(() => loadSavedViews());
+  const [viewName, setViewName] = useState("");
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("mw.savedViews", JSON.stringify(savedViews));
+    } catch {
+      // ignore
+    }
+  }, [savedViews]);
+
+  const saveView = () => {
+    if (!viewName) return;
+    if (savedViews.some((v) => v.name === viewName)) return;
+    setSavedViews([
+      ...savedViews,
+      {
+        name: viewName,
+        wing: filterWing,
+        classification: filterClass,
+        status: filterStatus,
+        start: filterStart,
+        end: filterEnd,
+      },
+    ]);
+  };
+
+  const updateView = () => {
+    setSavedViews((prev) =>
+      prev.map((v) =>
+        v.name === viewName
+          ? {
+              ...v,
+              wing: filterWing,
+              classification: filterClass,
+              status: filterStatus,
+              start: filterStart,
+              end: filterEnd,
+            }
+          : v,
+      ),
+    );
+  };
+
+  const deleteView = () => {
+    setSavedViews((prev) => prev.filter((v) => v.name !== viewName));
+    setViewName("");
+  };
+
+  const applyView = (v: SavedView) => {
+    setFilterWing(v.wing);
+    setFilterClass(v.classification);
+    setFilterStatus(v.status);
+    setFilterStart(v.start);
+    setFilterEnd(v.end);
+    setViewName(v.name);
+  };
 
   // Tick for countdowns
   const [now, setNow] = useState<number>(Date.now());
@@ -448,14 +525,15 @@ export default function App() {
 
   const filteredVacancies = useMemo(() => {
     return vacancies.filter((v) => {
-      if (v.status === "Awarded") return false;
+      if (!filterStatus && v.status === "Awarded") return false;
+      if (filterStatus && v.status !== filterStatus) return false;
       if (filterWing && v.wing !== filterWing) return false;
       if (filterClass && v.classification !== filterClass) return false;
       if (filterStart && v.shiftDate < filterStart) return false;
       if (filterEnd && v.shiftDate > filterEnd) return false;
       return true;
     });
-  }, [vacancies, filterWing, filterClass, filterStart, filterEnd]);
+  }, [vacancies, filterStatus, filterWing, filterClass, filterStart, filterEnd]);
 
   return (
     <div
@@ -502,6 +580,7 @@ export default function App() {
         .row{display:grid;gap:10px}
         .cols2{grid-template-columns:1fr} @media(min-width:900px){.cols2{grid-template-columns:1fr 1fr}}
         .pill{background:var(--chipBg); color:var(--chipText); border:1px solid var(--stroke); padding:4px 8px;border-radius:999px;font-size:12px; font-weight:600}
+        .view-chip{display:inline-block;border:1px solid var(--stroke);border-radius:999px;padding:4px 8px;margin-right:6px;margin-bottom:6px;background:var(--chipBg);color:var(--chipText);font-size:12px;font-weight:600;cursor:pointer}
         .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
         .dropdown{position:relative}
         .menu{position:absolute;z-index:30;top:100%;left:0;right:0;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;max-height:240px;overflow:auto}
@@ -844,6 +923,25 @@ export default function App() {
                         </option>
                       ))}
                     </select>
+                    <select
+                      value={filterStatus}
+                      onChange={(e) =>
+                        setFilterStatus(
+                          e.target.value as "" | "Open" | "Pending Award" | "Awarded",
+                        )
+                      }
+                    >
+                      <option value="">Open/Pending</option>
+                      {[
+                        "Open",
+                        "Pending Award",
+                        "Awarded",
+                      ].map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
                     <input
                       type="date"
                       value={filterStart}
@@ -859,12 +957,50 @@ export default function App() {
                       onClick={() => {
                         setFilterWing("");
                         setFilterClass("");
+                        setFilterStatus("");
                         setFilterStart("");
                         setFilterEnd("");
                       }}
                     >
                       Clear
                     </button>
+                    <input
+                      type="text"
+                      placeholder="View name"
+                      value={viewName}
+                      onChange={(e) => setViewName(e.target.value)}
+                    />
+                    {savedViews.some((v) => v.name === viewName) ? (
+                      <>
+                        <button className="btn" onClick={updateView}>
+                          Update
+                        </button>
+                        <button className="btn" onClick={deleteView}>
+                          Delete
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className="btn"
+                        onClick={saveView}
+                        disabled={!viewName}
+                      >
+                        Save
+                      </button>
+                    )}
+                  </div>
+                )}
+                {savedViews.length > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    {savedViews.map((v) => (
+                      <button
+                        key={v.name}
+                        className="view-chip"
+                        onClick={() => applyView(v)}
+                      >
+                        {v.name}
+                      </button>
+                    ))}
                   </div>
                 )}
                 <table className="vac-table responsive-table">
