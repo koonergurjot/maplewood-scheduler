@@ -54,6 +54,9 @@ app.post(
   requireAuth,
   upload.single("file"),
   async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
     try {
       await loadAgreement(req.file.path);
       res.json({ success: true });
