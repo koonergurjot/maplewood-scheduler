@@ -1,76 +1,95 @@
-import { useMemo, useState } from "react";
+
+import React from "react";
 import type { Vacancy } from "../App";
-import type { CalendarVacancy } from "../types/vacancy";
-import {
-  buildCalendar,
-  isoDate,
-  combineDateTime,
-  prevMonth,
-  nextMonth,
-} from "../lib/dates";
+import { buildCalendar, isoDate, prevMonth, nextMonth } from "../lib/dates";
 
-export default function CalendarView({
-  vacancies,
-}: {
-  vacancies: Vacancy[];
-}) {
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
+type Props = { vacancies: Vacancy[] };
 
-  const days = useMemo(() => buildCalendar(year, month), [year, month]);
+type Day = { date: Date; inMonth: boolean };
 
-  const eventsByDate = useMemo(() => {
-    const map: Record<string, CalendarVacancy[]> = {};
-    for (const v of vacancies) {
-      const start = combineDateTime(v.shiftDate, v.shiftStart).toISOString();
-      const end = combineDateTime(v.shiftDate, v.shiftEnd).toISOString();
-      const cv: CalendarVacancy = { ...v, start, end };
-      (map[v.shiftDate] ??= []).push(cv);
+function monthLabel(y: number, m: number) {
+  return new Date(y, m, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+}
+
+export default function CalendarView({ vacancies }: Props) {
+  const today = React.useMemo(() => new Date(), []);
+  const [y, setY] = React.useState(today.getFullYear());
+  const [m, setM] = React.useState(today.getMonth());
+
+  const days: Day[] = React.useMemo(() => buildCalendar(y, m), [y, m]);
+
+  // Group events by ISO yyyy-mm-dd
+  const eventsByDate = React.useMemo(() => {
+    const map: Record<string, any[]> = {};
+    for (const v of vacancies ?? []) {
+      const d = (v as any).date || (v as any).start?.slice(0,10);
+      if (!d) continue;
+      (map[d] ||= []).push(v);
     }
     return map;
   }, [vacancies]);
 
-  const monthLabel = new Date(year, month, 1).toLocaleDateString(undefined, {
-    month: "long",
-    year: "numeric",
-  });
+  const weekdayShort = new Intl.DateTimeFormat(undefined, { weekday: "short" });
 
   return (
-    <div className="calendar-view">
-      <div className="calendar-header">
-        <button onClick={() => prevMonth(setYear, setMonth, year, month)}>
-          &lt;
-        </button>
-        <span>{monthLabel}</span>
-        <button onClick={() => nextMonth(setYear, setMonth, year, month)}>
-          &gt;
-        </button>
+    <section className="calendar" aria-label="Calendar">
+      <div className="calendar-toolbar">
+        <div className="controls">
+          <button className="calendar-btn" onClick={() => prevMonth(setY, setM, y, m)} aria-label="Previous month">◀</button>
+          <button className="calendar-btn" onClick={() => { setY(today.getFullYear()); setM(today.getMonth()); }} aria-label="Jump to today">Today</button>
+          <button className="calendar-btn" onClick={() => nextMonth(setY, setM, y, m)} aria-label="Next month">▶</button>
+        </div>
+        <div className="month-label">{monthLabel(y, m)}</div>
+        <div style={{ width: 90 }} />{/* spacer */}
       </div>
+
+      <div className="calendar-weekdays">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i}>{weekdayShort.format(new Date(2025, 0, i + 5)) /* stable labels Sun..Sat */}</div>
+        ))}
+      </div>
+
       <div className="calendar-grid">
-        {days.map(({ date, inMonth }) => {
-          const iso = isoDate(date);
-          const events = eventsByDate[iso] || [];
+        {days.map((d) => {
+          const iso = isoDate(d.date);
+          const events = (eventsByDate[iso] || []) as any[];
+          const open = events.filter((e) => (e as any).status === "Open").length;
+          const awarded = events.filter((e) => (e as any).status === "Awarded").length;
+          const pending = events.filter((e) => (e as any).status === "Pending").length;
           return (
-            <div
-              key={iso}
-              className={`calendar-cell${inMonth ? "" : " dim"}`}
-            >
-              <div className="date-label">{date.getDate()}</div>
-              {events.map((e) => (
-                <div
-                  key={e.id}
-                  className={`vacancy-block ${
-                    e.status === "Awarded" ? "awarded" : "open"
-                  }`}
-                >
-                  {e.shiftStart}–{e.shiftEnd} {e.wing ?? ""} {e.classification}
+            <div key={iso} className={"day-cell" + (d.inMonth ? "" : " outside")} aria-label={iso}>
+              <div className="day-head">
+                <div>{d.date.getDate()}</div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {open ? <span className="badge badge-open" title="Open">{open}</span> : null}
+                  {pending ? <span className="badge badge-pending" title="Pending">{pending}</span> : null}
+                  {awarded ? <span className="badge badge-awarded" title="Awarded">{awarded}</span> : null}
                 </div>
-              ))}
+              </div>
+              <div className="events">
+                {events.slice(0, 4).map((e, idx) => (
+                  <div key={idx} className="event-pill has-tooltip" data-status={(e as any).status || "Open"}>
+                    <div>
+                      <strong>{(e as any).shiftStart ?? ""}–{(e as any).shiftEnd ?? ""}</strong>
+                      <span className="event-meta"> {(e as any).wing ?? ""} {(e as any).classification ?? ""}</span>
+                    </div>
+                    <span className="event-meta">{(e as any).status ?? "Open"}</span>
+                    <div className="tooltip" role="tooltip">
+                      <div className="title">Shift details</div>
+                      <div className="line">Wing: {(e as any).wing ?? "—"}</div>
+                      <div className="line">Class: {(e as any).classification ?? "—"}</div>
+                      <div className="line">Time: {(e as any).shiftStart ?? "—"}–{(e as any).shiftEnd ?? "—"}</div>
+                      { (e as any).employee ? <div className="line">Assigned: {(e as any).employee}</div> : null }
+                      { (e as any).notes ? <div className="line">Notes: {(e as any).notes}</div> : null }
+                    </div>
+                  </div>
+                ))}
+                {events.length > 4 ? <div className="event-meta">+{events.length - 4} more…</div> : null}
+              </div>
             </div>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }
