@@ -21,5 +21,7 @@ describe("applyAwardVacancies", () => {
     expect(updated[1].status).toBe("Filled");
     expect(updated[0].awardedTo).toBe("e1");
     expect(updated[1].awardedTo).toBe("e1");
+    expect(updated[0].awardReason).toBeUndefined();
+    expect(updated[1].awardReason).toBeUndefined();
   });
 });

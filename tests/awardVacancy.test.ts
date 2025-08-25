@@ -18,6 +18,7 @@ describe("applyAwardVacancy", () => {
     const updated = applyAwardVacancy([vac], "v1", { empId: "EMPTY" });
     expect(updated[0].status).toBe("Filled");
     expect(updated[0].awardedTo).toBeUndefined();
+    expect(updated[0].awardReason).toBeUndefined();
   });
 
   it("awards multiple vacancies with identical details and differing overrides", () => {
