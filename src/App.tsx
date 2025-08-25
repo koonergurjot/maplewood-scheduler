@@ -246,17 +246,17 @@ export const archiveBidsForVacancy = (
   bids: Bid[],
   archived: Record<string, Bid[]>,
   vacancyId: string,
-): { bids: Bid[]; archived: Record<string, Bid[]> } => {
+): { bids: Bid[]; archivedBids: Record<string, Bid[]> } => {
   const remaining: Bid[] = [];
   const moved: Bid[] = [];
   for (const b of bids) {
     if (b.vacancyId === vacancyId) moved.push(b);
     else remaining.push(b);
   }
-  if (!moved.length) return { bids: remaining, archived };
+  if (!moved.length) return { bids: remaining, archivedBids: archived };
   return {
     bids: remaining,
-    archived: {
+    archivedBids: {
       ...archived,
       [vacancyId]: [...(archived[vacancyId] ?? []), ...moved],
     },
