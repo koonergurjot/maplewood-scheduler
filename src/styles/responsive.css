@@ -72,6 +72,10 @@
   .calendar-grid {
     grid-template-columns: 1fr;
   }
+  .calendar-mini-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 /* custom checkbox toggle */

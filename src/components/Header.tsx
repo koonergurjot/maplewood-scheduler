@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import ThemeToggle from "./ThemeToggle";
 
 type HeaderProps = {
@@ -16,8 +16,19 @@ const NavLink: React.FC<{ href: string; label: string; current?: boolean; icon?:
 };
 
 export default function Header({ current }: HeaderProps) {
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (headerRef.current) {
+      document.documentElement.style.setProperty(
+        "--header-height",
+        `${headerRef.current.offsetHeight}px`
+      );
+    }
+  }, []);
+
   return (
-    <header className="topnav" role="banner">
+    <header ref={headerRef} className="topnav" role="banner">
       <div className="brand">
         <img src="/maplewood-logo.svg" alt="" />
         <div>Maplewood Scheduler</div>

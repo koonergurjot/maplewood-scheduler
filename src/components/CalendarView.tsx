@@ -15,6 +15,7 @@ export default function CalendarView({ vacancies }: Props) {
   const today = React.useMemo(() => new Date(), []);
   const [y, setY] = React.useState(today.getFullYear());
   const [m, setM] = React.useState(today.getMonth());
+  const [showHeatmap, setShowHeatmap] = React.useState(false);
 
   const days: Day[] = React.useMemo(() => buildCalendar(y, m), [y, m]);
 
@@ -29,10 +30,30 @@ export default function CalendarView({ vacancies }: Props) {
     return map;
   }, [vacancies]);
 
+  const todayIso = isoDate(today);
+  const todaysEvents = eventsByDate[todayIso] || [];
+  const openToday = todaysEvents.filter((e: any) => (e as any).status === "Open").length;
+  const pendingToday = todaysEvents.filter((e: any) => (e as any).status === "Pending").length;
+  const awardedToday = todaysEvents.filter((e: any) => (e as any).status === "Awarded").length;
+
   const weekdayShort = new Intl.DateTimeFormat(undefined, { weekday: "short" });
 
   return (
-    <section className="calendar" aria-label="Calendar">
+    <>
+      <div className="calendar-mini-toolbar" role="toolbar">
+        <div className="counts" aria-live="polite">
+          <div className="count"><span className="badge badge-open">{openToday}</span> Open today</div>
+          <div className="count"><span className="badge badge-pending">{pendingToday}</span> Pending today</div>
+          <div className="count"><span className="badge badge-awarded">{awardedToday}</span> Awarded today</div>
+        </div>
+        <div className="actions">
+          <button className="calendar-btn" onClick={() => { setY(today.getFullYear()); setM(today.getMonth()); }} aria-label="Jump to today">Jump to Today</button>
+          <button className="calendar-btn" onClick={() => { /* TODO: navigate to new vacancy */ }} aria-label="Create new vacancy">New Vacancy</button>
+          <button className="calendar-btn" onClick={() => setShowHeatmap((h) => !h)} aria-pressed={showHeatmap} aria-label="Toggle heatmap">Toggle Heatmap</button>
+        </div>
+      </div>
+
+      <section className="calendar" aria-label="Calendar">
       <div className="calendar-toolbar">
         <div className="controls">
           <button className="calendar-btn" onClick={() => prevMonth(setY, setM, y, m)} aria-label="Previous month">◀</button>
@@ -49,7 +70,7 @@ export default function CalendarView({ vacancies }: Props) {
         ))}
       </div>
 
-      <div className="calendar-grid">
+      <div className={"calendar-grid" + (showHeatmap ? " heatmap" : "") }>
         {days.map((d) => {
           const iso = isoDate(d.date);
           const events = (eventsByDate[iso] || []) as any[];
@@ -57,7 +78,12 @@ export default function CalendarView({ vacancies }: Props) {
           const awarded = events.filter((e) => (e as any).status === "Awarded").length;
           const pending = events.filter((e) => (e as any).status === "Pending").length;
           return (
-            <div key={iso} className={"day-cell" + (d.inMonth ? "" : " outside")} aria-label={iso}>
+            <div
+              key={iso}
+              className={"day-cell" + (d.inMonth ? "" : " outside")}
+              aria-label={iso}
+              style={{ ["--event-count" as any]: events.length }}
+            >
               <div className="day-head">
                 <div>{d.date.getDate()}</div>
                 <div style={{ display: "flex", gap: 6 }}>
@@ -97,5 +123,6 @@ export default function CalendarView({ vacancies }: Props) {
         })}
       </div>
     </section>
+    </>
   );
 }
