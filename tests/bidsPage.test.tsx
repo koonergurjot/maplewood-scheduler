@@ -40,6 +40,7 @@ describe("BidsPage vacancy dropdown", () => {
     expect(beforeHtml).toContain('value="v1"');
 
     const awarded = applyAwardVacancy([vac], "v1", { empId: "e1" });
+    expect(awarded[0].awardReason).toBeUndefined();
     const afterHtml = renderToStaticMarkup(
       <BidsPage
         bids={[]}
@@ -48,7 +49,7 @@ describe("BidsPage vacancy dropdown", () => {
         vacations={[]}
         employees={[]}
         employeesById={{}}
-      />,
+      />, 
     );
     expect(afterHtml).not.toContain('value="v1"');
     expect(afterHtml).toContain("No open vacancies");

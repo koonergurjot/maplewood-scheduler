@@ -224,7 +224,7 @@ export const applyAwardVacancy = (
           status: "Filled",
           awardedTo: empId,
           awardedAt: new Date().toISOString(),
-          awardReason: payload.reason ?? "",
+          awardReason: payload.reason,
           overrideUsed: !!payload.overrideUsed,
         }
       : v,
