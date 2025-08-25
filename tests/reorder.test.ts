@@ -12,6 +12,11 @@ describe("reorder utility", () => {
     expect(result).toEqual(["c", "a", "b"]);
   });
 
+  it("moves item to end when 'to' equals array length", () => {
+    const result = reorder(["a", "b", "c"], 0, 3);
+    expect(result).toEqual(["b", "c", "a"]);
+  });
+
   it("returns original array when index is out of range", () => {
     const arr = ["a", "b", "c"];
     const result = reorder(arr, 5, 0);
