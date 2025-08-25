@@ -3,7 +3,7 @@ export function reorder<T>(arr: T[], from: number, to: number): T[] {
     from < 0 ||
     from >= arr.length ||
     to < 0 ||
-    to >= arr.length ||
+    to > arr.length ||
     from === to
   ) {
     return arr;
@@ -11,6 +11,7 @@ export function reorder<T>(arr: T[], from: number, to: number): T[] {
 
   const copy = arr.slice();
   const [item] = copy.splice(from, 1);
-  copy.splice(to, 0, item);
+  const insertIndex = to === arr.length ? arr.length : to;
+  copy.splice(insertIndex, 0, item);
   return copy;
 }
