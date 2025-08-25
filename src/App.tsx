@@ -368,6 +368,14 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultShift]);
 
+  const vacDateRef = useRef<HTMLInputElement>(null);
+  const vacStartRef = useRef<HTMLInputElement>(null);
+  const vacEndRef = useRef<HTMLInputElement>(null);
+  const handleDateFieldClick = (ref: React.RefObject<HTMLInputElement>) => {
+    ref.current?.focus();
+    ref.current?.showPicker();
+  };
+
   const [multiDay, setMultiDay] = useState(false);
 
   // Actions
@@ -713,9 +721,13 @@ export default function App() {
                     </label>
                   </div>
                   {!multiDay && (
-                    <div style={{ gridColumn: "1 / -1" }}>
+                    <div
+                      style={{ gridColumn: "1 / -1" }}
+                      onClick={() => handleDateFieldClick(vacDateRef)}
+                    >
                       <label htmlFor="vac-date">Date</label>
                       <input
+                        ref={vacDateRef}
                         id="vac-date"
                         type="date"
                         value={newVacay.startDate ?? ""}
@@ -731,9 +743,10 @@ export default function App() {
                   )}
                   {multiDay && (
                     <>
-                      <div>
+                      <div onClick={() => handleDateFieldClick(vacStartRef)}>
                         <label htmlFor="vac-start">Start Date</label>
                         <input
+                          ref={vacStartRef}
                           id="vac-start"
                           type="date"
                           value={newVacay.startDate ?? ""}
@@ -745,9 +758,10 @@ export default function App() {
                           }
                         />
                       </div>
-                      <div>
+                      <div onClick={() => handleDateFieldClick(vacEndRef)}>
                         <label htmlFor="vac-end">End Date</label>
                         <input
+                          ref={vacEndRef}
                           id="vac-end"
                           type="date"
                           value={newVacay.endDate ?? ""}
