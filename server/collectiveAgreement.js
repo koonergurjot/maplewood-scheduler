@@ -1,8 +1,10 @@
 import fs from "fs";
 import pdfParse from "pdf-parse";
+import { fileURLToPath } from "url";
 
 const uploadDir = new URL("./uploads", import.meta.url);
 const storedPath = new URL("./uploads/agreement", import.meta.url);
+const storedFilePath = fileURLToPath(storedPath);
 
 let agreementText = "";
 let agreementLines = [];
@@ -10,8 +12,8 @@ let agreementIndex = new Map();
 
 export async function initAgreement() {
   try {
-    if (fs.existsSync(storedPath)) {
-      await loadAgreement(storedPath.pathname);
+    if (fs.existsSync(storedFilePath)) {
+      await loadAgreement(storedFilePath);
     }
   } catch (err) {
     console.error("Failed to initialize agreement", err);
@@ -42,7 +44,7 @@ export async function loadAgreement(filePath) {
     }
   });
   fs.mkdirSync(uploadDir, { recursive: true });
-  fs.copyFileSync(filePath, storedPath);
+  fs.copyFileSync(filePath, storedFilePath);
 }
 
 export function searchAgreement(
