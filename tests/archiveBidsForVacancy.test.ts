@@ -36,8 +36,8 @@ describe("archiveBidsForVacancy", () => {
     const res = archiveBidsForVacancy(bids, archived, "v1");
     expect(res.bids).toHaveLength(1);
     expect(res.bids[0].vacancyId).toBe("v2");
-    expect(res.archived.v1).toHaveLength(1);
-    expect(res.archived.v1[0].vacancyId).toBe("v1");
-    expect(res.archived.v2).toHaveLength(1);
+    expect(res.archivedBids.v1).toHaveLength(1);
+    expect(res.archivedBids.v1[0].vacancyId).toBe("v1");
+    expect(res.archivedBids.v2).toHaveLength(1);
   });
 });
