@@ -245,15 +245,22 @@ export const applyAwardVacancies = (
 export const archiveBidsForVacancy = (
   bids: Bid[],
   archived: Record<string, Bid[]>,
-  vacId: string,
+  vacancyId: string,
 ): { bids: Bid[]; archivedBids: Record<string, Bid[]> } => {
-  const moved = bids.filter((b) => b.vacancyId === vacId);
-  const remaining = bids.filter((b) => b.vacancyId !== vacId);
-  const updated = { ...archived };
-  if (moved.length) {
-    updated[vacId] = [...(archived[vacId] || []), ...moved];
+  const remaining: Bid[] = [];
+  const moved: Bid[] = [];
+  for (const b of bids) {
+    if (b.vacancyId === vacancyId) moved.push(b);
+    else remaining.push(b);
   }
-  return { bids: remaining, archivedBids: updated };
+  if (!moved.length) return { bids: remaining, archivedBids: archived };
+  return {
+    bids: remaining,
+    archivedBids: {
+      ...archived,
+      [vacancyId]: [...(archived[vacancyId] ?? []), ...moved],
+    },
+  };
 };
 
 // ---------- Main App ----------
