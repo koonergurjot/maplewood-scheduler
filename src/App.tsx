@@ -242,6 +242,20 @@ export const applyAwardVacancies = (
   );
 };
 
+export const archiveBidsForVacancy = (
+  bids: Bid[],
+  archived: Record<string, Bid[]>,
+  vacId: string,
+): { bids: Bid[]; archivedBids: Record<string, Bid[]> } => {
+  const moved = bids.filter((b) => b.vacancyId === vacId);
+  const remaining = bids.filter((b) => b.vacancyId !== vacId);
+  const updated = { ...archived };
+  if (moved.length) {
+    updated[vacId] = [...(archived[vacId] || []), ...moved];
+  }
+  return { bids: remaining, archivedBids: updated };
+};
+
 // ---------- Main App ----------
 export default function App() {
   const persisted = loadState();
@@ -264,6 +278,9 @@ export default function App() {
     })),
   );
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
+  const [archivedBids, setArchivedBids] = useState<Record<string, Bid[]>>(
+    persisted?.archivedBids ?? {},
+  );
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
   const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
   const persistedSettings = persisted?.settings ?? {};
@@ -292,10 +309,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!saveState({ employees, vacations, vacancies, bids, settings })) {
+    if (
+      !saveState({
+        employees,
+        vacations,
+        vacancies,
+        bids,
+        archivedBids,
+        settings,
+      })
+    ) {
       // localStorage unavailable; state persistence disabled
     }
-  }, [employees, vacations, vacancies, bids, settings]);
+  }, [employees, vacations, vacancies, bids, archivedBids, settings]);
 
   const employeesById = useMemo(
     () => Object.fromEntries(employees.map((e) => [e.id, e])),
@@ -443,6 +469,16 @@ export default function App() {
     payload: { empId?: string; reason?: string; overrideUsed?: boolean },
   ) => {
     setVacancies((prev) => applyAwardVacancy(prev, vacId, payload));
+    setBids((prev) => {
+      const moved = prev.filter((b) => b.vacancyId === vacId);
+      if (moved.length) {
+        setArchivedBids((arch) => ({
+          ...arch,
+          [vacId]: [...(arch[vacId] || []), ...moved],
+        }));
+      }
+      return prev.filter((b) => b.vacancyId !== vacId);
+    });
   };
 
   const resetKnownAt = (vacId: string) => {
@@ -1040,6 +1076,7 @@ export default function App() {
           <BidsPage
             bids={bids}
             setBids={setBids}
+            archivedBids={archivedBids}
             vacancies={vacancies}
             vacations={vacations}
             employees={employees}
@@ -1082,6 +1119,26 @@ export default function App() {
             setVacancies((prev) =>
               applyAwardVacancies(prev, selectedVacancyIds, payload),
             );
+            setBids((prev) => {
+              const moved: Record<string, Bid[]> = {};
+              const remaining = prev.filter((b) => {
+                if (selectedVacancyIds.includes(b.vacancyId)) {
+                  (moved[b.vacancyId] = moved[b.vacancyId] || []).push(b);
+                  return false;
+                }
+                return true;
+              });
+              if (Object.keys(moved).length) {
+                setArchivedBids((arch) => {
+                  const res = { ...arch };
+                  for (const [k, arr] of Object.entries(moved)) {
+                    res[k] = [...(res[k] || []), ...arr];
+                  }
+                  return res;
+                });
+              }
+              return remaining;
+            });
             setSelectedVacancyIds([]);
             setBulkAwardOpen(false);
           }}
@@ -1433,6 +1490,7 @@ function TabOrderEditor({
 export function BidsPage({
   bids,
   setBids,
+  archivedBids,
   vacancies,
   vacations,
   employees,
@@ -1440,6 +1498,7 @@ export function BidsPage({
 }: {
   bids: Bid[];
   setBids: (u: any) => void;
+  archivedBids: Record<string, Bid[]>;
   vacancies: Vacancy[];
   vacations: Vacation[];
   employees: Employee[];
@@ -1457,6 +1516,7 @@ export function BidsPage({
   };
 
   const openVacancies = vacancies.filter((v) => v.status !== "Awarded");
+  const archivedVacancyIds = Object.keys(archivedBids);
 
   const removeBid = (index: number) => {
     setBids((prev: Bid[]) => prev.filter((_, idx) => idx !== index));
@@ -1622,6 +1682,50 @@ export function BidsPage({
               })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-h">Archived Bids</div>
+        <div className="card-c">
+          {archivedVacancyIds.length ? (
+            archivedVacancyIds.map((id) => {
+              const vac = vacancies.find((v) => v.id === id);
+              const label = vac ? displayVacancyLabel(vac) : id;
+              return (
+                <details key={id}>
+                  <summary>{label}</summary>
+                  <table
+                    className="responsive-table"
+                    style={{ marginTop: 8 }}
+                  >
+                    <thead>
+                      <tr>
+                        <th>Employee</th>
+                        <th>Class</th>
+                        <th>Status</th>
+                        <th>Bid at</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {archivedBids[id].map((b, i) => (
+                        <tr key={i}>
+                          <td>{b.bidderName}</td>
+                          <td>{b.bidderClassification}</td>
+                          <td>{b.bidderStatus}</td>
+                          <td>
+                            {new Date(b.bidTimestamp).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </details>
+              );
+            })
+          ) : (
+            <div className="subtitle">No archived bids</div>
+          )}
         </div>
       </div>
     </div>
