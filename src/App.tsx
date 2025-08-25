@@ -471,6 +471,12 @@ export default function App() {
     });
   }, [vacancies, filterWing, filterClass, filterStart, filterEnd]);
 
+  const toggleAllVacancies = (checked: boolean) => {
+    setSelectedVacancyIds(
+      checked ? filteredVacancies.map((v) => v.id) : [],
+    );
+  };
+
   return (
     <div
       className="app"
@@ -893,7 +899,20 @@ export default function App() {
                 <table className="vac-table responsive-table">
                   <thead>
                     <tr>
-                      <th>Select</th>
+                      <th>
+                        <input
+                          type="checkbox"
+                          aria-label="Select all vacancies"
+                          checked={
+                            filteredVacancies.length > 0 &&
+                            selectedVacancyIds.length ===
+                              filteredVacancies.length
+                          }
+                          onChange={(e) =>
+                            toggleAllVacancies(e.target.checked)
+                          }
+                        />
+                      </th>
                       <th>Shift</th>
                       <th>Wing</th>
                       <th>Class</th>
