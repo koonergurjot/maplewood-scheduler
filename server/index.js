@@ -5,11 +5,15 @@ import { requireAuth } from "./auth.js";
 import { createCsv } from "./analyticsFormats/csv.js";
 import { createPdf } from "./analyticsFormats/pdf.js";
 import multer from "multer";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import { initAgreement, loadAgreement, searchAgreement } from "./collectiveAgreement.js";
 
 const app = express();
 app.use(cors());
-const upload = multer({ dest: new URL("./uploads", import.meta.url).pathname });
+const uploadDir = fileURLToPath(new URL("./uploads", import.meta.url));
+fs.mkdirSync(uploadDir, { recursive: true });
+const upload = multer({ dest: uploadDir });
 
 initAgreement();
 
