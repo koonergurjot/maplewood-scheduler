@@ -1061,7 +1061,7 @@ export default function App() {
         <BulkAwardDialog
           open={bulkAwardOpen}
           employees={employees}
-          vacancyIds={selectedVacancyIds}
+          vacancies={vacancies.filter((v) => selectedVacancyIds.includes(v.id))}
           onClose={() => setBulkAwardOpen(false)}
           onConfirm={(payload) => {
             setVacancies((prev) =>

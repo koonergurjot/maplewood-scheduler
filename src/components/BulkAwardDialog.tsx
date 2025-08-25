@@ -1,17 +1,17 @@
 import { useState } from "react";
-import type { Employee } from "../App";
+import type { Employee, Vacancy } from "../App";
 import { OVERRIDE_REASONS } from "../App";
 import { logBulkAward } from "../utils/logger";
 
 type Props = {
   open: boolean;
   employees: Employee[];
-  vacancyIds: string[];
+  vacancies: Vacancy[];
   onConfirm: (payload: { empId?: string; reason?: string; overrideUsed?: boolean; message?: string }) => void;
   onClose: () => void;
 };
 
-export default function BulkAwardDialog({ open, employees, vacancyIds, onConfirm, onClose }: Props) {
+export default function BulkAwardDialog({ open, employees, vacancies, onConfirm, onClose }: Props) {
   const [empId, setEmpId] = useState("");
   const [message, setMessage] = useState("");
   const [reason, setReason] = useState("");
@@ -27,7 +27,7 @@ export default function BulkAwardDialog({ open, employees, vacancyIds, onConfirm
     };
     onConfirm(payload);
     logBulkAward({
-      vacancyIds,
+      vacancyIds: vacancies.map((v) => v.id),
       employeeId: payload.empId,
       reason: payload.reason,
     });
