@@ -1,6 +1,4 @@
 
-import React from "react";
-
 type Props = {
   openCount: number;
   awardedToday: number;

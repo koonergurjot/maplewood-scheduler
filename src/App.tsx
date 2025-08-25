@@ -14,6 +14,7 @@ import {
 } from "./lib/dates";
 import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
+import BulkAwardDialog from "./components/BulkAwardDialog";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -142,7 +143,7 @@ const SHIFT_PRESETS = [
   { label: "Night", start: "22:30", end: "06:30" },
 ] as const;
 
-const OVERRIDE_REASONS = [
+export const OVERRIDE_REASONS = [
   "Earlier bidder within step",
   "Availability mismatch / declined",
   "Single Site Order / conflict",
@@ -230,6 +231,17 @@ export const applyAwardVacancy = (
   );
 };
 
+export const applyAwardVacancies = (
+  vacs: Vacancy[],
+  vacIds: string[],
+  payload: { empId?: string; reason?: string; overrideUsed?: boolean },
+): Vacancy[] => {
+  return vacIds.reduce(
+    (prev, id) => applyAwardVacancy(prev, id, payload),
+    vacs,
+  );
+};
+
 // ---------- Main App ----------
 export default function App() {
   const persisted = loadState();
@@ -252,6 +264,8 @@ export default function App() {
     })),
   );
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
+  const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
+  const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
   const persistedSettings = persisted?.settings ?? {};
   const storedOrder: string[] = persistedSettings.tabOrder || [];
   const mergedOrder = [
@@ -811,13 +825,22 @@ export default function App() {
             <div className="card">
               <div className="card-h">Open Vacancies</div>
               <div className="card-c">
-                <button
-                  className="btn btn-sm"
-                  style={{ marginBottom: 8 }}
-                  onClick={() => setFiltersOpen((o) => !o)}
-                >
-                  {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
-                </button>
+                <div style={{ marginBottom: 8, display: "flex", gap: 8 }}>
+                  <button
+                    className="btn btn-sm"
+                    onClick={() => setFiltersOpen((o) => !o)}
+                  >
+                    {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
+                  </button>
+                  {selectedVacancyIds.length > 0 && (
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => setBulkAwardOpen(true)}
+                    >
+                      Bulk Award
+                    </button>
+                  )}
+                </div>
                 {filtersOpen && (
                   <div className="toolbar" style={{ marginBottom: 8 }}>
                     <select
@@ -870,6 +893,7 @@ export default function App() {
                 <table className="vac-table responsive-table">
                   <thead>
                     <tr>
+                      <th>Select</th>
                       <th>Shift</th>
                       <th>Wing</th>
                       <th>Class</th>
@@ -913,6 +937,14 @@ export default function App() {
                           recName={recName}
                           recWhy={recWhy}
                           employees={employees}
+                          selected={selectedVacancyIds.includes(v.id)}
+                          onToggleSelect={() =>
+                            setSelectedVacancyIds((ids) =>
+                              ids.includes(v.id)
+                                ? ids.filter((id) => id !== v.id)
+                                : [...ids, v.id],
+                            )
+                          }
                           countdownLabel={fmtCountdown(msLeft)}
                           countdownClass={cdClass}
                           isDueNext={!!isDueNext}
@@ -981,6 +1013,18 @@ export default function App() {
         {tab === "settings" && (
           <SettingsPage settings={settings} setSettings={setSettings} />
         )}
+        <BulkAwardDialog
+          open={bulkAwardOpen}
+          employees={employees}
+          onClose={() => setBulkAwardOpen(false)}
+          onConfirm={(payload) => {
+            setVacancies((prev) =>
+              applyAwardVacancies(prev, selectedVacancyIds, payload),
+            );
+            setSelectedVacancyIds([]);
+            setBulkAwardOpen(false);
+          }}
+        />
       </div>
     </div>
   );
@@ -1649,6 +1693,8 @@ function VacancyRow({
   recName,
   recWhy,
   employees,
+  selected,
+  onToggleSelect,
   countdownLabel,
   countdownClass,
   isDueNext,
@@ -1660,6 +1706,8 @@ function VacancyRow({
   recName: string;
   recWhy: string[];
   employees: Employee[];
+  selected: boolean;
+  onToggleSelect: () => void;
   countdownLabel: string;
   countdownClass: string;
   isDueNext: boolean;
@@ -1702,6 +1750,9 @@ function VacancyRow({
 
   return (
     <tr className={isDueNext ? "due-next" : ""}>
+      <td>
+        <input type="checkbox" checked={selected} onChange={onToggleSelect} />
+      </td>
       <td>
         <span className="pill">{formatDowShort(v.shiftDate)}</span>{" "}
         {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}
