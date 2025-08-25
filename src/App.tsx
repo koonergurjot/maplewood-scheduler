@@ -450,26 +450,36 @@ export default function App() {
     setMultiDay(false);
   };
 
+  const archiveBids = (vacancyIds: string[]) => {
+    setBids((prev) => {
+      const remaining: Bid[] = [];
+      const archiveMap: Record<string, Bid[]> = {};
+      for (const b of prev) {
+        if (vacancyIds.includes(b.vacancyId)) {
+          (archiveMap[b.vacancyId] ||= []).push(b);
+        } else {
+          remaining.push(b);
+        }
+      }
+      if (Object.keys(archiveMap).length) {
+        setArchivedBids((prevMap) => {
+          const m = { ...prevMap } as Record<string, Bid[]>;
+          for (const [vid, arr] of Object.entries(archiveMap)) {
+            m[vid] = [...(m[vid] || []), ...arr];
+          }
+          return m;
+        });
+      }
+      return remaining;
+    });
+  };
+
   const awardVacancy = (
     vacId: string,
     payload: { empId?: string; reason?: string; overrideUsed?: boolean },
   ) => {
     setVacancies((prev) => applyAwardVacancy(prev, vacId, payload));
-    setBids((prev) => {
-      const active: Bid[] = [];
-      const archived: Bid[] = [];
-      for (const b of prev) {
-        if (b.vacancyId === vacId) archived.push(b);
-        else active.push(b);
-      }
-      if (archived.length) {
-        setArchivedBids((prevMap) => ({
-          ...prevMap,
-          [vacId]: [...(prevMap[vacId] || []), ...archived],
-        }));
-      }
-      return active;
-    });
+    archiveBids([vacId]);
   };
 
   const resetKnownAt = (vacId: string) => {
@@ -1110,25 +1120,7 @@ export default function App() {
             setVacancies((prev) =>
               applyAwardVacancies(prev, selectedVacancyIds, payload),
             );
-            setBids((prev) => {
-              const remaining: Bid[] = [];
-              const archiveMap: Record<string, Bid[]> = {};
-              for (const b of prev) {
-                if (selectedVacancyIds.includes(b.vacancyId)) {
-                  (archiveMap[b.vacancyId] ||= []).push(b);
-                } else remaining.push(b);
-              }
-              if (Object.keys(archiveMap).length) {
-                setArchivedBids((prevMap) => {
-                  const m = { ...prevMap } as Record<string, Bid[]>;
-                  for (const [vid, arr] of Object.entries(archiveMap)) {
-                    m[vid] = [...(m[vid] || []), ...arr];
-                  }
-                  return m;
-                });
-              }
-              return remaining;
-            });
+            archiveBids(selectedVacancyIds);
             setSelectedVacancyIds([]);
             setBulkAwardOpen(false);
           }}
