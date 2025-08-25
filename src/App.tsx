@@ -308,17 +308,25 @@ export default function App() {
   const [filterEnd, setFilterEnd] = useState<string>("");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const archiveBids = (vacIds: string[]) => {
-    setBids((prevBids) => {
-      let b = prevBids;
-      let a = archivedBids;
-      vacIds.forEach((id) => {
-        const res = archiveBidsForVacancy(b, a, id);
-        b = res.bids;
-        a = res.archived;
+  const archiveBids = (vacancyIds: string[]) => {
+    setBids((prev) => {
+      const remaining: Bid[] = [];
+      const archivedGroups: Record<string, Bid[]> = {};
+      for (const bid of prev) {
+        if (vacancyIds.includes(bid.vacancyId)) {
+          (archivedGroups[bid.vacancyId] ??= []).push(bid);
+        } else {
+          remaining.push(bid);
+        }
+      }
+      setArchivedBids((prevArchived) => {
+        const merged = { ...prevArchived };
+        for (const [vacId, bids] of Object.entries(archivedGroups)) {
+          merged[vacId] = [...(merged[vacId] ?? []), ...bids];
+        }
+        return merged;
       });
-      setArchivedBids(a);
-      return b;
+      return remaining;
     });
   };
 
