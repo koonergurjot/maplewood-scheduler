@@ -1,13 +1,18 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { authFetch } from "./utils/api";
 
 export default function Agreement() {
+  const navigate = useNavigate();
   const [uploaded, setUploaded] = useState(false);
   const [query, setQuery] = useState("");
+  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [limit, setLimit] = useState(5);
+  const [context, setContext] = useState(1);
   interface Match {
     line: string;
     lineNumber: number;
-    context: string;
+    context: string[];
   }
   const [results, setResults] = useState<Match[]>([]);
 
@@ -25,7 +30,9 @@ export default function Agreement() {
 
   const search = async () => {
     const res = await authFetch(
-      `/api/collective-agreement/search?q=${encodeURIComponent(query)}`,
+      `/api/collective-agreement/search?q=${encodeURIComponent(
+        query,
+      )}&caseSensitive=${caseSensitive}&limit=${limit}&context=${context}`,
     );
     const data = await res.json();
     const matches = (data.matches ?? []) as Match[];
@@ -35,7 +42,8 @@ export default function Agreement() {
   return (
     <div className="container">
       <div className="nav">
-        <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button className="btn" onClick={() => navigate("/")}>Back</button>
           <div className="title">Collective Agreement</div>
         </div>
       </div>
@@ -52,6 +60,38 @@ export default function Agreement() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <input
+                  type="checkbox"
+                  checked={caseSensitive}
+                  onChange={(e) => setCaseSensitive(e.target.checked)}
+                />
+                Case sensitive
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                Max results
+                <input
+                  type="number"
+                  min={1}
+                  value={limit}
+                  onChange={(e) => setLimit(parseInt(e.target.value, 10) || 1)}
+                  style={{ width: 60 }}
+                />
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                Context lines
+                <input
+                  type="number"
+                  min={0}
+                  value={context}
+                  onChange={(e) =>
+                    setContext(parseInt(e.target.value, 10) || 0)
+                  }
+                  style={{ width: 60 }}
+                />
+              </label>
+            </div>
             <button className="btn" onClick={search}>
               Search
             </button>
@@ -60,7 +100,7 @@ export default function Agreement() {
                 <li key={i}>
                   <div>{r.line}</div>
                   <small>
-                    Line {r.lineNumber}: {r.context}
+                    Line {r.lineNumber}: {r.context.join(" — ")}
                   </small>
                 </li>
               ))}

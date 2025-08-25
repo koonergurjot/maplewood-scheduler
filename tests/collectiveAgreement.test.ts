@@ -60,5 +60,35 @@ describe("collectiveAgreement", () => {
       fs.unlinkSync(tmpPath);
     }
   });
+
+  it("supports search options", async () => {
+    const { loadAgreement, searchAgreement } = await import(
+      "../server/collectiveAgreement.js",
+    );
+    const text = [
+      "Alpha", // line 1
+      "beta keyword", // line 2
+      "Keyword", // line 3
+      "keyword", // line 4
+    ].join("\n");
+    const tmpPath = path.join(process.cwd(), "temp-agreement-case.txt");
+    fs.writeFileSync(tmpPath, text);
+    try {
+      await loadAgreement(tmpPath);
+      const caseSensitive = searchAgreement("Keyword", { caseSensitive: true });
+      expect(caseSensitive).toHaveLength(1);
+      const caseInsensitive = searchAgreement("Keyword", { caseSensitive: false });
+      expect(caseInsensitive).toHaveLength(3);
+      const limited = searchAgreement("keyword", { limit: 1 });
+      expect(limited).toHaveLength(1);
+      const noContext = searchAgreement("Keyword", {
+        caseSensitive: true,
+        context: 0,
+      });
+      expect(noContext[0].context).toEqual(["Keyword"]);
+    } finally {
+      fs.unlinkSync(tmpPath);
+    }
+  });
 });
 
