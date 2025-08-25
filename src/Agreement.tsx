@@ -4,7 +4,12 @@ import { authFetch } from "./utils/api";
 export default function Agreement() {
   const [uploaded, setUploaded] = useState(false);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<string[]>([]);
+  interface Match {
+    line: string;
+    lineNumber: number;
+    context: string;
+  }
+  const [results, setResults] = useState<Match[]>([]);
 
   const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -23,7 +28,8 @@ export default function Agreement() {
       `/api/collective-agreement/search?q=${encodeURIComponent(query)}`,
     );
     const data = await res.json();
-    setResults(data.matches || []);
+    const matches = (data.matches ?? []) as Match[];
+    setResults(matches);
   };
 
   return (
@@ -51,7 +57,12 @@ export default function Agreement() {
             </button>
             <ul>
               {results.map((r, i) => (
-                <li key={i}>{r}</li>
+                <li key={i}>
+                  <div>{r.line}</div>
+                  <small>
+                    Line {r.lineNumber}: {r.context}
+                  </small>
+                </li>
               ))}
             </ul>
           </div>
