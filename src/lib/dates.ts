@@ -54,5 +54,5 @@ export const nextMonth = (
 };
 
 export const minutesBetween = (a: Date, b: Date) =>
-  Math.round((a.getTime() - b.getTime()) / 60000);
+  Math.round(Math.abs(a.getTime() - b.getTime()) / 60000);
 
