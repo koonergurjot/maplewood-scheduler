@@ -523,7 +523,8 @@ export default function App() {
         table{width:100%;border-collapse:separate; border-spacing:0}
         th,td{padding:10px;border-bottom:1px solid var(--stroke);text-align:left;vertical-align:middle}
         th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-        input,select,textarea{width:100%;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;padding:10px;color:var(--text);-webkit-appearance:none;appearance:none}
+        input:not([type="checkbox"]),select,textarea{width:100%;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;padding:10px;color:var(--text);-webkit-appearance:none;appearance:none}
+        input[type="checkbox"]{accent-color:var(--brand)}
         input::placeholder{color:#cbd5e1}
         input[type=date]{cursor:pointer}
         input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer}
