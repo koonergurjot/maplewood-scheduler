@@ -5,17 +5,25 @@ export default function Agreement() {
   const [uploaded, setUploaded] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const form = new FormData();
     form.append("file", file);
-    await authFetch("/api/collective-agreement/upload", {
+    const res = await authFetch("/api/collective-agreement/upload", {
       method: "POST",
       body: form,
     });
-    setUploaded(true);
+    if (res.ok) {
+      setUploaded(true);
+      setError(null);
+    } else {
+      const msg = await res.text();
+      setError(msg || "Upload failed");
+      setUploaded(false);
+    }
   };
 
   const search = async () => {
@@ -37,6 +45,9 @@ export default function Agreement() {
         {!uploaded && (
           <div>
             <input type="file" onChange={onUpload} />
+            {error && (
+              <div style={{ color: "red" }}>{error}</div>
+            )}
           </div>
         )}
         {uploaded && (
