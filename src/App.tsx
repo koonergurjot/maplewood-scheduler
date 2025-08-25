@@ -1435,6 +1435,7 @@ export function BidsPage({
   const [newBid, setNewBid] = useState<
     Partial<Bid & { bidDate: string; bidTime: string }>
   >({});
+  const bidDateRef = useRef<HTMLInputElement>(null);
 
   const vacWithCoveredName = (v: Vacancy) => {
     const vac = vacations.find((x) => x.id === v.vacationId);
@@ -1499,10 +1500,12 @@ export function BidsPage({
                 }}
               />
             </div>
-            <div>
+            {/* clicking wrapper triggers picker; use same pattern for future date fields */}
+            <div onClick={() => bidDateRef.current?.showPicker()}>
               <label>Bid Date</label>
               <input
                 type="date"
+                ref={bidDateRef}
                 value={newBid.bidDate ?? ""}
                 onChange={(e) =>
                   setNewBid((b) => ({ ...b, bidDate: e.target.value }))
