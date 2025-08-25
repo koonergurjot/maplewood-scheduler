@@ -68,13 +68,24 @@ app.get("/api/collective-agreement/search", requireAuth, (req, res) => {
   const q = req.query.q;
   if (typeof q !== "string" || !q) return res.json({ matches: [] });
   const caseSensitive = req.query.caseSensitive === "true";
-  const limit = parseInt(req.query.limit);
-  const context = parseInt(req.query.context);
+  const rawLimit = req.query.limit;
+  const rawContext = req.query.context;
+
+  const limit = rawLimit === undefined ? undefined : parseInt(rawLimit, 10);
+  if (rawLimit !== undefined && Number.isNaN(limit)) {
+    return res.status(400).json({ error: "limit must be numeric" });
+  }
+
+  const context = rawContext === undefined ? undefined : parseInt(rawContext, 10);
+  if (rawContext !== undefined && Number.isNaN(context)) {
+    return res.status(400).json({ error: "context must be numeric" });
+  }
+
   res.json({
     matches: searchAgreement(q, {
       caseSensitive,
-      limit: isNaN(limit) ? undefined : limit,
-      context: isNaN(context) ? undefined : context,
+      limit,
+      context,
     }),
   });
 });
