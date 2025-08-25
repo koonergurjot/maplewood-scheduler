@@ -265,7 +265,6 @@ export default function App() {
   );
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
-  const [allSelected, setAllSelected] = useState(false);
   const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
   const persistedSettings = persisted?.settings ?? {};
   const storedOrder: string[] = persistedSettings.tabOrder || [];
@@ -480,18 +479,11 @@ export default function App() {
     });
   }, [vacancies, filterWing, filterClass, filterStart, filterEnd]);
 
-  useEffect(() => {
-    if (allSelected) {
-      setSelectedVacancyIds(filteredVacancies.map((v) => v.id));
-    }
-  }, [allSelected, filteredVacancies]);
-
-  useEffect(() => {
-    const allIds = filteredVacancies.map((v) => v.id);
-    setAllSelected(
-      allIds.length > 0 && allIds.every((id) => selectedVacancyIds.includes(id)),
+  const toggleAllVacancies = (checked: boolean) => {
+    setSelectedVacancyIds(
+      checked ? filteredVacancies.map((v) => v.id) : [],
     );
-  }, [filteredVacancies, selectedVacancyIds]);
+  };
 
   return (
     <div
@@ -867,16 +859,12 @@ export default function App() {
                   >
                     <input
                       type="checkbox"
-                      checked={allSelected}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setAllSelected(checked);
-                        setSelectedVacancyIds(
-                          checked
-                            ? filteredVacancies.map((v) => v.id)
-                            : [],
-                        );
-                      }}
+                      checked={
+                        filteredVacancies.length > 0 &&
+                        selectedVacancyIds.length ===
+                          filteredVacancies.length
+                      }
+                      onChange={(e) => toggleAllVacancies(e.target.checked)}
                     />
                     All
                   </label>
