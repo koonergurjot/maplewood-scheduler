@@ -265,6 +265,7 @@ export default function App() {
   );
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
+  const [allSelected, setAllSelected] = useState(false);
   const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
   const persistedSettings = persisted?.settings ?? {};
   const storedOrder: string[] = persistedSettings.tabOrder || [];
@@ -470,6 +471,19 @@ export default function App() {
       return true;
     });
   }, [vacancies, filterWing, filterClass, filterStart, filterEnd]);
+
+  useEffect(() => {
+    if (allSelected) {
+      setSelectedVacancyIds(filteredVacancies.map((v) => v.id));
+    }
+  }, [allSelected, filteredVacancies]);
+
+  useEffect(() => {
+    const allIds = filteredVacancies.map((v) => v.id);
+    setAllSelected(
+      allIds.length > 0 && allIds.every((id) => selectedVacancyIds.includes(id)),
+    );
+  }, [filteredVacancies, selectedVacancyIds]);
 
   return (
     <div
@@ -825,7 +839,32 @@ export default function App() {
             <div className="card">
               <div className="card-h">Open Vacancies</div>
               <div className="card-c">
-                <div style={{ marginBottom: 8, display: "flex", gap: 8 }}>
+                <div
+                  style={{
+                    marginBottom: 8,
+                    display: "flex",
+                    gap: 8,
+                    alignItems: "center",
+                  }}
+                >
+                  <label
+                    style={{ display: "flex", alignItems: "center", gap: 4 }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setAllSelected(checked);
+                        setSelectedVacancyIds(
+                          checked
+                            ? filteredVacancies.map((v) => v.id)
+                            : [],
+                        );
+                      }}
+                    />
+                    All
+                  </label>
                   <button
                     className="btn btn-sm"
                     onClick={() => setFiltersOpen((o) => !o)}
@@ -833,12 +872,17 @@ export default function App() {
                     {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
                   </button>
                   {selectedVacancyIds.length > 0 && (
-                    <button
-                      className="btn btn-sm"
-                      onClick={() => setBulkAwardOpen(true)}
-                    >
-                      Bulk Award
-                    </button>
+                    <>
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => setBulkAwardOpen(true)}
+                      >
+                        Bulk Award
+                      </button>
+                      <span className="badge">
+                        {selectedVacancyIds.length} selected
+                      </span>
+                    </>
                   )}
                 </div>
                 {filtersOpen && (
