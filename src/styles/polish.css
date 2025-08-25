@@ -234,3 +234,15 @@
 }
 .tooltip .line { font-size: .85rem; opacity: .9; }
 .tooltip .title { font-weight: 800; margin-bottom: 4px; }
+
+/* Selected vacancy row */
+.selected {
+  background: rgba(16, 185, 129, 0.15);
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+
+.selected:focus-visible,
+.selected:focus-within {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}

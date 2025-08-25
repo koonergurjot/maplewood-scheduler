@@ -1764,7 +1764,11 @@ function VacancyRow({
   }
 
   return (
-    <tr className={isDueNext ? "due-next" : ""}>
+    <tr
+      className={`${isDueNext ? "due-next " : ""}${selected ? "selected" : ""}`.trim()}
+      aria-selected={selected}
+      tabIndex={0}
+    >
       <td>
         <input type="checkbox" checked={selected} onChange={onToggleSelect} />
       </td>
