@@ -1,6 +1,12 @@
 export function reorder<T>(arr: T[], from: number, to: number): T[] {
-  if (from < 0 || from >= arr.length || to < 0 || to >= arr.length) {
-    return arr.slice();
+  if (
+    from < 0 ||
+    from >= arr.length ||
+    to < 0 ||
+    to >= arr.length ||
+    from === to
+  ) {
+    return arr;
   }
 
   const copy = arr.slice();
