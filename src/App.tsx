@@ -1721,7 +1721,12 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
                 {dayVacancies.length ? (
                   <>
                     {dayVacancies.slice(0, 3).map((v) => (
-                      <span key={v.id} className="cal-chip">
+                      <span
+                        key={v.id}
+                        className="cal-chip"
+                        data-wing={v.wing || undefined}
+                        data-class={v.classification}
+                      >
                         {v.wing ? `${v.wing} ` : ""}
                         {v.classification}
                       </span>
