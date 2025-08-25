@@ -497,8 +497,8 @@ export default function App() {
     vacId: string,
     payload: { empId?: string; reason?: string; overrideUsed?: boolean },
   ) => {
-    archiveBids([vacId]);
     setVacancies((prev) => applyAwardVacancy(prev, vacId, payload));
+    archiveBids([vacId]);
   };
 
   const resetKnownAt = (vacId: string) => {
