@@ -68,7 +68,13 @@ export default function CalendarView({ vacancies }: Props) {
               </div>
               <div className="events">
                 {events.slice(0, 4).map((e, idx) => (
-                  <div key={idx} className="event-pill has-tooltip" data-status={(e as any).status || "Open"}>
+                  <div
+                    key={idx}
+                    className="event-pill has-tooltip"
+                    data-status={(e as any).status || "Open"}
+                    data-wing={(e as any).wing || undefined}
+                    data-class={(e as any).classification || undefined}
+                  >
                     <div>
                       <strong>{(e as any).shiftStart ?? ""}–{(e as any).shiftEnd ?? ""}</strong>
                       <span className="event-meta"> {(e as any).wing ?? ""} {(e as any).classification ?? ""}</span>

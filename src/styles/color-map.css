@@ -1,0 +1,43 @@
+:root {
+  /* Base colors */
+  --teal: #14b8a6;
+  --indigo: #6366f1;
+  --emerald: #10b981;
+  --amber: #f59e0b;
+  --sky: #0ea5e9;
+  --violet: #8b5cf6;
+
+  /* Wing mappings */
+  --wing-Rosewood: var(--teal);
+  --wing-Bluebell: var(--indigo);
+  --wing-Shamrock: var(--emerald);
+
+  /* Class mappings */
+  --class-RCA: var(--amber);
+  --class-LPN: var(--sky);
+  --class-RN: var(--violet);
+}
+
+/* Apply mapped colors to chip/badge elements */
+.cal-chip[data-wing],
+.cal-chip[data-class],
+.badge[data-wing],
+.badge[data-class],
+.pill[data-wing],
+.pill[data-class],
+.event-pill[data-wing],
+.event-pill[data-class] {
+  background-color: var(--chipColor);
+  color: #fff;
+  border-color: var(--chipColor);
+}
+
+/* Wing selectors */
+[data-wing="Rosewood"] { --chipColor: var(--wing-Rosewood); }
+[data-wing="Bluebell"] { --chipColor: var(--wing-Bluebell); }
+[data-wing="Shamrock"] { --chipColor: var(--wing-Shamrock); }
+
+/* Class selectors */
+[data-class="RCA"] { --chipColor: var(--class-RCA); }
+[data-class="LPN"] { --chipColor: var(--class-LPN); }
+[data-class="RN"] { --chipColor: var(--class-RN); }
