@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { recommend, Recommendation } from "./recommend";
 import type { OfferingTier } from "./offering/offeringMachine";
@@ -492,6 +492,30 @@ export default function App() {
       shiftPreset: defaultShift.label,
     });
     setMultiDay(false);
+  };
+
+  const archiveBids = (vacancyIds: string[]) => {
+    setBids((prev) => {
+      const remaining: Bid[] = [];
+      const archiveMap: Record<string, Bid[]> = {};
+      for (const b of prev) {
+        if (vacancyIds.includes(b.vacancyId)) {
+          (archiveMap[b.vacancyId] ||= []).push(b);
+        } else {
+          remaining.push(b);
+        }
+      }
+      if (Object.keys(archiveMap).length) {
+        setArchivedBids((prevMap) => {
+          const m = { ...prevMap } as Record<string, Bid[]>;
+          for (const [vid, arr] of Object.entries(archiveMap)) {
+            m[vid] = [...(m[vid] || []), ...arr];
+          }
+          return m;
+        });
+      }
+      return remaining;
+    });
   };
 
   const awardVacancy = (
@@ -1096,6 +1120,7 @@ export default function App() {
         {tab === "bids" && (
           <BidsPage
             bids={bids}
+            archivedBids={archivedBids}
             setBids={setBids}
             vacancies={vacancies}
             vacations={vacations}
@@ -1494,6 +1519,7 @@ function TabOrderEditor({
 
 export function BidsPage({
   bids,
+  archivedBids,
   setBids,
   vacancies,
   vacations,
@@ -1501,6 +1527,7 @@ export function BidsPage({
   employeesById,
 }: {
   bids: Bid[];
+  archivedBids: Record<string, Bid[]>;
   setBids: (u: any) => void;
   vacancies: Vacancy[];
   vacations: Vacation[];
@@ -1521,6 +1548,13 @@ export function BidsPage({
   const openVacancies = vacancies.filter(
     (v) => v.status !== "Filled" && v.status !== "Awarded",
   );
+
+  const activeBids = bids.filter((b) => {
+    const v = vacancies.find((x) => x.id === b.vacancyId);
+    return !v || v.status !== "Awarded";
+  });
+  const awardedVacancies = vacancies.filter((v) => v.status === "Awarded");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const removeBid = (index: number) => {
     setBids((prev: Bid[]) => prev.filter((_, idx) => idx !== index));
@@ -1649,7 +1683,7 @@ export function BidsPage({
       </div>
 
       <div className="card">
-        <div className="card-h">Bids</div>
+        <div className="card-h">Active Bids</div>
         <div className="card-c">
           <table className="responsive-table">
             <thead>
@@ -1663,7 +1697,7 @@ export function BidsPage({
               </tr>
             </thead>
             <tbody>
-              {bids.map((b, i) => {
+              {activeBids.map((b, i) => {
                 const v = vacancies.find((x) => x.id === b.vacancyId);
                 return (
                   <tr key={i}>
@@ -1684,6 +1718,60 @@ export function BidsPage({
                   </tr>
                 );
               })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-h">Archived Bids</div>
+        <div className="card-c">
+          <table className="responsive-table">
+            <tbody>
+              {awardedVacancies.map((v) => (
+                <Fragment key={v.id}>
+                  <tr
+                    onClick={() =>
+                      setExpanded((prev) => ({ ...prev, [v.id]: !prev[v.id] }))
+                    }
+                    style={{ cursor: "pointer", background: "var(--cardAlt)" }}
+                  >
+                    <td colSpan={5}>{displayVacancyLabel(v)}</td>
+                  </tr>
+                  {expanded[v.id] && (
+                    <Fragment>
+                      <tr>
+                        <th style={{ paddingLeft: 24 }}>Employee</th>
+                        <th>Class</th>
+                        <th>Status</th>
+                        <th>Bid at</th>
+                        <th>Notes</th>
+                      </tr>
+                      {archivedBids[v.id]?.map((b, i) => (
+                        <tr key={i}>
+                          <td style={{ paddingLeft: 24 }}>{b.bidderName}</td>
+                          <td>{b.bidderClassification}</td>
+                          <td>{b.bidderStatus}</td>
+                          <td>{new Date(b.bidTimestamp).toLocaleString()}</td>
+                          <td>{b.notes}</td>
+                        </tr>
+                      ))}
+                      {!(archivedBids[v.id] && archivedBids[v.id].length) && (
+                        <tr>
+                          <td style={{ paddingLeft: 24 }} colSpan={5}>
+                            No bids
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  )}
+                </Fragment>
+              ))}
+              {!awardedVacancies.length && (
+                <tr>
+                  <td>No archived bids</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
