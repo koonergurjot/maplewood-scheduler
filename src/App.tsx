@@ -693,23 +693,23 @@ export default function App() {
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
                     <label
-                      className={`toggle-box${multiDay ? " checked" : ""}`}
+                      className={`toggle-box${!multiDay ? " checked" : ""}`}
                     >
                       <input
                         type="checkbox"
                         className="toggle-input"
-                        checked={multiDay}
+                        checked={!multiDay}
                         onChange={(e) => {
                           const checked = e.target.checked;
-                          setMultiDay(checked);
+                          setMultiDay(!checked);
                           setNewVacay((v) => ({
                             ...v,
-                            endDate: checked ? "" : v.startDate,
+                            endDate: !checked ? "" : v.startDate,
                           }));
                         }}
                       />
                       <span className="toggle-indicator" />
-                      {multiDay ? ">1 day" : "1 day"}
+                      {!multiDay ? "1 day" : ">1 day"}
                     </label>
                   </div>
                   {!multiDay && (
