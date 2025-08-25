@@ -940,7 +940,20 @@ export default function App() {
                 <table className="vac-table responsive-table">
                   <thead>
                     <tr>
-                      <th>Select</th>
+                      <th>
+                        <input
+                          type="checkbox"
+                          aria-label="Select all vacancies"
+                          checked={
+                            filteredVacancies.length > 0 &&
+                            selectedVacancyIds.length ===
+                              filteredVacancies.length
+                          }
+                          onChange={(e) =>
+                            toggleAllVacancies(e.target.checked)
+                          }
+                        />
+                      </th>
                       <th>Shift</th>
                       <th>Wing</th>
                       <th>Class</th>
