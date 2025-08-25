@@ -4,6 +4,8 @@
    No new deps; works with your existing CSS variables.
 */
 
+:root { --header-height: 0px; }
+
 /* Light/Dark manual theme override (optional) */
 :root[data-theme="light"] {
   color-scheme: light;
@@ -126,6 +128,30 @@
   padding: 12px;
   box-shadow: 0 2px 10px rgba(0,0,0,.04);
 }
+.calendar-mini-toolbar {
+  position: sticky;
+  top: calc(var(--header-height) + 8px);
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.calendar-mini-toolbar .counts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.calendar-mini-toolbar .count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+.calendar-mini-toolbar .actions {
+  display: flex;
+  gap: 8px;
+}
 .calendar-toolbar {
   display: flex;
   align-items: center;
@@ -169,6 +195,10 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+.heatmap .day-cell {
+  background-color: rgba(14,165,233, calc(min(var(--event-count), 10) * 0.1));
+  transition: background-color .2s ease;
 }
 .day-cell.outside { opacity: .45; }
 .day-head {
