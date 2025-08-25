@@ -1396,6 +1396,10 @@ export function BidsPage({
 
   const openVacancies = vacancies.filter((v) => v.status !== "Awarded");
 
+  const removeBid = (index: number) => {
+    setBids((prev: Bid[]) => prev.filter((_, idx) => idx !== index));
+  };
+
   const setNow = () => {
     const now = new Date();
     const d = isoDate(now);
@@ -1527,6 +1531,7 @@ export function BidsPage({
                 <th>Class</th>
                 <th>Status</th>
                 <th>Bid at</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -1539,6 +1544,15 @@ export function BidsPage({
                     <td>{b.bidderClassification}</td>
                     <td>{b.bidderStatus}</td>
                     <td>{new Date(b.bidTimestamp).toLocaleString()}</td>
+                    <td>
+                      <button
+                        className="btn"
+                        style={{ background: "var(--bad)", color: "#fff" }}
+                        onClick={() => removeBid(i)}
+                      >
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
