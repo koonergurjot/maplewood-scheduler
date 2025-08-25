@@ -16,7 +16,7 @@ describe("applyAwardVacancy", () => {
       status: "Open",
     };
     const updated = applyAwardVacancy([vac], "v1", { empId: "EMPTY" });
-    expect(updated[0].status).toBe("Awarded");
+    expect(updated[0].status).toBe("Filled");
     expect(updated[0].awardedTo).toBeUndefined();
   });
 
@@ -73,8 +73,8 @@ describe("applyAwardVacancy", () => {
     const v2 = updated.find((v) => v.id === "v2")!;
     const v3 = updated.find((v) => v.id === "v3")!;
 
-    expect(v1.status).toBe("Awarded");
-    expect(v2.status).toBe("Awarded");
+    expect(v1.status).toBe("Filled");
+    expect(v2.status).toBe("Filled");
     expect(v1.awardedTo).toBeUndefined();
     expect(v2.awardedTo).toBeUndefined();
     expect(v1.awardedTo).toBe(v2.awardedTo);

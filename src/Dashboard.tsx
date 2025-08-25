@@ -24,18 +24,18 @@ export default function Dashboard() {
 
   const [view, setView] = useState<"list" | "calendar">("list");
 
-  const awarded = useMemo(
-    () => vacancies.filter((v) => v.status === "Awarded"),
+  const filled = useMemo(
+    () => vacancies.filter((v) => v.status === "Filled" || v.status === "Awarded"),
     [vacancies],
   );
   const open = useMemo(
-    () => vacancies.filter((v) => v.status !== "Awarded"),
+    () => vacancies.filter((v) => v.status !== "Filled" && v.status !== "Awarded"),
     [vacancies],
   );
 
   const employeeLastAssigned = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const v of awarded) {
+    for (const v of filled) {
       if (v.awardedTo && v.awardedAt) {
         const prev = map[v.awardedTo];
         if (!prev || new Date(v.awardedAt) > new Date(prev)) {
@@ -44,7 +44,7 @@ export default function Dashboard() {
       }
     }
     return map;
-  }, [awarded]);
+  }, [filled]);
 
   const employeesWithLast = useMemo(
     () =>
@@ -90,14 +90,14 @@ export default function Dashboard() {
         ) : (
           <>
             <section>
-              <h2>Awarded Shifts</h2>
+              <h2>Filled Shifts</h2>
               <div className="shift-list">
-                {awarded.map((v) => (
+                {filled.map((v) => (
                   <div key={v.id} className="shift-card awarded">
                     {v.shiftDate} {v.shiftStart}–{v.shiftEnd} • {v.wing ?? ""} • {v.classification}
                   </div>
                 ))}
-                {awarded.length === 0 && <p>No awarded shifts.</p>}
+                {filled.length === 0 && <p>No filled shifts.</p>}
               </div>
             </section>
 
