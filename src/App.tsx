@@ -51,7 +51,7 @@ export type Vacation = {
   employeeId: string;
   employeeName: string;
   classification: Classification;
-  wing: string; // wing where this vacation occurs
+  wing: string; // wing where the employee's shift is being covered
   startDate: string; // ISO YYYY-MM-DD
   endDate: string; // ISO YYYY-MM-DD
   notes?: string;
