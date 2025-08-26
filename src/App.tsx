@@ -2285,7 +2285,7 @@ function EmployeeCombo({
 }
 
 // ---------- Helpers ----------
-function dateRangeInclusive(startISO: string, endISO: string) {
+export function dateRangeInclusive(startISO: string, endISO: string) {
   const out: string[] = [];
   const s = new Date(startISO + "T00:00:00");
   const e = new Date(endISO + "T00:00:00");
