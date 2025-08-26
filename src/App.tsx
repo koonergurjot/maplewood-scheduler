@@ -2285,11 +2285,11 @@ function EmployeeCombo({
 }
 
 // ---------- Helpers ----------
-function dateRangeInclusive(startISO: string, endISO: string) {
+export function dateRangeInclusive(startISO: string, endISO: string) {
   const out: string[] = [];
   const s = new Date(startISO + "T00:00:00");
   const e = new Date(endISO + "T00:00:00");
-  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1))
+  for (let d = new Date(s); d <= e; d.setUTCDate(d.getUTCDate() + 1))
     out.push(isoDate(d));
   return out;
 }
