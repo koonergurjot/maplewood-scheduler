@@ -2,15 +2,19 @@
   "name": "maplewood-scheduler",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:ci": "tsc -p tsconfig.ci.json && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
     "react-chartjs-2": "^5.2.0",
     "chart.js": "^4.4.1"
   },
@@ -19,7 +23,6 @@
     "vite": "^5.2.0",
     "@vitejs/plugin-react": "^4.3.1",
     "vitest": "^1.6.0",
-    "@types/node": "^20.11.24",
     "jsdom": "^24.0.0"
   }
 }

@@ -1,0 +1,7 @@
+[build]
+  command = "npm run build:ci"
+  publish = "dist"
+
+[build.environment]
+  # Alternative if you keep strict tsconfig.json:
+  # NPM_FLAGS = "--include=dev"
