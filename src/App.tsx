@@ -969,7 +969,28 @@ export default function App() {
                   >
                     {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
                   </button>
-                  {selectedVacancyIds.length > 0 && (
+                  {selecte
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => {
+                          if (selectedVacancyIds.length === 0) return;
+                          const openIds = selectedVacancyIds.filter(id => {
+                            const v = vacancies.find(x => x.id === id);
+                            return v && v.status !== "Awarded" && v.status !== "Filled";
+                          });
+                          if (openIds.length === 0) {
+                            alert("No unfilled vacancies selected.");
+                            return;
+                          }
+                          if (!confirm(`Delete ${openIds.length} unfilled vacancy(s)? This will also remove their bids.`)) return;
+                          setVacancies(prev => prev.filter(v => !openIds.includes(v.id)));
+                          setBids(prev => prev.filter(b => !openIds.includes(b.vacancyId)));
+                          setSelectedVacancyIds([]);
+                        }}
+                      >
+                        Delete Selected
+                      </button>
+    dVacancyIds.length > 0 && (
                     <>
                       <button
                         className="btn btn-sm"
@@ -1127,6 +1148,17 @@ export default function App() {
                           isDueNext={!!isDueNext}
                           onAward={(payload) => awardVacancy(v.id, payload)}
                           onResetKnownAt={() => resetKnownAt(v.id)}
+                        
+                          onArchive={(id) => {
+                            if (!confirm('Archive this vacancy?')) return;
+                            // For now, archive by removing from open list (simulate archive).
+                            setVacancies(prev => prev.filter(v => v.id !== id));
+                          }}
+                          onDelete={(id) => {
+                            if (!confirm('Delete this vacancy? This also removes its bids.')) return;
+                            setVacancies(prev => prev.filter(v => v.id !== id));
+                            setBids(prev => prev.filter(b => b.vacancyId !== id));
+                          }}
                         />
                       );
                     })}
@@ -1974,6 +2006,8 @@ function VacancyRow({
   isDueNext,
   onAward,
   onResetKnownAt,
+  onArchive,
+  onDelete,
 }: {
   v: Vacancy;
   recId?: string;
@@ -2098,6 +2132,13 @@ function VacancyRow({
         <button className="btn" onClick={onResetKnownAt}>
           Reset knownAt
         </button>
+        {v.status !== "Awarded" && v.status !== "Filled" && (
+          <>
+            <button className="btn btn-sm" title="Archive this vacancy" onClick={() => onArchive(v.id)}>Archive</button>
+            <button className="btn btn-sm" title="Delete this vacancy" onClick={() => onDelete(v.id)}>Delete</button>
+          </>
+        )}
+    
         <button className="btn" onClick={handleAward} disabled={!choice}>
           Award
         </button>
