@@ -412,6 +412,8 @@ export default function App() {
   };
 
   const [multiDay, setMultiDay] = useState(false);
+  const [awardAllNow, setAwardAllNow] = useState(false);
+  const [awardAllEmpId, setAwardAllEmpId] = useState<string>("");
 
   // Actions
   const addVacationAndGenerate = (
@@ -419,7 +421,15 @@ export default function App() {
       Vacation & { shiftStart: string; shiftEnd: string; shiftPreset: string }
     >,
   ) => {
-    if (
+    
+    if (!multiDay) {
+      v.endDate = v.startDate;
+    }
+    if (v.startDate && v.endDate && v.endDate < v.startDate) {
+      alert("End date cannot be before start date.");
+      return;
+    }
+if (
       !v.employeeId ||
       !v.employeeName ||
       !v.classification ||
@@ -463,7 +473,23 @@ export default function App() {
       offeringStep: "Casuals",
       status: "Open",
     }));
-    setVacancies((prev) => [...vxs, ...prev]);
+    setVacancies((prev) => {
+      const base = [...vxs, ...prev];
+      if (awardAllNow && awardAllEmpId) {
+        const ids = vxs.map((x) => x.id);
+        const payload = { empId: awardAllEmpId, reason: "All days awarded on creation", overrideUsed: false };
+        return applyAwardVacancies(base, ids, payload);
+      }
+      return base;
+    });
+    if (awardAllNow && awardAllEmpId) {
+      // archive bids for those new vacancies (likely empty right now, but safe)
+      const ids = vxs.map((x) => x.id);
+      archiveBids(ids);
+      try {
+        logBulkAward({ vacancyIds: ids, employeeId: awardAllEmpId, reason: "All days awarded on creation" });
+      } catch {}
+    }
 
     setNewVacay({
       wing: WINGS[0],
@@ -472,6 +498,8 @@ export default function App() {
       shiftPreset: defaultShift.label,
     });
     setMultiDay(false);
+    setAwardAllNow(false);
+    setAwardAllEmpId("");
   };
 
   const archiveBids = (vacancyIds: string[]) => {
@@ -856,6 +884,29 @@ export default function App() {
                             setNewVacay((v) => ({ ...v, endDate: e.target.value }))
                           }
                         />
+                    {/* If multi-day and a 2+ day span, allow awarding all days to one person immediately */}
+                    {multiDay && newVacay.startDate && newVacay.endDate && dateRangeInclusive(newVacay.startDate, newVacay.endDate).length >= 2 && (
+                      <div className="row" style={{ marginTop: 10 }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <input
+                            type="checkbox"
+                            checked={awardAllNow}
+                            onChange={(e) => setAwardAllNow(e.target.checked)}
+                          />
+                          Award all days to one employee now
+                        </label>
+                        {awardAllNow && (
+                          <div style={{ marginTop: 8 }}>
+                            <label>Choose Employee to Award</label>
+                            <EmployeeCombo
+                              employees={employees}
+                              onSelect={(id) => setAwardAllEmpId(id)}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                       </div>
                     </>
                   )}
