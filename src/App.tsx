@@ -54,7 +54,7 @@ export type Vacation = {
   wing: string; // wing where the employee's shift is being covered
   startDate: string; // ISO YYYY-MM-DD
   endDate: string; // ISO YYYY-MM-DD
-  notes?: string;
+  notes?: string;ring;
   archived?: boolean;
   archivedAt?: string; // ISO
 };
@@ -90,7 +90,7 @@ export type Bid = {
   bidderStatus: Status;
   bidderClassification: Classification;
   bidTimestamp: string; // ISO
-  notes?: string;
+  notes?: string;ring;
 };
 
 export type Settings = {
@@ -996,7 +996,7 @@ export default function App() {
                       >
                         Delete Selected
                       </button>
-    dVacancyIds.length > 0 && (
+    {selectedVacancyIds.length > 0 && (
                     <>
                       <button
                         className="btn btn-sm"
