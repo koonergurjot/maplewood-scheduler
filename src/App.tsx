@@ -62,6 +62,8 @@ export type Vacation = {
 export type Vacancy = {
   id: string;
   vacationId?: string;
+  bundleId?: string;
+  bundleLabel?: string; // optional human label for the bundle
   reason: string; // e.g. Vacation Backfill
   classification: Classification;
   wing?: string;
@@ -289,7 +291,11 @@ export default function App() {
     persisted?.archivedBids ?? {},
   );
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
-  const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
+  const selectedFirst = vacancies.find(v => v.id === selectedVacancyIds[0]);
+  const selectedBundleId = selectedFirst?.bundleId;
+
+  const [bulkAwardOpen, setBulkAwardOpen] = useState(false)
+  const [manageBundle, setManageBundle] = useState<{ id: string; label: string } | null>(null);
   const persistedSettings = persisted?.settings ?? {};
   const storedOrder: string[] = persistedSettings.tabOrder || [];
   const mergedOrder = [
@@ -1159,6 +1165,10 @@ export default function App() {
                             setVacancies(prev => prev.filter(v => v.id !== id));
                             setBids(prev => prev.filter(b => b.vacancyId !== id));
                           }}
+                        
+                          onUnbundle={(id) => {
+                            setVacancies(prev => prev.map(v => v.id === id ? { ...v, bundleId: undefined, bundleLabel: undefined } : v));
+                          }}
                         />
                       );
                     })}
@@ -1610,7 +1620,9 @@ export function BidsPage({
   const vacWithCoveredName = (v: Vacancy) => {
     const vac = vacations.find((x) => x.id === v.vacationId);
     const covered = vac ? vac.employeeName : "";
-    return `${displayVacancyLabel(v)} — covering ${covered}`.trim();
+    const bundleCount = v.bundleId ? vacancies.filter(x => x.bundleId === v.bundleId).length : 0;
+    const bundleTag = v.bundleId ? ` [Bundle of ${bundleCount}${v.bundleLabel ? ` • ${v.bundleLabel}` : ""}]` : "";
+    return `${displayVacancyLabel(v)}${bundleTag} — covering ${covered}`.trim();
   };
 
   const openVacancies = vacancies.filter(
@@ -2008,6 +2020,7 @@ function VacancyRow({
   onResetKnownAt,
   onArchive,
   onDelete,
+  onUnbundle,
 }: {
   v: Vacancy;
   recId?: string;
@@ -2132,6 +2145,12 @@ function VacancyRow({
         <button className="btn" onClick={onResetKnownAt}>
           Reset knownAt
         </button>
+        {v.bundleId && v.status !== "Awarded" && v.status !== "Filled" && (
+          <button className="btn btn-sm" onClick={() => onUnbundle(v.id)} title="Remove this day from its bundle">
+            Remove from bundle
+          </button>
+        )}
+    
         {v.status !== "Awarded" && v.status !== "Filled" && (
           <>
             <button className="btn btn-sm" title="Archive this vacancy" onClick={() => onArchive(v.id)}>Archive</button>
@@ -2321,6 +2340,49 @@ function EmployeeCombo({
           )}
         </div>
       )}
+    
+      {manageBundle && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 60 }}>
+          <div className="card" style={{ width: "min(700px, 92vw)" }}>
+            <div className="card-h">Bundle Settings</div>
+            <div className="card-c">
+              <div className="row">
+                <label>Bundle Label</label>
+                <input
+                  value={manageBundle.label}
+                  onChange={(e) => setManageBundle({ ...manageBundle, label: e.target.value })}
+                  placeholder="e.g., 4-day VAC Aug 12–15"
+                />
+              </div>
+              <div className="row">
+                <small>This label shows beside each day in the bundle for easy recognition.</small>
+              </div>
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 10 }}>
+                <button className="btn" onClick={() => setManageBundle(null)}>Close</button>
+                <button className="btn" onClick={() => {
+                  // Apply label to all days in the bundle
+                  setVacancies(prev => prev.map(v => v.bundleId === manageBundle.id ? { ...v, bundleLabel: manageBundle.label || undefined } : v));
+                  setManageBundle(null);
+                }}>Save</button>
+                <button className="btn" onClick={() => {
+                  if (!confirm('Split this bundle into individual days?')) return;
+                  setVacancies(prev => prev.map(v => v.bundleId === manageBundle.id ? { ...v, bundleId: undefined, bundleLabel: undefined } : v));
+                  setManageBundle(null);
+                }}>Split Bundle</button>
+                <button className="btn btn-danger" onClick={() => {
+                  if (!confirm('Delete the entire bundle (removes days and bids)?')) return;
+                  setBids(prev => prev.filter(b => {
+                    const keep = !vacancies.some(v => v.bundleId === manageBundle.id && v.id === b.vacancyId);
+                    return keep;
+                  }));
+                  setVacancies(prev => prev.filter(v => v.bundleId !== manageBundle.id));
+                  setManageBundle(null);
+                }}>Delete Bundle</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2333,4 +2395,61 @@ export function dateRangeInclusive(startISO: string, endISO: string) {
   for (let d = new Date(s); d <= e; d.setUTCDate(d.getUTCDate() + 1))
     out.push(isoDate(d));
   return out;
-}
+
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => {
+                          // Create a new bundle for all selected unfilled vacancies
+                          const openIds = selectedVacancyIds.filter(id => {
+                            const v = vacancies.find(x => x.id === id);
+                            return v && v.status !== "Awarded" && v.status !== "Filled";
+                          });
+                          if (openIds.length < 2) { alert("Select at least 2 unfilled vacancies."); return; }
+                          const bundleId = (crypto?.randomUUID ? crypto.randomUUID() : `BUNDLE-${Math.random().toString(36).slice(2,7).toUpperCase()}`);
+                          setVacancies(prev => prev.map(v => openIds.includes(v.id) ? { ...v, bundleId } : v));
+                          setManageBundle({ id: bundleId, label: "" });
+                        }}
+                      >
+                        Bundle Selected (new)
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => {
+                          // Add all other selected to the first selected vacancy's bundle
+                          const anchor = vacancies.find(v => v.id === selectedVacancyIds[0]);
+                          if (!anchor?.bundleId) { alert("First selected vacancy does not belong to a bundle. Create a new one instead."); return; }
+                          const target = anchor.bundleId;
+                          const openIds = selectedVacancyIds.filter(id => {
+                            const v = vacancies.find(x => x.id === id);
+                            return v && v.status !== "Awarded" && v.status !== "Filled" && v.id !== anchor.id;
+                          });
+                          if (openIds.length === 0) { alert("No additional unfilled vacancies selected to add."); return; }
+                          setVacancies(prev => prev.map(v => openIds.includes(v.id) ? { ...v, bundleId: target, bundleLabel: anchor.bundleLabel } : v));
+                        }}
+                      >
+                        Add Selected to First's Bundle
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => {
+                          // Remove selected from any bundle
+                          const ids = selectedVacancyIds.slice();
+                          setVacancies(prev => prev.map(v => ids.includes(v.id) ? { ...v, bundleId: undefined, bundleLabel: undefined } : v));
+                        }}
+                      >
+                        Unbundle Selected
+                      </button>
+                      {selectedBundleId && (
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => {
+                            const anyInBundle = vacancies.some(v => selectedVacancyIds.includes(v.id) && v.bundleId === selectedBundleId);
+                            if (!anyInBundle) { alert("Select at least one vacancy from the bundle to edit."); return; }
+                            const existing = vacancies.find(v => v.bundleId === selectedBundleId && v.bundleLabel);
+                            setManageBundle({ id: selectedBundleId, label: existing?.bundleLabel || "" });
+                          }}
+                        >
+                          Edit Bundle
+                        </button>
+                      )}
+    }
