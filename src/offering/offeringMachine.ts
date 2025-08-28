@@ -4,6 +4,12 @@ export type OfferingTier =
   | "OT_CASUALS"
   | "LAST_RESORT_RN";
 
+export const TIER_LABELS: Record<OfferingTier, string> = {
+  CASUALS: "Casuals",
+  OT_FULL_TIME: "OT-Full-Time",
+  OT_CASUALS: "OT-Casuals",
+  LAST_RESORT_RN: "Last Resort RN",
+};
 export const TIERS: OfferingTier[] = [
   "CASUALS",
   "OT_FULL_TIME",
