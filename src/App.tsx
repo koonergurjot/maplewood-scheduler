@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { recommend, Recommendation } from "./recommend";
 import type { OfferingTier } from "./offering/offeringMachine";
@@ -54,7 +54,7 @@ export type Vacation = {
   wing: string; // wing where the employee's shift is being covered
   startDate: string; // ISO YYYY-MM-DD
   endDate: string; // ISO YYYY-MM-DD
-  notes?: string;ring;
+  notes?: string;
   archived?: boolean;
   archivedAt?: string; // ISO
 };
@@ -62,8 +62,6 @@ export type Vacation = {
 export type Vacancy = {
   id: string;
   vacationId?: string;
-  bundleId?: string;
-  bundleLabel?: string; // optional human label for the bundle
   reason: string; // e.g. Vacation Backfill
   classification: Classification;
   wing?: string;
@@ -90,7 +88,7 @@ export type Bid = {
   bidderStatus: Status;
   bidderClassification: Classification;
   bidTimestamp: string; // ISO
-  notes?: string;ring;
+  notes?: string;
 };
 
 export type Settings = {
@@ -291,11 +289,7 @@ export default function App() {
     persisted?.archivedBids ?? {},
   );
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
-  const selectedFirst = vacancies.find(v => v.id === selectedVacancyIds[0]);
-  const selectedBundleId = selectedFirst?.bundleId;
-
-  const [bulkAwardOpen, setBulkAwardOpen] = useState(false)
-  const [manageBundle, setManageBundle] = useState<{ id: string; label: string } | null>(null);
+  const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
   const persistedSettings = persisted?.settings ?? {};
   const storedOrder: string[] = persistedSettings.tabOrder || [];
   const mergedOrder = [
@@ -983,34 +977,83 @@ export default function App() {
                       >
                         Bulk Award
                       </button>
-                      <button
-                        className="btn btn-sm"
-                        onClick={() => {
-                          if (selectedVacancyIds.length === 0) return;
-                          const openIds = selectedVacancyIds.filter(id => {
-                            const v = vacancies.find(x => x.id === id);
-                            return v && v.status !== "Awarded" && v.status !== "Filled";
-                          });
-                          if (openIds.length === 0) {
-                            alert("No unfilled vacancies selected.");
-                            return;
-                          }
-                          if (!confirm(`Delete ${openIds.length} unfilled vacancy(s)? This will also remove their bids.`)) return;
-                          setVacancies(prev => prev.filter(v => !openIds.includes(v.id)));
-                          setBids(prev => prev.filter(b => !openIds.includes(b.vacancyId)));
-                          setSelectedVacancyIds([]);
-                        }}
-                      >
-                        Delete Selected
-                      </button>
                       <span className="badge">
                         {selectedVacancyIds.length} selected
                       </span>
                     </>
-// removed stray close of non-existent block
-
+                  )}
+                </div>
+                {filtersOpen && (
+                  <div className="toolbar" style={{ marginBottom: 8 }}>
+                    <select
+                      value={filterWing}
+                      onChange={(e) => setFilterWing(e.target.value)}
+                    >
+                      <option value="">All Wings</option>
+                      {WINGS.map((w) => (
+                        <option key={w} value={w}>
+                          {w}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={filterClass}
+                      onChange={(e) =>
+                        setFilterClass(e.target.value as Classification | "")
+                      }
+                    >
+                      <option value="">All Classes</option>
+                      {["RCA", "LPN", "RN"].map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={filterShift}
+                      onChange={(e) => setFilterShift(e.target.value)}
+                    >
+                      <option value="">All Shifts</option>
+                      {SHIFT_PRESETS.map((s) => (
+                        <option key={s.label} value={s.label}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={filterCountdown}
+                      onChange={(e) => setFilterCountdown(e.target.value)}
+                    >
+                      <option value="">All Countdowns</option>
+                      <option value="green">Green</option>
+                      <option value="yellow">Yellow</option>
+                      <option value="red">Red</option>
+                    </select>
+                    <input
+                      type="date"
+                      value={filterStart}
+                      onChange={(e) => setFilterStart(e.target.value)}
+                    />
+                    <input
+                      type="date"
+                      value={filterEnd}
+                      onChange={(e) => setFilterEnd(e.target.value)}
+                    />
+                    <button
+                      className="btn"
+                      onClick={() => {
+                        setFilterWing("");
+                        setFilterClass("");
+                        setFilterShift("");
+                        setFilterCountdown("");
+                        setFilterStart("");
+                        setFilterEnd("");
+                      }}
+                    >
+                      Clear
+                    </button>
                   </div>
-
+                )}
                 <table className="vac-table responsive-table">
                   <thead>
                     <tr>
@@ -1051,12 +1094,18 @@ export default function App() {
                       const dl = deadlineFor(v, settings);
                       const msLeft = dl.getTime() - now;
                       const winMin = pickWindowMinutes(v, settings);
-                      const sinceKnownMin = minutesBetween(new Date(), new Date(v.knownAt));
-                      const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin));
+                      const sinceKnownMin = minutesBetween(
+                        new Date(),
+                        new Date(v.knownAt),
+                      );
+                      const pct = Math.max(
+                        0,
+                        Math.min(1, (winMin - sinceKnownMin) / winMin),
+                      ); // 1→0 over window
                       let cdClass = "cd-green";
                       if (msLeft <= 0) cdClass = "cd-red";
                       else if (pct < 0.25) cdClass = "cd-yellow";
-                      const isSel = selectedVacancyIds.includes(v.id);
+                      const isDueNext = dueNextId === v.id;
                       return (
                         <VacancyRow
                           key={v.id}
@@ -1065,12 +1114,227 @@ export default function App() {
                           recName={recName}
                           recWhy={recWhy}
                           employees={employees}
-                          selected={isSel}
+                          selected={selectedVacancyIds.includes(v.id)}
+                          onToggleSelect={() =>
+                            setSelectedVacancyIds((ids) =>
+                              ids.includes(v.id)
+                                ? ids.filter((id) => id !== v.id)
+                                : [...ids, v.id],
+                            )
+                          }
+                          countdownLabel={fmtCountdown(msLeft)}
+                          countdownClass={cdClass}
+                          isDueNext={!!isDueNext}
+                          onAward={(payload) => awardVacancy(v.id, payload)}
+                          onResetKnownAt={() => resetKnownAt(v.id)}
                         />
                       );
                     })}
                   </tbody>
                 </table>
+                {filteredVacancies.length === 0 && (
+                  <div className="subtitle" style={{ marginTop: 8 }}>
+                    No open vacancies 🎉
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === "calendar" && (
+          <div className="grid">
+            <div className="card">
+              <div className="card-h">Monthly Schedule (open shifts)</div>
+              <div className="card-c">
+                <MonthlySchedule vacancies={vacancies} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === "bids" && (
+          <BidsPage
+            bids={bids}
+            archivedBids={archivedBids}
+            setBids={setBids}
+            vacancies={vacancies}
+            vacations={vacations}
+            employees={employees}
+            employeesById={employeesById}
+          />
+        )}
+
+        {tab === "employees" && (
+          <EmployeesPage employees={employees} setEmployees={setEmployees} />
+        )}
+
+        {tab === "archive" && <ArchivePage vacations={vacations} />}
+
+        {tab === "alerts" && (
+          <div className="grid">
+            <div className="card">
+              <div className="card-h">Quick Stats</div>
+              <div className="card-c">
+                <div className="pill">
+                  Open: {
+                    vacancies.filter(
+                      (v) => v.status !== "Filled" && v.status !== "Awarded",
+                    ).length
+                  }
+                </div>
+                <div className="pill" style={{ marginLeft: 6 }}>
+                  Archived vacations:{" "}
+                  {vacations.filter((v) => v.archived).length}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === "settings" && (
+          <SettingsPage settings={settings} setSettings={setSettings} />
+        )}
+        <BulkAwardDialog
+          open={bulkAwardOpen}
+          employees={employees}
+          vacancies={vacancies.filter((v) => selectedVacancyIds.includes(v.id))}
+          onClose={() => setBulkAwardOpen(false)}
+          onConfirm={(payload) => {
+            setVacancies((prev) =>
+              applyAwardVacancies(prev, selectedVacancyIds, payload),
+            );
+            archiveBids(selectedVacancyIds);
+            setSelectedVacancyIds([]);
+            setBulkAwardOpen(false);
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ---------- Pages ----------
+function EmployeesPage({
+  employees,
+  setEmployees,
+}: {
+  employees: Employee[];
+  setEmployees: (u: any) => void;
+}) {
+  return (
+    <div className="grid">
+      <div className="card">
+        <div className="card-h">Import Staff (CSV)</div>
+        <div className="card-c">
+          <input
+            type="file"
+            accept=".csv"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              const text = await f.text();
+              const { parseCSV } = await import("./utils/csv");
+              let rows: Record<string, string>[] = [];
+              try {
+                rows = parseCSV(text);
+              } catch (err) {
+                console.error(err);
+                alert("Failed to parse CSV");
+                return;
+              }
+              const out: Employee[] = rows.map((r: any, i: number) => ({
+                id: String(r.id ?? r.EmployeeID ?? `emp_${i}`),
+                firstName: String(r.firstName ?? r.name ?? ""),
+                lastName: String(r.lastName ?? ""),
+                classification: (["RCA", "LPN", "RN"].includes(
+                  String(r.classification),
+                )
+                  ? r.classification
+                  : "RCA") as Classification,
+                status: (["FT", "PT", "Casual"].includes(String(r.status))
+                  ? r.status
+                  : "FT") as Status,
+                homeWing: String(r.homeWing ?? ""),
+                startDate: String(r.startDate ?? ""),
+                seniorityHours: Number(r.seniorityHours ?? 0),
+                seniorityRank: Number(r.seniorityRank ?? i + 1),
+                active: String(r.active ?? "Yes")
+                  .toLowerCase()
+                  .startsWith("y"),
+              }));
+              setEmployees(out.filter((e) => !!e.id));
+            }}
+          />
+          <div className="subtitle">
+            Columns: id, firstName, lastName, classification (RCA/LPN/RN),
+            status (FT/PT/Casual), homeWing, startDate, seniorityHours,
+            seniorityRank, active (Yes/No)
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-h">Add Employee</div>
+        <div className="card-c">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const name = (form.elements.namedItem("name") as HTMLInputElement)
+                .value;
+              const start = (
+                form.elements.namedItem("start") as HTMLInputElement
+              ).value;
+              const hours = Number(
+                (form.elements.namedItem("hours") as HTMLInputElement).value,
+              );
+              if (!name) return;
+              const [first, ...rest] = name.trim().split(" ");
+              const newEmp: Employee = {
+                id: `emp_${Date.now()}`,
+                firstName: first ?? "",
+                lastName: rest.join(" "),
+                classification: "RCA",
+                status: "FT",
+                startDate: start,
+                seniorityHours: hours || 0,
+                seniorityRank: employees.length + 1,
+                active: true,
+              };
+              const sorted = [...employees, newEmp]
+                .sort((a, b) => {
+                  const hDiff =
+                    (b.seniorityHours ?? 0) - (a.seniorityHours ?? 0);
+                  if (hDiff !== 0) return hDiff;
+                  return (a.seniorityRank ?? 99999) - (b.seniorityRank ?? 99999);
+                })
+                .map((e, i) => ({ ...e, seniorityRank: i + 1 }));
+              setEmployees(sorted);
+              form.reset();
+            }}
+          >
+            <div className="row cols3">
+              <div>
+                <label>Name</label>
+                <input name="name" type="text" />
+              </div>
+              <div>
+                <label>Start Date</label>
+                <input name="start" type="date" />
+              </div>
+              <div>
+                <label>Seniority Hours</label>
+                <input name="hours" type="number" />
+              </div>
+            </div>
+            <button type="submit" style={{ marginTop: 8 }}>
+              Add
+            </button>
+          </form>
+        </div>
+      </div>
+
       <div className="card">
         <div className="card-h">Employees</div>
         <div className="card-c">
@@ -1314,9 +1578,7 @@ export function BidsPage({
   const vacWithCoveredName = (v: Vacancy) => {
     const vac = vacations.find((x) => x.id === v.vacationId);
     const covered = vac ? vac.employeeName : "";
-    const bundleCount = v.bundleId ? vacancies.filter(x => x.bundleId === v.bundleId).length : 0;
-    const bundleTag = v.bundleId ? ` [Bundle of ${bundleCount}${v.bundleLabel ? ` • ${v.bundleLabel}` : ""}]` : "";
-    return `${displayVacancyLabel(v)}${bundleTag} — covering ${covered}`.trim();
+    return `${displayVacancyLabel(v)} — covering ${covered}`.trim();
   };
 
   const openVacancies = vacancies.filter(
@@ -1691,20 +1953,151 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
         })}
       </div>
       <CoverageDayList
-        dateISO=
-        {v.bundleId && v.status !== "Awarded" && v.status !== "Filled" && (
-          <button className="btn btn-sm" onClick={() => onUnbundle(v.id)} title="Remove this day from its bundle">
-            Remove from bundle
-          </button>
+        dateISO={selectedISO}
+        vacancies={vacanciesByDay.get(selectedISO) || []}
+      />
+    </div>
+  );
+}
+
+// ---------- Small components ----------
+function VacancyRow({
+  v,
+  recId,
+  recName,
+  recWhy,
+  employees,
+  selected,
+  onToggleSelect,
+  countdownLabel,
+  countdownClass,
+  isDueNext,
+  onAward,
+  onResetKnownAt,
+}: {
+  v: Vacancy;
+  recId?: string;
+  recName: string;
+  recWhy: string[];
+  employees: Employee[];
+  selected: boolean;
+  onToggleSelect: () => void;
+  countdownLabel: string;
+  countdownClass: string;
+  isDueNext: boolean;
+  onAward: (payload: {
+    empId?: string;
+    reason?: string;
+    overrideUsed?: boolean;
+  }) => void;
+  onResetKnownAt: () => void;
+}) {
+  const [choice, setChoice] = useState<string>("");
+  const [overrideClass, setOverrideClass] = useState<boolean>(false);
+  const [reason, setReason] = useState<string>("");
+
+  const chosen = employees.find((e) => e.id === choice);
+  const classMismatch = chosen && chosen.classification !== v.classification;
+  const needReason =
+    (!!recId && choice && choice !== recId) || (classMismatch && overrideClass);
+
+  function handleAward() {
+    if (classMismatch && !overrideClass) {
+      alert(
+        `Selected employee is ${chosen?.classification}; vacancy requires ${v.classification}. Check "Allow class override" to proceed.`,
+      );
+      return;
+    }
+    if (needReason && !reason) {
+      alert("Please select a reason for this override.");
+      return;
+    }
+    onAward({
+      empId: choice || undefined,
+      reason: reason || undefined,
+      overrideUsed: overrideClass,
+    });
+    setChoice("");
+    setReason("");
+    setOverrideClass(false);
+  }
+
+  return (
+    <tr
+      className={`${isDueNext ? "due-next " : ""}${selected ? "selected" : ""}`.trim()}
+      aria-selected={selected}
+      tabIndex={0}
+    >
+      <td>
+        <input type="checkbox" checked={selected} onChange={onToggleSelect} />
+      </td>
+      <td>
+        <span className="pill">{formatDowShort(v.shiftDate)}</span>{" "}
+        {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}
+      </td>
+      <td>{v.wing ?? ""}</td>
+      <td>{v.classification}</td>
+      <td>{v.offeringStep}</td>
+      <td>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 4,
+          }}
+        >
+          <span>{recName}</span>
+          {recWhy.map((w, i) => (
+            <span key={i} className="pill">
+              {w}
+            </span>
+          ))}
+        </div>
+      </td>
+      <td>
+        <span className={`cd-chip ${countdownClass}`}>{countdownLabel}</span>
+      </td>
+      <td style={{ minWidth: 220 }}>
+        <SelectEmployee
+          allowEmpty
+          employees={employees}
+          value={choice}
+          onChange={setChoice}
+        />
+      </td>
+      <td style={{ whiteSpace: "nowrap" }}>
+        <input
+          id="override-toggle"
+          className="toggle-input"
+          type="checkbox"
+          checked={overrideClass}
+          onChange={(e) => setOverrideClass(e.target.checked)}
+        />
+        <label htmlFor="override-toggle" className="toggle-box">
+          <span className="subtitle">Allow class override</span>
+        </label>
+      </td>
+      <td style={{ minWidth: 230 }}>
+        {needReason ||
+        overrideClass ||
+        (recId && choice && choice !== recId) ? (
+          <select value={reason} onChange={(e) => setReason(e.target.value)}>
+            <option value="">Select reason…</option>
+            {OVERRIDE_REASONS.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="subtitle">—</span>
         )}
-    
-        {v.status !== "Awarded" && v.status !== "Filled" && (
-          <>
-            <button className="btn btn-sm" title="Archive this vacancy" onClick={() => onArchive(v.id)}>Archive</button>
-            <button className="btn btn-sm" title="Delete this vacancy" onClick={() => onDelete(v.id)}>Delete</button>
-          </>
-        )}
-    
+      </td>
+      <td style={{ display: "flex", gap: 6 }}>
+        <button className="btn" onClick={onResetKnownAt}>
+          Reset knownAt
+        </button>
         <button className="btn" onClick={handleAward} disabled={!choice}>
           Award
         </button>
@@ -1887,49 +2280,6 @@ function EmployeeCombo({
           )}
         </div>
       )}
-    
-      {manageBundle && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "grid", placeItems: "center", zIndex: 60 }}>
-          <div className="card" style={{ width: "min(700px, 92vw)" }}>
-            <div className="card-h">Bundle Settings</div>
-            <div className="card-c">
-              <div className="row">
-                <label>Bundle Label</label>
-                <input
-                  value={manageBundle.label}
-                  onChange={(e) => setManageBundle({ ...manageBundle, label: e.target.value })}
-                  placeholder="e.g., 4-day VAC Aug 12–15"
-                />
-              </div>
-              <div className="row">
-                <small>This label shows beside each day in the bundle for easy recognition.</small>
-              </div>
-              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 10 }}>
-                <button className="btn" onClick={() => setManageBundle(null)}>Close</button>
-                <button className="btn" onClick={() => {
-                  // Apply label to all days in the bundle
-                  setVacancies(prev => prev.map(v => v.bundleId === manageBundle.id ? { ...v, bundleLabel: manageBundle.label || undefined } : v));
-                  setManageBundle(null);
-                }}>Save</button>
-                <button className="btn" onClick={() => {
-                  if (!confirm('Split this bundle into individual days?')) return;
-                  setVacancies(prev => prev.map(v => v.bundleId === manageBundle.id ? { ...v, bundleId: undefined, bundleLabel: undefined } : v));
-                  setManageBundle(null);
-                }}>Split Bundle</button>
-                <button className="btn btn-danger" onClick={() => {
-                  if (!confirm('Delete the entire bundle (removes days and bids)?')) return;
-                  setBids(prev => prev.filter(b => {
-                    const keep = !vacancies.some(v => v.bundleId === manageBundle.id && v.id === b.vacancyId);
-                    return keep;
-                  }));
-                  setVacancies(prev => prev.filter(v => v.bundleId !== manageBundle.id));
-                  setManageBundle(null);
-                }}>Delete Bundle</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1942,50 +2292,4 @@ export function dateRangeInclusive(startISO: string, endISO: string) {
   for (let d = new Date(s); d <= e; d.setUTCDate(d.getUTCDate() + 1))
     out.push(isoDate(d));
   return out;
-
-                      <button
-                        className="btn btn-sm"
-                        onClick={() => {
-                          // Create a new bundle for all selected unfilled vacancies
-                          const openIds = selectedVacancyIds.filter(id => {
-                            const v = vacancies.find(x => x.id === id);
-                            return v && v.status !== "Awarded" && v.status !== "Filled";
-                          });
-                          if (openIds.length < 2) { alert("Select at least 2 unfilled vacancies."); return; }
-                          const bundleId = (crypto?.randomUUID ? crypto.randomUUID() : `BUNDLE-${Math.random().toString(36).slice(2,7).toUpperCase()}`);
-                          setVacancies(prev => prev.map(v => openIds.includes(v.id) ? { ...v, bundleId } : v));
-                          setManageBundle({ id: bundleId, label: "" });
-                        }}
-                      >
-                        Bundle Selected (new)
-                      </button>
-                      <button
-                        className="btn btn-sm"
-                        onClick={() => {
-                          // Add all other selected to the first selected vacancy's bundle
-                          const anchor = vacancies.find(v => v.id === selectedVacancyIds[0]);
-                          if (!anchor?.bundleId) { alert("First selected vacancy does not belong to a bundle. Create a new one instead."); return; }
-                          const target = anchor.bundleId;
-                          const openIds = selectedVacancyIds.filter(id => {
-                            const v = vacancies.find(x => x.id === id);
-                            return v && v.status !== "Awarded" && v.status !== "Filled" && v.id !== anchor.id;
-                          });
-                          if (openIds.length === 0) { alert("No additional unfilled vacancies selected to add."); return; }
-                          setVacancies(prev => prev.map(v => openIds.includes(v.id) ? { ...v, bundleId: target, bundleLabel: anchor.bundleLabel } : v));
-                        }}
-                      >
-                        Add Selected to First's Bundle
-                      </button>
-                      <button
-                        className="btn btn-sm"
-                        onClick={() => {
-                          // Remove selected from any bundle
-                          const ids = selectedVacancyIds.slice();
-                          setVacancies(prev => prev.map(v => ids.includes(v.id) ? { ...v, bundleId: undefined, bundleLabel: undefined } : v));
-                        }}
-                      >
-                        Unbundle Selected
-                      </button>
-                      
-                      )}
-    }
+}
