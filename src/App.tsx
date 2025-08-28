@@ -1007,10 +1007,10 @@ export default function App() {
                         {selectedVacancyIds.length} selected
                       </span>
                     </>
-                  )}
+// removed stray close of non-existent block
 
                   </div>
-                )}
+
                 <table className="vac-table responsive-table">
                   <thead>
                     <tr>
@@ -1051,18 +1051,12 @@ export default function App() {
                       const dl = deadlineFor(v, settings);
                       const msLeft = dl.getTime() - now;
                       const winMin = pickWindowMinutes(v, settings);
-                      const sinceKnownMin = minutesBetween(
-                        new Date(),
-                        new Date(v.knownAt),
-                      );
-                      const pct = Math.max(
-                        0,
-                        Math.min(1, (winMin - sinceKnownMin) / winMin),
-                      ); // 1→0 over window
+                      const sinceKnownMin = minutesBetween(new Date(), new Date(v.knownAt));
+                      const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin));
                       let cdClass = "cd-green";
                       if (msLeft <= 0) cdClass = "cd-red";
                       else if (pct < 0.25) cdClass = "cd-yellow";
-                      const isDueNext = dueNextId === v.id;
+                      const isSel = selectedVacancyIds.includes(v.id);
                       return (
                         <VacancyRow
                           key={v.id}
@@ -1071,11 +1065,12 @@ export default function App() {
                           recName={recName}
                           recWhy={recWhy}
                           employees={employees}
-                          selected=
-          </form>
-        </div>
-      </div>
-
+                          selected={isSel}
+                        />
+                      );
+                    })}
+                  </tbody>
+                </table>
       <div className="card">
         <div className="card-h">Employees</div>
         <div className="card-c">
