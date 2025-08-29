@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:ci": "tsc -p tsconfig.ci.json && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "prebuild": "npm run typecheck"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -26,5 +28,8 @@
     "vitest": "^1.6.0",
     "jsdom": "^24.0.0",
     "@types/node": "^22.7.0"
+  },
+  "engines": {
+    "node": "18.20.8"
   }
 }
