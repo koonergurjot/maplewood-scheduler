@@ -50,6 +50,13 @@ export type Vacancy = {
 };
 
 export type Bid = {
+  /** Range coverage intent */
+  coverageType?: "full" | "some-days" | "partial-day";
+  /** Selected ISO dates if not full */
+  selectedDays?: string[];
+  /** Optional per-day time overrides */
+  timeOverrides?: Record<string, { start: string; end: string }>;
+
   vacancyId: string;
   bidderEmployeeId: string;
   bidderName: string;
@@ -96,3 +103,23 @@ export const OVERRIDE_REASONS = [
   "Unit familiarity / continuity",
   "Manager discretion",
 ] as const;
+
+
+// --- Multi-day Vacancy Range ---
+export type VacancyRange = {
+  id: string;
+  reason: string;
+  classification: Classification;
+  wing?: string;
+  startDate: string;     // YYYY-MM-DD
+  endDate: string;       // YYYY-MM-DD
+  knownAt: string;       // ISO timestamp
+  workingDays: string[]; // ISO dates
+  perDayTimes?: Record<string, { start: string; end: string }>;
+  shiftStart?: string;
+  shiftEnd?: string;
+  offeringStep: "Casuals" | "OT-Full-Time" | "OT-Casuals";
+  status: "Open" | "Pending Award" | "Awarded" | "Filled";
+  awardedTo?: string;
+  awardedAt?: string;
+};

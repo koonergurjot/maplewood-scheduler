@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import type { VacancyRange, Classification } from "../types";
-import { formatDateLong } from "../lib/dates";
 
 type Props = {
   open: boolean;
@@ -93,7 +92,7 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">Classification</span>
-            <select value={classification} onChange={e=>setClassification(e.target.value as any)} className="border rounded-md px-2 py-1">
+            <select value={classification} onChange={e=>setClassification(e.target.value as Classification)} className="border rounded-md px-2 py-1">
               <option>RCA</option><option>LPN</option><option>RN</option>
             </select>
           </label>
@@ -118,14 +117,13 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
               <button onClick={applyPresetToAll} className="px-2 py-1 rounded-md border">Apply default time to all picked days</button>
             </div>
             <div className="grid grid-cols-2 gap-2 max-h-56 overflow-auto border rounded-md p-2">
-              {allDays.map(d => (
+              {allDays.map((d: string) => (
                 <label key={d} className={"flex items-center gap-2 px-2 py-1 rounded "+(workingDays.includes(d)?"bg-green-50":"")}>
                   <input type="checkbox" checked={workingDays.includes(d)} onChange={()=>toggleDay(d)} />
-                  <span className="min-w-[8rem]">{formatDateLong(d)} ({d})</span>
+                  <span className="min-w-[8rem]">{d}</span>
                   <input type="time" value={ (perDayTimes[d]?.start) ?? shiftStart } onChange={e=>updateTime(d,"start",e.target.value)} className="border rounded-md px-1 py-0.5" />
                   <span>—</span>
                   <input type="time" value={ (perDayTimes[d]?.end) ?? shiftEnd } onChange={e=>updateTime(d,"end",e.target.value)} className="border rounded-md px-1 py-0.5" />
-                  {/* Stat/holiday reminder could be shown here via a future calendar service */}
                 </label>
               ))}
             </div>

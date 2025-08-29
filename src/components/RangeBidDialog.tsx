@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import type { VacancyRange, Bid, Employee } from "../types";
-import { formatDateLong } from "../lib/dates";
 
 type Props = {
   open: boolean;
@@ -24,12 +23,13 @@ export default function RangeBidDialog({ open, onClose, range, employees, onSubm
 
   function submit() {
     if (!employeeId) return;
+    const e = employees.find(x=>x.id===employeeId);
     const bid: Bid = {
-      vacancyId: range.id, // we reuse vacancyId to refer to the range id in this context
+      vacancyId: range.id,
       bidderEmployeeId: employeeId,
-      bidderName: (employees.find(e=>e.id===employeeId)?.firstName ?? "") + " " + (employees.find(e=>e.id===employeeId)?.lastName ?? ""),
-      bidderStatus: (employees.find(e=>e.id===employeeId)?.status)!,
-      bidderClassification: (employees.find(e=>e.id===employeeId)?.classification)!,
+      bidderName: (e?.firstName ?? "") + " " + (e?.lastName ?? ""),
+      bidderStatus: (e?.status)!,
+      bidderClassification: (e?.classification)!,
       bidTimestamp: new Date().toISOString(),
       notes: note || undefined,
       coverageType,
@@ -74,10 +74,10 @@ export default function RangeBidDialog({ open, onClose, range, employees, onSubm
 
             {(coverageType!=="full") && (
               <div className="mt-2 max-h-48 overflow-auto border rounded p-2">
-                {(range.workingDays ?? []).map(d => (
+                {(range.workingDays ?? []).map((d: string) => (
                   <label key={d} className="flex items-center gap-2 py-0.5">
                     <input type="checkbox" checked={selectedDays.includes(d)} onChange={()=>toggleDay(d)} />
-                    <span>{formatDateLong(d)} ({d})</span>
+                    <span>{d}</span>
                   </label>
                 ))}
               </div>
@@ -91,7 +91,7 @@ export default function RangeBidDialog({ open, onClose, range, employees, onSubm
         </div>
 
         <div className="mt-4 flex justify-end gap-2">
-          <button onClick={onClose} className="px-3 py-2 rounded-md border">Cancel</button>
+          <button onClose={onClose} className="px-3 py-2 rounded-md border">Cancel</button>
           <button onClick={submit} className="px-3 py-2 rounded-md bg-black text-white">Submit bid</button>
         </div>
       </div>

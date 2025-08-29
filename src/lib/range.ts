@@ -35,7 +35,7 @@ export function bidCoversAllDays(range: VacancyRange, bid: Bid): boolean {
   const days = new Set(workingDays(range));
   const selected = bid.selectedDays ?? [];
   const isFull = bid.coverageType === "full";
-  const coversAll = isFull && selected.length === days.size && selected.every(d => days.has(d));
+  const coversAll = isFull && selected.length === days.size && selected.every((d: string) => days.has(d));
   return Boolean(coversAll);
 }
 
