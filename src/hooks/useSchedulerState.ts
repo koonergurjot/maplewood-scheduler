@@ -1,65 +1,60 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Employee, Vacation, Vacancy, Bid, Settings } from "../types";
+import type {
+  Employee,
+  Vacation,
+  Vacancy,
+  Bid,
+  Settings,
+  VacancyRange,
+} from "../types";
 import { loadState, saveState } from "../utils/storage";
-
-const TAB_KEYS = [
-  "coverage",
-  "calendar",
-  "bids",
-  "employees",
-  "archive",
-  "alerts",
-  "settings",
-] as const;
 
 const defaultSettings: Settings = {
   responseWindows: { lt2h: 7, h2to4: 15, h4to24: 30, h24to72: 120, gt72: 1440 },
-  theme:
-    typeof window !== "undefined" &&
-    window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light",
-  fontScale: 1,
-  tabOrder: [...TAB_KEYS],
-  defaultShiftPreset: "Day",
+};
+
+type PersistedState = {
+  employees?: Employee[];
+  vacations?: Vacation[];
+  vacancies?: Vacancy[];
+  bids?: Bid[];
+  archivedBids?: Record<string, Bid[]>;
+  settings?: Settings;
+  vacancyRanges?: VacancyRange[];
 };
 
 export function useSchedulerState() {
-  const persisted = loadState();
+  const persisted: PersistedState | null = loadState();
 
   const [employees, setEmployees] = useState<Employee[]>(persisted?.employees ?? []);
   const [vacations, setVacations] = useState<Vacation[]>(persisted?.vacations ?? []);
-  const [vacancies, setVacancies] = useState<Vacancy[]>(
-    (persisted?.vacancies ?? []).map((v: any) => ({
-      offeringTier: "CASUALS",
-      offeringRoundStartedAt: v.offeringRoundStartedAt ?? new Date().toISOString(),
-      offeringRoundMinutes: v.offeringRoundMinutes ?? 120,
-      offeringAutoProgress: v.offeringAutoProgress ?? true,
-      ...v,
-    })),
-  );
+  const [vacancies, setVacancies] = useState<Vacancy[]>(persisted?.vacancies ?? []);
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
   const [archivedBids, setArchivedBids] = useState<Record<string, Bid[]>>(
     persisted?.archivedBids ?? {},
   );
-  const persistedSettings = persisted?.settings ?? {};
-  const storedOrder: string[] = persistedSettings.tabOrder || [];
-  const mergedOrder = [...storedOrder, ...TAB_KEYS.filter((k) => !storedOrder.includes(k))];
-  const [settings, setSettings] = useState<Settings>({
-    ...defaultSettings,
-    ...persistedSettings,
-    tabOrder: mergedOrder,
-  });
+  const [settings, setSettings] = useState<Settings>(persisted?.settings ?? defaultSettings);
+  const [vacancyRanges, setVacancyRanges] = useState<VacancyRange[]>(
+    persisted?.vacancyRanges ?? [],
+  );
+
+  const employeesById = useMemo(() => {
+    const m = new Map<string, Employee>();
+    for (const e of employees) m.set(e.id, e);
+    return m;
+  }, [employees]);
 
   useEffect(() => {
-    saveState({ employees, vacations, vacancies, bids, archivedBids, settings });
-  }, [employees, vacations, vacancies, bids, archivedBids, settings]);
-
-  const employeesById = useMemo(
-    () => Object.fromEntries(employees.map((e) => [e.id, e])),
-    [employees],
-  );
+    saveState({
+      employees,
+      vacations,
+      vacancies,
+      bids,
+      archivedBids,
+      settings,
+      vacancyRanges,
+    });
+  }, [employees, vacations, vacancies, bids, archivedBids, settings, vacancyRanges]);
 
   return {
     employees,
@@ -75,5 +70,7 @@ export function useSchedulerState() {
     settings,
     setSettings,
     employeesById,
+    vacancyRanges,
+    setVacancyRanges,
   };
 }
