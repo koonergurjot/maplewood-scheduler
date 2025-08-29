@@ -844,7 +844,8 @@ export default function App() {
                     </div>
                   )}
                   {multiDay && (
-                                          <div onClick={() => handleDateFieldClick(vacStartRef)}>
+                    <>
+                      <div onClick={() => handleDateFieldClick(vacStartRef)}>
                         <label htmlFor="vac-start">Start Date</label>
                         <input
                           ref={vacStartRef}
@@ -871,7 +872,7 @@ export default function App() {
                           }
                         />
                       </div>
-                    
+                    </>
                   )}
                   <div>
                     <label>Shift</label>
@@ -902,7 +903,8 @@ export default function App() {
                     </select>
                   </div>
                   {newVacay.shiftPreset === "Custom" && (
-                                          <div>
+                    <>
+                      <div>
                         <label>Shift Start</label>
                         <input
                           type="time"
@@ -928,7 +930,7 @@ export default function App() {
                           }
                         />
                       </div>
-                    
+                    </>
                   )}
                   <div style={{ gridColumn: "1 / -1" }}>
                     <label>Notes</label>
@@ -983,7 +985,8 @@ export default function App() {
                     {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
                   </button>
                   {selectedVacancyIds.length > 0 && (
-                                          <button
+                    <>
+                      <button
                         className="btn btn-sm"
                         onClick={() => setBulkAwardOpen(true)}
                       >
@@ -992,7 +995,7 @@ export default function App() {
                       <span className="badge">
                         {selectedVacancyIds.length} selected
                       </span>
-                    
+                    </>
                   )}
                 </div>
                 {filtersOpen && (
