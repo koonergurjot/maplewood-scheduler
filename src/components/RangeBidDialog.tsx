@@ -91,7 +91,7 @@ export default function RangeBidDialog({ open, onClose, range, employees, onSubm
         </div>
 
         <div className="mt-4 flex justify-end gap-2">
-          <button onClose={onClose} className="px-3 py-2 rounded-md border">Cancel</button>
+          <button onClick={onClose} className="px-3 py-2 rounded-md border">Cancel</button>
           <button onClick={submit} className="px-3 py-2 rounded-md bg-black text-white">Submit bid</button>
         </div>
       </div>
