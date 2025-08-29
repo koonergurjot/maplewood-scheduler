@@ -40,9 +40,7 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
 
   function applyPresetToAll() {
     const upd: Record<string,{start:string;end:string}> = {};
-    for (const d of workingDays) {
-      upd[d] = { start: shiftStart, end: shiftEnd };
-    }
+    for (const d of workingDays) upd[d] = { start: shiftStart, end: shiftEnd };
     setPerDayTimes(upd);
   }
 
@@ -77,7 +75,7 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Create Multi‑Day Vacancy</h2>
+          <h2 className="text-lg font-semibold">Create Multi-Day Vacancy</h2>
           <button onClick={onClose} className="px-2 py-1 rounded-md border">Close</button>
         </div>
 
