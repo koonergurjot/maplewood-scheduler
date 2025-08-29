@@ -53,8 +53,8 @@ export function useSchedulerState() {
   });
 
   useEffect(() => {
-    saveState({ employees, vacations, vacancies, bids, archivedBids, settings });
-  }, [employees, vacations, vacancies, bids, archivedBids, settings]);
+    saveState({ employees, vacations, vacancies, bids, archivedBids, settings, vacancyRanges });
+  }, [employees, vacations, vacancies, bids, archivedBids, settings, vacancyRanges]);
 
   const employeesById = useMemo(
     () => Object.fromEntries(employees.map((e) => [e.id, e])),
