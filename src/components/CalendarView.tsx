@@ -1,6 +1,6 @@
 
 import React from "react";
-import type { Vacancy } from "../App";
+import type { Vacancy } from "../types";
 import { buildCalendar, isoDate, prevMonth, nextMonth } from "../lib/dates";
 
 type Props = { vacancies: Vacancy[] };
