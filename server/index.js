@@ -62,7 +62,7 @@ app.post(
       res.json({ success: true });
     } catch (err) {
       console.error(err);
-      res.status(500).json({ error: "Failed to process agreement" });
+      res.status(500).json({ error: err.message });
     }
   },
 );
