@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { Employee, Vacancy } from "../App";
-import { OVERRIDE_REASONS } from "../App";
+import type { Employee, Vacancy } from "../types";
+import { OVERRIDE_REASONS } from "../types";
 import { logBulkAward } from "../utils/logger";
 
 type Props = {

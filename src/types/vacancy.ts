@@ -1,4 +1,4 @@
-import type { Vacancy as BaseVacancy } from "../App";
+import type { Vacancy as BaseVacancy } from "../types";
 
 /**
  * Vacancy information augmented with ISO start/end timestamps
