@@ -1,17 +1,18 @@
 
 import React, { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 
 type HeaderProps = {
   current?: string;
 };
 
-const NavLink: React.FC<{ href: string; label: string; current?: boolean; icon?: React.ReactNode }> = ({ href, label, current, icon }) => {
+const NavLink: React.FC<{ to: string; label: string; current?: boolean; icon?: React.ReactNode }> = ({ to, label, current, icon }) => {
   return (
-    <a className="navlink" aria-current={current ? "page" : undefined} href={href}>
+    <Link className="navlink" aria-current={current ? "page" : undefined} to={to}>
       {icon}
       <span>{label}</span>
-    </a>
+    </Link>
   );
 };
 
@@ -34,10 +35,10 @@ export default function Header({ current }: HeaderProps) {
         <div>Maplewood Scheduler</div>
       </div>
       <nav className="navlinks" aria-label="Primary">
-        <NavLink href="#" label="Dashboard" current={current === "Dashboard"} icon={<DashboardIcon />} />
-        <NavLink href="#" label="Calendar" current={current === "Calendar"} icon={<CalendarIcon />} />
-        <NavLink href="#" label="Shifts" current={current === "Shifts"} icon={<ShiftIcon />} />
-        <NavLink href="#" label="Audit Log" current={current === "Audit"} icon={<AuditIcon />} />
+        <NavLink to="/dashboard" label="Dashboard" current={current === "Dashboard"} icon={<DashboardIcon />} />
+        <NavLink to="/calendar" label="Calendar" current={current === "Calendar"} icon={<CalendarIcon />} />
+        <NavLink to="/shifts" label="Shifts" current={current === "Shifts"} icon={<ShiftIcon />} />
+        <NavLink to="/audit-log" label="Audit Log" current={current === "Audit"} icon={<AuditIcon />} />
       </nav>
       <div className="right">
         <ThemeToggle />
