@@ -21,30 +21,35 @@ export async function initAgreement() {
 }
 
 export async function loadAgreement(filePath) {
-  const buffer = fs.readFileSync(filePath);
-  // Detect PDFs by signature rather than relying on the file extension so
-  // previously uploaded agreements without an extension can still be parsed
-  // correctly on startup.
-  const isPdf = buffer.slice(0, 4).toString() === "%PDF";
-  if (isPdf) {
-    const data = await pdfParse(buffer);
-    agreementText = data.text;
-  } else {
-    agreementText = buffer.toString();
-  }
-  agreementLines = agreementText.split(/\r?\n/);
-  agreementIndex = new Map();
-  agreementLines.forEach((line, idx) => {
-    const tokens = line.toLowerCase().split(/\W+/).filter(Boolean);
-    for (const token of tokens) {
-      if (!agreementIndex.has(token)) {
-        agreementIndex.set(token, new Set());
-      }
-      agreementIndex.get(token).add(idx);
+  try {
+    const buffer = await fs.promises.readFile(filePath);
+    // Detect PDFs by signature rather than relying on the file extension so
+    // previously uploaded agreements without an extension can still be parsed
+    // correctly on startup.
+    const isPdf = buffer.slice(0, 4).toString() === "%PDF";
+    if (isPdf) {
+      const data = await pdfParse(buffer);
+      agreementText = data.text;
+    } else {
+      agreementText = buffer.toString();
     }
-  });
-  fs.mkdirSync(uploadDir, { recursive: true });
-  fs.copyFileSync(filePath, storedFilePath);
+    agreementLines = agreementText.split(/\r?\n/);
+    agreementIndex = new Map();
+    agreementLines.forEach((line, idx) => {
+      const tokens = line.toLowerCase().split(/\W+/).filter(Boolean);
+      for (const token of tokens) {
+        if (!agreementIndex.has(token)) {
+          agreementIndex.set(token, new Set());
+        }
+        agreementIndex.get(token).add(idx);
+      }
+    });
+    await fs.promises.mkdir(uploadDir, { recursive: true });
+    await fs.promises.copyFile(filePath, storedFilePath);
+  } catch (err) {
+    console.error("Failed to load agreement", err);
+    throw new Error(`Failed to load agreement: ${err.message}`);
+  }
 }
 
 export function searchAgreement(
