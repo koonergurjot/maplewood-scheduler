@@ -7,7 +7,12 @@ import { createPdf } from "./analyticsFormats/pdf.js";
 import multer from "multer";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { initAgreement, loadAgreement, searchAgreement } from "./collectiveAgreement.js";
+import {
+  initAgreement,
+  loadAgreement,
+  searchAgreement,
+} from "./collectiveAgreement.js";
+import { parseNumberParam } from "./parseNumberParam.js";
 
 const app = express();
 app.use(cors());
@@ -18,19 +23,33 @@ const upload = multer({ dest: uploadDir });
 initAgreement();
 
 app.get("/api/analytics", requireAuth, (req, res) => {
-  const threshold = parseFloat(req.query.overtimeThreshold);
-  const data = aggregateByMonth(sampleVacancies, {
-    overtimeThreshold: isNaN(threshold) ? undefined : threshold,
-  });
+  let overtimeThreshold;
+  try {
+    overtimeThreshold = parseNumberParam(
+      "overtimeThreshold",
+      req.query.overtimeThreshold,
+    );
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  const data = aggregateByMonth(sampleVacancies, { overtimeThreshold });
   res.json(data);
 });
 
 app.get("/api/analytics/export", requireAuth, (req, res) => {
   const format = req.query.format;
-  const threshold = parseFloat(req.query.overtimeThreshold);
-  const data = aggregateByMonth(sampleVacancies, {
-    overtimeThreshold: isNaN(threshold) ? undefined : threshold,
-  });
+  let overtimeThreshold;
+  try {
+    overtimeThreshold = parseNumberParam(
+      "overtimeThreshold",
+      req.query.overtimeThreshold,
+    );
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  const data = aggregateByMonth(sampleVacancies, { overtimeThreshold });
   switch (format) {
     case "csv": {
       res.setHeader("Content-Type", "text/csv");
@@ -71,18 +90,17 @@ app.get("/api/collective-agreement/search", requireAuth, (req, res) => {
   const q = req.query.q;
   if (typeof q !== "string" || !q) return res.json({ matches: [] });
   const caseSensitive = req.query.caseSensitive === "true";
-  const rawLimit = req.query.limit;
-  const rawContext = req.query.context;
-
-  const limit = rawLimit === undefined ? undefined : parseInt(rawLimit, 10);
-  if (rawLimit !== undefined && Number.isNaN(limit)) {
-    return res.status(400).json({ error: "limit must be numeric" });
+  let limit;
+  let context;
+  try {
+    limit = parseNumberParam("limit", req.query.limit);
+    context = parseNumberParam("context", req.query.context);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
   }
 
-  const context = rawContext === undefined ? undefined : parseInt(rawContext, 10);
-  if (rawContext !== undefined && Number.isNaN(context)) {
-    return res.status(400).json({ error: "context must be numeric" });
-  }
+  if (limit !== undefined) limit = Math.trunc(limit);
+  if (context !== undefined) context = Math.trunc(context);
 
   res.json({
     matches: searchAgreement(q, {
