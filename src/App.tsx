@@ -159,7 +159,16 @@ const loadState = () => {
   try {
     const raw = localStorage.getItem(LS_KEY);
     return raw ? JSON.parse(raw) : null;
-  } catch {
+  } catch (err) {
+    console.error("Failed to parse saved state", err);
+    if (typeof window !== "undefined" && typeof window.alert === "function") {
+      window.alert("Stored data was corrupted and has been reset.");
+    }
+    try {
+      localStorage.removeItem(LS_KEY);
+    } catch (removeErr) {
+      console.error("Failed to reset localStorage", removeErr);
+    }
     return null;
   }
 };

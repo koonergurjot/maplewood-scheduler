@@ -23,7 +23,16 @@ function read(storage: Storage): AuditLog[] {
   try {
     const raw = storage.getItem(KEY);
     return raw ? (JSON.parse(raw) as AuditLog[]) : [];
-  } catch {
+  } catch (err) {
+    console.error("Failed to parse audit log storage", err);
+    if (typeof window !== "undefined" && typeof window.alert === "function") {
+      window.alert("Audit log storage was corrupted and has been reset.");
+    }
+    try {
+      storage.setItem(KEY, JSON.stringify([]));
+    } catch (writeErr) {
+      console.error("Failed to reset audit log storage", writeErr);
+    }
     return [];
   }
 }
