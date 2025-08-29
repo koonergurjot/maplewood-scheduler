@@ -1,38 +1,45 @@
-import type { VacancyRange, Bid, Settings } from "../types";
-import { combineDateTime } from "./dates";
+import type { Settings, Bid } from "../types";
+
+export type VacancyRange = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  workingDays: string[];
+  perDayTimes?: Record<string, { start: string; end: string }>;
+  shiftStart?: string;
+  shiftEnd?: string;
+};
 
 /** Return sorted list of working days (ISO YYYY-MM-DD) */
 export function workingDays(range: VacancyRange): string[] {
-  return [...(range.workingDays ?? [])].sort();
+  return [...(range.workingDays || [])].sort();
 }
 
-/** Earliest deadline for the range (based on earliest working day) */
+/** Simple earliest-deadline calculator (uses earliest working day) */
 export function deadlineForRange(range: VacancyRange, settings: Settings): Date {
   const days = workingDays(range);
   const first = days[0];
-  const t = range.perDayTimes?.[first];
-  const start = combineDateTime(first, t?.start ?? range.shiftStart ?? "06:30");
-  // Reuse pickWindowMinutes-style logic outside for now: default to 24h window if unknown
-  const minutes = settings?.responseWindows?.h4to24 ?? 30;
-  const d = new Date(start);
+  // Fallbacks to avoid undefined
+  const start = (range.perDayTimes && range.perDayTimes[first]?.start)
+    || range.shiftStart
+    || "06:30";
+  const dt = new Date(`${first}T${start}:00`);
+  const minutes = settings.responseWindows?.h4to24 ?? 30;
+  const d = new Date(dt);
   d.setMinutes(d.getMinutes() - minutes);
   return d;
 }
 
-/** Validate that a bid covers all required working days (for coverageType 'full'). */
+/** True iff a bid explicitly covers all required working days */
 export function bidCoversAllDays(range: VacancyRange, bid: Bid): boolean {
   const days = new Set(workingDays(range));
-  // If partial-day via timeOverrides, we still consider it "covered" for continuity purposes.
-  return bid.coverageType === "full" && bid.selectedDays &&
-         bid.selectedDays.length === days.size &&
-         bid.selectedDays.every(d => days.has(d));
+  const selected = bid.selectedDays ?? [];
+  const isFull = bid.coverageType === "full";
+  const coversAll = isFull && selected.length === days.size && selected.every(d => days.has(d));
+  return Boolean(coversAll);
 }
 
-/** Flag potential conflicts for a bid (fatigue, eligibility). Stub hooks; implement in future. */
-export function evaluateBidFlags(range: VacancyRange, bid: Bid): { warnings: string[] } {
-  const warnings: string[] = [];
-  // Placeholders – to be integrated with your existing fatigue/eligibility logic:
-  // warnings.push("Fatigue risk on 2025-08-21 (back-to-back).");
-  // warnings.push("Classification mismatch on 2025-08-22 (RCA shift requires LPN).");
-  return { warnings };
+/** Collect non-blocking warnings (placeholder: integrate fatigue/eligibility later) */
+export function evaluateBidWarnings(_range: VacancyRange, _bid: Bid): string[] {
+  return [];
 }
