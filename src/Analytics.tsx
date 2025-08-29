@@ -57,13 +57,6 @@ export default function Analytics() {
         const response = await authFetch("/api/analytics", {
           signal: controller.signal,
         });
-        if (response.status === 401) {
-          if (promptForToken()) {
-            continue;
-          }
-          throw new Error("Unauthorized");
-        }
-        if (!response.ok) throw new Error(`Request failed: ${response.status}`);
         const data = await response.json();
         setRows(data);
         setLoading(false);
@@ -73,6 +66,12 @@ export default function Analytics() {
           setLoading(false);
           controllerRef.current = null;
           return;
+        }
+        if (err.status === 401) {
+          if (promptForToken()) {
+            continue;
+          }
+          err = new Error("Unauthorized");
         }
         if (attempt < maxRetries - 1) {
           const delay = 500 * 2 ** attempt;
@@ -90,13 +89,6 @@ export default function Analytics() {
       const response = await authFetch(
         `/api/analytics/export?format=${format}`,
       );
-      if (response.status === 401) {
-        if (promptForToken()) {
-          return handleExport(format);
-        }
-        throw new Error("Unauthorized");
-      }
-      if (!response.ok) throw new Error(`Request failed: ${response.status}`);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -107,7 +99,14 @@ export default function Analytics() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch (err: any) {
-      setError(err.message);
+      if (err.status === 401) {
+        if (promptForToken()) {
+          return handleExport(format);
+        }
+        setError("Unauthorized");
+      } else {
+        setError(err.message);
+      }
     }
   };
 

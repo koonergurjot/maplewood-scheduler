@@ -23,5 +23,19 @@ export async function authFetch(input: RequestInfo, init: RequestInit = {}) {
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
-  return fetch(input, { ...init, headers });
+  const response = await fetch(input, { ...init, headers });
+  if (!response.ok) {
+    let message = `Request failed with status ${response.status}`;
+    try {
+      const text = await response.text();
+      if (text) message += `: ${text}`;
+    } catch {
+      // ignore
+    }
+    const error: any = new Error(message);
+    error.status = response.status;
+    error.response = response;
+    throw error;
+  }
+  return response;
 }
