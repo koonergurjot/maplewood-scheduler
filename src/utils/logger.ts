@@ -22,13 +22,9 @@ export async function logBulkAward({
         : undefined),
     timestamp: new Date().toISOString(),
   };
-  try {
-    await authFetch("/api/logs/bulk-award", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-  } catch (err) {
-    console.error("Failed to log bulk award", err);
-  }
+  await authFetch("/api/logs/bulk-award", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 }

@@ -15,10 +15,11 @@ export default function BulkAwardDialog({ open, employees, vacancies, onConfirm,
   const [empId, setEmpId] = useState("");
   const [message, setMessage] = useState("");
   const [reason, setReason] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   if (!open) return null;
 
-  const confirm = () => {
+  const confirm = async () => {
     const payload = {
       empId: empId || undefined,
       reason: reason || undefined,
@@ -26,11 +27,16 @@ export default function BulkAwardDialog({ open, employees, vacancies, onConfirm,
       message: message || undefined,
     };
     onConfirm(payload);
-    logBulkAward({
-      vacancyIds: vacancies.map((v) => v.id),
-      employeeId: payload.empId,
-      reason: payload.reason,
-    });
+    try {
+      await logBulkAward({
+        vacancyIds: vacancies.map((v) => v.id),
+        employeeId: payload.empId,
+        reason: payload.reason,
+      });
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Failed to log bulk award");
+    }
     setEmpId("");
     setMessage("");
     setReason("");
@@ -73,6 +79,11 @@ export default function BulkAwardDialog({ open, employees, vacancies, onConfirm,
           Confirm
         </button>
       </div>
+      {error && (
+        <div role="alert" style={{ color: "red", marginTop: 8 }}>
+          {error}
+        </div>
+      )}
     </div>
   );
 }
