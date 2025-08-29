@@ -49,14 +49,9 @@ export type Vacancy = {
   overrideUsed?: boolean;
 };
 
+// Extend Bid for range coverage (safe: all optional)
 export type Bid = {
-  /** Range coverage intent */
-  coverageType?: "full" | "some-days" | "partial-day";
-  /** Selected ISO dates if not full */
-  selectedDays?: string[];
-  /** Optional per-day time overrides */
-  timeOverrides?: Record<string, { start: string; end: string }>;
-
+  // ...keep existing fields
   vacancyId: string;
   bidderEmployeeId: string;
   bidderName: string;
@@ -64,6 +59,10 @@ export type Bid = {
   bidderClassification: Classification;
   bidTimestamp: string;
   notes?: string;
+
+  coverageType?: "full" | "some-days" | "partial-day";
+  selectedDays?: string[]; // ISO dates if not full
+  timeOverrides?: Record<string, { start: string; end: string }>;
 };
 
 export type Settings = {
@@ -111,13 +110,22 @@ export type VacancyRange = {
   reason: string;
   classification: Classification;
   wing?: string;
+
   startDate: string;     // YYYY-MM-DD
   endDate: string;       // YYYY-MM-DD
   knownAt: string;       // ISO timestamp
-  workingDays: string[]; // ISO dates
+
+  // Admin chooses which dates are actually worked
+  workingDays: string[]; // ISO dates, e.g., ["2025-09-15", "2025-09-16", "2025-09-20"]
+
+  // Optional per-day time overrides (when some days have different times)
   perDayTimes?: Record<string, { start: string; end: string }>;
   shiftStart?: string;
   shiftEnd?: string;
+
+  // Optional group tie; only enforced if both employee and range have values
+  groupId?: string;
+
   offeringStep: "Casuals" | "OT-Full-Time" | "OT-Casuals";
   status: "Open" | "Pending Award" | "Awarded" | "Filled";
   awardedTo?: string;
