@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Employee, Vacancy } from "./App";
+import type { CalendarEvent } from "./types/calendar";
 import CalendarView from "./components/CalendarView";
 import "./styles/branding.css";
 
@@ -21,6 +22,20 @@ type State = {
 export default function Dashboard() {
   const data: State = loadState() || { employees: [], vacancies: [] };
   const { employees, vacancies } = data;
+  const calendarEvents = useMemo<CalendarEvent[]>(
+    () =>
+      vacancies.map((v) => ({
+        id: v.id,
+        date: v.shiftDate,
+        shiftStart: v.shiftStart,
+        shiftEnd: v.shiftEnd,
+        wing: v.wing,
+        classification: v.classification,
+        status: v.status === "Pending Award" ? "Pending" : v.status,
+        employee: v.awardedTo,
+      })),
+    [vacancies],
+  );
 
   const [view, setView] = useState<"list" | "calendar">("list");
 
@@ -86,7 +101,7 @@ export default function Dashboard() {
 
       <main className="dashboard-content">
         {view === "calendar" ? (
-          <CalendarView vacancies={vacancies} />
+          <CalendarView vacancies={calendarEvents} />
         ) : (
           <>
             <section>

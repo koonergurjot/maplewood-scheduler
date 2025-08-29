@@ -1,9 +1,10 @@
 
 import React from "react";
-import type { Vacancy } from "../App";
+import { useNavigate } from "react-router-dom";
+import type { CalendarEvent } from "../types/calendar";
 import { buildCalendar, isoDate, prevMonth, nextMonth } from "../lib/dates";
 
-type Props = { vacancies: Vacancy[] };
+type Props = { vacancies: CalendarEvent[] };
 
 type Day = { date: Date; inMonth: boolean };
 
@@ -12,6 +13,7 @@ function monthLabel(y: number, m: number) {
 }
 
 export default function CalendarView({ vacancies }: Props) {
+  const navigate = useNavigate();
   const today = React.useMemo(() => new Date(), []);
   const [y, setY] = React.useState(today.getFullYear());
   const [m, setM] = React.useState(today.getMonth());
@@ -22,9 +24,9 @@ export default function CalendarView({ vacancies }: Props) {
 
   // Group events by ISO yyyy-mm-dd
   const eventsByDate = React.useMemo(() => {
-    const map: Record<string, any[]> = {};
+    const map: Record<string, CalendarEvent[]> = {};
     for (const v of vacancies ?? []) {
-      const d = (v as any).date || (v as any).start?.slice(0,10);
+      const d = v.date;
       if (!d) continue;
       (map[d] ||= []).push(v);
     }
@@ -34,12 +36,12 @@ export default function CalendarView({ vacancies }: Props) {
   const todayIso = isoDate(today);
   const todaysEvents = eventsByDate[todayIso] || [];
   const visibleToday = todaysEvents.filter(
-    (e: any) => (e as any).status !== "Filled" && (e as any).status !== "Awarded",
+    (e) => e.status !== "Filled" && e.status !== "Awarded",
   );
-  const openToday = visibleToday.filter((e: any) => (e as any).status === "Open").length;
-  const pendingToday = visibleToday.filter((e: any) => (e as any).status === "Pending").length;
+  const openToday = visibleToday.filter((e) => e.status === "Open").length;
+  const pendingToday = visibleToday.filter((e) => e.status === "Pending").length;
   const filledToday = todaysEvents.filter(
-    (e: any) => (e as any).status === "Filled" || (e as any).status === "Awarded",
+    (e) => e.status === "Filled" || e.status === "Awarded",
   ).length;
 
   const weekdayShort = new Intl.DateTimeFormat(undefined, { weekday: "short" });
@@ -54,7 +56,7 @@ export default function CalendarView({ vacancies }: Props) {
         </div>
         <div className="actions">
           <button className="calendar-btn" onClick={() => { setY(today.getFullYear()); setM(today.getMonth()); }} aria-label="Jump to today">Jump to Today</button>
-          <button className="calendar-btn" onClick={() => { /* TODO: navigate to new vacancy */ }} aria-label="Create new vacancy">New Vacancy</button>
+          <button className="calendar-btn" onClick={() => navigate("/vacancies/new")} aria-label="Create new vacancy">New Vacancy</button>
           <button className="calendar-btn" onClick={() => setShowHeatmap((h) => !h)} aria-pressed={showHeatmap} aria-label="Toggle heatmap">Toggle Heatmap</button>
           <button className="calendar-btn" onClick={() => setShowFilled((f) => !f)} aria-pressed={showFilled} aria-label="Show filled shifts">Show Filled</button>
         </div>
@@ -80,16 +82,16 @@ export default function CalendarView({ vacancies }: Props) {
       <div className={"calendar-grid" + (showHeatmap ? " heatmap" : "") }>
         {days.map((d) => {
           const iso = isoDate(d.date);
-          const allEvents = (eventsByDate[iso] || []) as any[];
+          const allEvents = eventsByDate[iso] || [];
           const events = showFilled
             ? allEvents
             : allEvents.filter(
-                (e) => (e as any).status !== "Filled" && (e as any).status !== "Awarded",
+                (e) => e.status !== "Filled" && e.status !== "Awarded",
               );
-          const open = events.filter((e) => (e as any).status === "Open").length;
-          const pending = events.filter((e) => (e as any).status === "Pending").length;
+          const open = events.filter((e) => e.status === "Open").length;
+          const pending = events.filter((e) => e.status === "Pending").length;
           const filled = allEvents.filter(
-            (e) => (e as any).status === "Filled" || (e as any).status === "Awarded",
+            (e) => e.status === "Filled" || e.status === "Awarded",
           ).length;
           return (
             <div
@@ -108,28 +110,27 @@ export default function CalendarView({ vacancies }: Props) {
               </div>
               <div className="events">
                 {events.slice(0, 4).map((e, idx) => {
-                  const status =
-                    (e as any).status === "Awarded" ? "Filled" : (e as any).status || "Open";
+                  const status = e.status === "Awarded" ? "Filled" : e.status || "Open";
                   return (
                     <div
                       key={idx}
                       className="event-pill has-tooltip"
                       data-status={status}
-                      data-wing={(e as any).wing || undefined}
-                      data-class={(e as any).classification || undefined}
+                      data-wing={e.wing || undefined}
+                      data-class={e.classification || undefined}
                     >
                       <div>
-                        <strong>{(e as any).shiftStart ?? ""}–{(e as any).shiftEnd ?? ""}</strong>
-                        <span className="event-meta"> {(e as any).wing ?? ""} {(e as any).classification ?? ""}</span>
+                        <strong>{e.shiftStart ?? ""}–{e.shiftEnd ?? ""}</strong>
+                        <span className="event-meta"> {e.wing ?? ""} {e.classification ?? ""}</span>
                       </div>
                       <span className="event-meta">{status}</span>
                       <div className="tooltip" role="tooltip">
                         <div className="title">Shift details</div>
-                        <div className="line">Wing: {(e as any).wing ?? "—"}</div>
-                        <div className="line">Class: {(e as any).classification ?? "—"}</div>
-                        <div className="line">Time: {(e as any).shiftStart ?? "—"}–{(e as any).shiftEnd ?? "—"}</div>
-                        { (e as any).employee ? <div className="line">Assigned: {(e as any).employee}</div> : null }
-                        { (e as any).notes ? <div className="line">Notes: {(e as any).notes}</div> : null }
+                        <div className="line">Wing: {e.wing ?? "—"}</div>
+                        <div className="line">Class: {e.classification ?? "—"}</div>
+                        <div className="line">Time: {e.shiftStart ?? "—"}–{e.shiftEnd ?? "—"}</div>
+                        {e.employee ? <div className="line">Assigned: {e.employee}</div> : null}
+                        {e.notes ? <div className="line">Notes: {e.notes}</div> : null}
                       </div>
                     </div>
                   );
