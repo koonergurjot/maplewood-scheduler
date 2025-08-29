@@ -14,6 +14,7 @@ import {
 } from "./lib/dates";
 import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
+import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
 
 /**
@@ -756,6 +757,7 @@ export default function App() {
         </div>
 
         {tab === "coverage" && (
+          <CoverageRangesPanel />
           <div className="grid grid2">
             <div className="card">
               <div className="card-h">
