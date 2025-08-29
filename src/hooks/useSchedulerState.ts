@@ -61,7 +61,21 @@ export function useSchedulerState() {
     [employees],
   );
 
-  return {
+  
+// Persist vacancyRanges as part of app state
+useEffect(() => {
+  saveState({
+    employees,
+    vacations,
+    vacancies,
+    bids,
+    archivedBids,
+    settings,
+    vacancyRanges,
+  });
+}, [employees, vacations, vacancies, bids, archivedBids, settings, vacancyRanges]);
+
+  if (typeof window !== "undefined") (window as any).schedulerState = {
     employees,
     setEmployees,
     vacations,
@@ -75,5 +89,25 @@ export function useSchedulerState() {
     settings,
     setSettings,
     employeesById,
+    vacancyRanges,
+    setVacancyRanges,
+  };
+
+return {
+    employees,
+    setEmployees,
+    vacations,
+    setVacations,
+    vacancies,
+    setVacancies,
+    bids,
+    setBids,
+    archivedBids,
+    setArchivedBids,
+    settings,
+    setSettings,
+    employeesById,
+    vacancyRanges,
+    setVacancyRanges,
   };
 }

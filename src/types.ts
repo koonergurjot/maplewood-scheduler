@@ -50,6 +50,13 @@ export type Vacancy = {
 };
 
 export type Bid = {
+  /** Range coverage intent: full = all workingDays, some-days = subset, partial-day = shorter time on specific day(s) */
+  coverageType?: BidCoverageType;
+  /** If bidding on a range, selected ISO dates inside the range */
+  selectedDays?: string[];
+  /** Optional per-day time overrides (for partial-day bids) */
+  timeOverrides?: Record<string, { start: string; end: string }>;
+
   vacancyId: string;
   bidderEmployeeId: string;
   bidderName: string;
@@ -72,6 +79,43 @@ export type Settings = {
   tabOrder: string[];
   defaultShiftPreset: string;
 };
+
+// --- Maplewood: Multi-day Vacancy Range support (added) ---
+export type VacancyRange = {
+  id: string;
+  reason: string;
+  classification: Classification;
+  wing?: string;
+  startDate: string;     // inclusive ISO date (YYYY-MM-DD)
+  endDate: string;       // inclusive ISO date
+  knownAt: string;       // ISO timestamp the vacancy was announced
+  workingDays: string[]; // ISO dates inside [startDate, endDate] that are actual worked days
+  /**
+   * Times can vary per worked day. Keys are ISO dates.
+   * If a date is missing here, use default shift times (shiftStart/shiftEnd below).
+   */
+  perDayTimes?: Record<string, { start: string; end: string }>;
+  /**
+   * Optional defaults/presets when first creating the range.
+   * These are not authoritative per day; perDayTimes takes precedence.
+   */
+  shiftStart?: string;
+  shiftEnd?: string;
+  offeringStep: "Casuals" | "OT-Full-Time" | "OT-Casuals";
+  status: "Open" | "Pending Award" | "Awarded" | "Filled";
+  /**
+   * If awarded, this is the employee id who covers ALL workingDays.
+   * Award happens as an atomic action across the group.
+   */
+  awardedTo?: string;
+  awardedAt?: string;
+};
+
+// Extend Bid to capture coverage type for range bids
+export type BidCoverageType = "full" | "some-days" | "partial-day";
+
+// Note: existing fields remain unchanged; we add a few optional fields for range context.
+declare module "./types-augment" {} // placeholder to avoid duplicate exports when tooling bundles
 
 export const WINGS = [
   "Shamrock",
