@@ -1,4 +1,5 @@
 import { formatDateLong, combineDateTime, minutesBetween } from "./dates";
+import { getDatesInRange } from "../utils/date";
 import type { Vacancy, Settings, Bid } from "../types";
 
 export const displayVacancyLabel = (v: Vacancy) => {
@@ -20,6 +21,15 @@ export function pickWindowMinutes(v: Vacancy, settings: Settings) {
 export function deadlineFor(v: Vacancy, settings: Settings) {
   const winMin = pickWindowMinutes(v, settings);
   return new Date(new Date(v.knownAt).getTime() + winMin * 60000);
+}
+
+export function getVacancyActiveDates(v: Vacancy): string[] {
+  if (Array.isArray(v.coverageDates) && v.coverageDates.length > 0) {
+    return v.coverageDates;
+  }
+  const start = v.startDate ?? v.shiftDate;
+  const end = v.endDate ?? v.shiftDate;
+  return getDatesInRange(start, end);
 }
 
 export function fmtCountdown(msLeft: number) {
