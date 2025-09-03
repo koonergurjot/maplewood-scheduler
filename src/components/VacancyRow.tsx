@@ -123,7 +123,7 @@ export default function VacancyRow({
       </td>
       <td style={{ display: "flex", gap: 6 }}>
         <button className="btn" onClick={onResetKnownAt}>
-          Reset knownAt
+          Reset timer
         </button>
         <button className="btn" onClick={handleAward} disabled={!choice}>
           Award
