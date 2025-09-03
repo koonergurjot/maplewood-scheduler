@@ -19,6 +19,7 @@ import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
 import { TrashIcon } from "./components/ui/Icon";
 import VacancyRangeForm from "./components/VacancyRangeForm";
+import BundleRow from "./components/BundleRow";
 import { appConfig } from "./config";
 import type { VacancyRange } from "./types";
 import { expandRangeToVacancies } from "./lib/expandRange";
@@ -613,6 +614,71 @@ export default function App() {
     );
   };
 
+  // Build rows: bundle by vacationId (fallback to bundleId)
+  const openVacancies = useMemo(() => filteredVacancies, [filteredVacancies]);
+
+  // Group vacancies by vacationId or bundleId
+  const groups = useMemo(() => {
+    const by: Record<string, Vacancy[]> = {};
+    for (const v of openVacancies) {
+      const key = v.vacationId || (v as any).bundleId || "";
+      if (!key) continue;
+      (by[key] ||= []).push(v);
+    }
+    return by;
+  }, [openVacancies]);
+
+  type Row =
+    | { type: "bundle"; key: string; items: Vacancy[] }
+    | { type: "single"; key: string; item: Vacancy };
+
+  // Create display rows: bundles for groups with 2+ items, singles otherwise
+  const rows: Row[] = useMemo(() => {
+    const bundledKeys = Object.keys(groups).filter((k) => groups[k].length >= 2);
+    const r: Row[] = [];
+    for (const k of bundledKeys) r.push({ type: "bundle", key: k, items: groups[k] });
+    for (const v of openVacancies) {
+      const k = v.vacationId || (v as any).bundleId || "";
+      if (!k || (groups[k]?.length ?? 0) < 2)
+        r.push({ type: "single", key: v.id, item: v });
+    }
+    r.sort((a, b) => {
+      const aTime =
+        a.type === "bundle"
+          ? Math.min(
+              ...a.items.map((x) =>
+                new Date(`${x.shiftDate}T${x.shiftStart}:00`).getTime(),
+              ),
+            )
+          : new Date(`${a.item.shiftDate}T${a.item.shiftStart}:00`).getTime();
+      const bTime =
+        b.type === "bundle"
+          ? Math.min(
+              ...b.items.map((x) =>
+                new Date(`${x.shiftDate}T${x.shiftStart}:00`).getTime(),
+              ),
+            )
+          : new Date(`${b.item.shiftDate}T${b.item.shiftStart}:00`).getTime();
+      return aTime - bTime;
+    });
+    return r;
+  }, [groups, openVacancies]);
+
+  // Helpers for selection & delete (operate on many ids)
+  const toggleMany = (ids: string[]) => {
+    setSelectedVacancyIds((prev) => {
+      const set = new Set(prev);
+      const allSelected = ids.every((id) => set.has(id));
+      if (allSelected) ids.forEach((id) => set.delete(id));
+      else ids.forEach((id) => set.add(id));
+      return Array.from(set);
+    });
+  };
+
+  const deleteMany = (ids: string[]) => {
+    ids.forEach((id) => deleteVacancy(id));
+  };
+
   return (
     <div
       className="app"
@@ -1129,15 +1195,32 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredVacancies.map((v) => {
+                    {rows.map((row) => {
+                      if (row.type === "bundle") {
+                        return (
+                          <BundleRow
+                            key={`bundle-${row.key}`}
+                            groupId={row.key}
+                            items={row.items}
+                            employees={employees}
+                            settings={settings}
+                            selectedIds={selectedVacancyIds}
+                            onToggleSelectMany={toggleMany}
+                            onDeleteMany={deleteMany}
+                            dueNextId={dueNextId}
+                          />
+                        );
+                      }
+                      const v = row.item;
                       const rec = recommendations[v.id];
                       const recId = rec?.id;
                       const recName = recId
-                        ? `${employeesById[recId]?.firstName ?? ""} ${employeesById[recId]?.lastName ?? ""}`.trim()
+                        ? `${employeesById[recId]?.firstName ?? ""} ${
+                            employeesById[recId]?.lastName ?? ""
+                          }`.trim()
                         : "—";
                       const recWhy = rec?.why ?? [];
-                      const dl = deadlineFor(v, settings);
-                      const msLeft = dl.getTime() - now;
+                      const msLeft = deadlineFor(v, settings).getTime() - now;
                       const winMin = pickWindowMinutes(v, settings);
                       const sinceKnownMin = minutesBetween(
                         new Date(),
@@ -1146,11 +1229,12 @@ export default function App() {
                       const pct = Math.max(
                         0,
                         Math.min(1, (winMin - sinceKnownMin) / winMin),
-                      ); // 1→0 over window
+                      );
                       let cdClass = "cd-green";
                       if (msLeft <= 0) cdClass = "cd-red";
                       else if (pct < 0.25) cdClass = "cd-yellow";
                       const isDueNext = dueNextId === v.id;
+
                       return (
                         <VacancyRow
                           key={v.id}
