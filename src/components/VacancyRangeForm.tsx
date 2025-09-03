@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from "react";
 import type { VacancyRange, Classification } from "../types";
 import CoverageDaysModal from "./CoverageDaysModal";
-import { getDatesInRange, formatCoverageSummary } from "../utils/date";
+import { getDatesInRange, formatCoverageSummary, isWeekday } from "../utils/date";
+import { appConfig } from "../config";
 
 type Props = {
   open: boolean;
@@ -31,8 +32,30 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
 
   const isMultiDay = allDays.length > 1;
 
+  const selectedRecord = useMemo(() => {
+    const rec: Record<string, boolean> = {};
+    for (const d of workingDays) rec[d] = true;
+    return rec;
+  }, [workingDays]);
+
   function toggleDay(iso: string) {
-    setWorkingDays(prev => prev.includes(iso) ? prev.filter(d => d !== iso) : [...prev, iso]);
+    setWorkingDays(prev =>
+      prev.includes(iso) ? prev.filter(d => d !== iso) : [...prev, iso]
+    );
+  }
+
+  function applyPreset(preset: "weekdays" | "every-other" | "all" | "none") {
+    let next: string[] = [];
+    if (preset === "all") {
+      next = [...allDays];
+    } else if (preset === "none") {
+      next = [];
+    } else if (preset === "weekdays") {
+      next = allDays.filter(isWeekday);
+    } else if (preset === "every-other") {
+      next = allDays.filter((_, i) => i % 2 === 0);
+    }
+    setWorkingDays(next);
   }
 
   function applyPresetToAll() {
@@ -45,9 +68,8 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
     setPerDayTimes(prev => ({ ...prev, [d]: { start: prev[d]?.start ?? shiftStart, end: prev[d]?.end ?? shiftEnd, [field]: value } as any }));
   }
 
-  const handleCoverageDaysChange = (selectedDates: string[]) => {
-    setWorkingDays(selectedDates);
-    setShowCoverageModal(false);
+  const resetFullRange = () => {
+    setWorkingDays([...allDays]);
   };
 
   // Auto-select all days when dates change and no working days selected
@@ -117,18 +139,27 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
           </label>
         </div>
 
-        {isMultiDay && allDays.length > 0 && (
+        {appConfig.features.coverageDayPicker && isMultiDay && allDays.length > 0 && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-medium">Coverage Days</h3>
-              <button 
-                onClick={() => setShowCoverageModal(true)}
-                className="px-3 py-2 rounded-md border bg-blue-50 hover:bg-blue-100"
-              >
-                Select Coverage Days
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={resetFullRange}
+                  className="text-sm underline"
+                  data-testid="reset-full-range"
+                >
+                  Reset to full range
+                </button>
+                <button
+                  onClick={() => setShowCoverageModal(true)}
+                  className="px-3 py-2 rounded-md border bg-blue-50 hover:bg-blue-100"
+                >
+                  Edit coverage days
+                </button>
+              </div>
             </div>
-            
+
             <div className="p-3 bg-gray-50 rounded-md mb-2">
               <p className="text-sm text-gray-600 mb-1">
                 <strong>Coverage Summary:</strong> {formatCoverageSummary(workingDays, allDays)}
@@ -187,11 +218,10 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
         <CoverageDaysModal
           open={showCoverageModal}
           onClose={() => setShowCoverageModal(false)}
-          onSave={handleCoverageDaysChange}
-          startDate={startDate}
-          endDate={endDate}
-          initialSelection={workingDays}
-          title="Select Coverage Days"
+          dates={allDays}
+          selected={selectedRecord}
+          onToggle={toggleDay}
+          onApplyPreset={applyPreset}
         />
       </div>
     </div>
