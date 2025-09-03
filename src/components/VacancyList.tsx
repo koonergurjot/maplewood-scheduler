@@ -191,8 +191,9 @@ export default function VacancyList({
               <th>Assign</th>
               <th>Override</th>
               <th>Reason (if overriding)</th>
-              <th>Actions</th>
-              <th>Actions</th>
+              <th colSpan={2} style={{ textAlign: "center" }}>
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
