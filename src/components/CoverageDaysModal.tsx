@@ -1,66 +1,107 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { getDayOfWeekShort } from "../utils/date";
 
-type Preset = "weekdays" | "every-other" | "all" | "none";
+type Preset = "four-two" | "custom";
+
+type Result = {
+  selectedDates: string[];
+  perDayTimes: Record<string, { start: string; end: string }>;
+  perDayWings: Record<string, string>;
+};
 
 interface Props {
   open: boolean;
   onClose: () => void;
   dates: string[];
-  selected: Record<string, boolean>;
-  onToggle: (iso: string) => void;
-  onApplyPreset: (preset: Preset) => void;
+  defaultShiftStart: string;
+  defaultShiftEnd: string;
+  defaultWing: string;
+  initialSelected: string[];
+  initialTimes: Record<string, { start: string; end: string }>;
+  initialWings: Record<string, string>;
+  onSave: (res: Result) => void;
 }
 
 export default function CoverageDaysModal({
   open,
   onClose,
   dates,
-  selected,
-  onToggle,
-  onApplyPreset,
+  defaultShiftStart,
+  defaultShiftEnd,
+  defaultWing,
+  initialSelected,
+  initialTimes,
+  initialWings,
+  onSave,
 }: Props) {
-  const buttonRefs = useRef<HTMLButtonElement[]>([]);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [times, setTimes] = useState<Record<string, { start: string; end: string }>>({});
+  const [wings, setWings] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (open) {
-      buttonRefs.current[0]?.focus();
+      const sel: Record<string, boolean> = {};
+      const init = initialSelected.length > 0 ? initialSelected : dates;
+      for (const d of dates) sel[d] = init.includes(d);
+      setSelected(sel);
+      setTimes(initialTimes || {});
+      setWings(initialWings || {});
     }
-  }, [open]);
-
-  const handleKeyDown = (idx: number, date: string) => (e: React.KeyboardEvent) => {
-    const cols = 7;
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-      buttonRefs.current[(idx + 1) % dates.length]?.focus();
-    } else if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      buttonRefs.current[(idx - 1 + dates.length) % dates.length]?.focus();
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      const next = Math.min(idx + cols, dates.length - 1);
-      buttonRefs.current[next]?.focus();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      const prev = Math.max(idx - cols, 0);
-      buttonRefs.current[prev]?.focus();
-    } else if (e.key === " " || e.key === "Enter") {
-      e.preventDefault();
-      onToggle(date);
-    }
-  };
+  }, [open, dates, initialSelected, initialTimes, initialWings]);
 
   if (!open) return null;
+
+  const toggle = (d: string) => {
+    setSelected((prev) => ({ ...prev, [d]: !prev[d] }));
+  };
+
+  const updateTime = (d: string, field: "start" | "end", value: string) => {
+    setTimes((prev) => ({
+      ...prev,
+      [d]: { start: prev[d]?.start ?? defaultShiftStart, end: prev[d]?.end ?? defaultShiftEnd, [field]: value } as any,
+    }));
+  };
+
+  const updateWing = (d: string, value: string) => {
+    setWings((prev) => ({ ...prev, [d]: value }));
+  };
+
+  const applyPreset = (preset: Preset) => {
+    const next: Record<string, boolean> = {};
+    if (preset === "four-two") {
+      dates.forEach((d, idx) => {
+        next[d] = idx % 6 < 4;
+      });
+    } else {
+      dates.forEach((d) => {
+        next[d] = true;
+      });
+    }
+    setSelected(next);
+  };
+
+  const handleSave = () => {
+    const selectedDates = dates.filter((d) => selected[d]);
+    const filteredTimes: Record<string, { start: string; end: string }> = {};
+    const filteredWings: Record<string, string> = {};
+    for (const d of selectedDates) {
+      const t = times[d];
+      if (t && (t.start !== defaultShiftStart || t.end !== defaultShiftEnd)) {
+        filteredTimes[d] = t;
+      }
+      const w = wings[d];
+      if (w && w !== defaultWing) {
+        filteredWings[d] = w;
+      }
+    }
+    onSave({ selectedDates, perDayTimes: filteredTimes, perDayWings: filteredWings });
+  };
 
   const selectedCount = dates.filter((d) => selected[d]).length;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" role="dialog" aria-modal="true">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-xl p-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Coverage Days</h2>
           <button onClick={onClose} className="px-2 py-1 rounded-md border">
@@ -68,61 +109,19 @@ export default function CoverageDaysModal({
           </button>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 gap-2 mb-4">
-          {dates.map((d, idx) => {
-            const date = new Date(d + "T00:00:00");
-            const label = `${getDayOfWeekShort(d)} ${date
-              .getDate()
-              .toString()
-              .padStart(2, "0")}`;
-            const isSelected = !!selected[d];
-            return (
-              <button
-                key={d}
-                ref={(el) => (buttonRefs.current[idx] = el!)}
-                data-testid={`date-${d}`}
-                className={`px-2 py-2 rounded-md border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isSelected ? "bg-blue-600 text-white" : "bg-white"
-                }`}
-                aria-pressed={isSelected}
-                onClick={() => onToggle(d)}
-                onKeyDown={handleKeyDown(idx, d)}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div className="flex gap-2">
             <button
-              data-testid="preset-weekdays"
               className="px-2 py-1 rounded-md border text-sm"
-              onClick={() => onApplyPreset("weekdays")}
+              onClick={() => applyPreset("four-two")}
             >
-              Weekdays
+              4-on/2-off
             </button>
             <button
-              data-testid="preset-every-other"
               className="px-2 py-1 rounded-md border text-sm"
-              onClick={() => onApplyPreset("every-other")}
+              onClick={() => applyPreset("custom")}
             >
-              Every Other
-            </button>
-            <button
-              data-testid="preset-all"
-              className="px-2 py-1 rounded-md border text-sm"
-              onClick={() => onApplyPreset("all")}
-            >
-              All
-            </button>
-            <button
-              data-testid="preset-none"
-              className="px-2 py-1 rounded-md border text-sm"
-              onClick={() => onApplyPreset("none")}
-            >
-              None
+              Custom
             </button>
           </div>
           <p className="text-sm">
@@ -130,11 +129,58 @@ export default function CoverageDaysModal({
           </p>
         </div>
 
-        {selectedCount === 0 && (
-          <p className="mt-2 text-sm text-amber-600">
-            At least one day recommended for coverage.
-          </p>
-        )}
+        <div className="flex flex-col gap-2 max-h-64 overflow-auto mb-4">
+          {dates.map((d) => {
+            const isSelected = !!selected[d];
+            const date = new Date(d + "T00:00:00");
+            const label = `${getDayOfWeekShort(d)} ${date
+              .getDate()
+              .toString()
+              .padStart(2, "0")}`;
+            return (
+              <label key={d} className="flex items-center gap-2">
+                <input type="checkbox" checked={isSelected} onChange={() => toggle(d)} />
+                <span className="w-28 text-sm">{label}</span>
+                <input
+                  type="time"
+                  value={times[d]?.start ?? defaultShiftStart}
+                  onChange={(e) => updateTime(d, "start", e.target.value)}
+                  disabled={!isSelected}
+                  className="border rounded-md px-1 py-0.5 text-sm"
+                />
+                <span>—</span>
+                <input
+                  type="time"
+                  value={times[d]?.end ?? defaultShiftEnd}
+                  onChange={(e) => updateTime(d, "end", e.target.value)}
+                  disabled={!isSelected}
+                  className="border rounded-md px-1 py-0.5 text-sm"
+                />
+                <input
+                  type="text"
+                  value={wings[d] ?? ""}
+                  onChange={(e) => updateWing(d, e.target.value)}
+                  disabled={!isSelected}
+                  className="border rounded-md px-1 py-0.5 text-sm w-24"
+                  placeholder="Wing"
+                />
+              </label>
+            );
+          })}
+        </div>
+
+        <div className="mt-2 flex justify-end gap-2">
+          <button onClick={onClose} className="px-3 py-2 rounded-md border">
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-3 py-2 rounded-md bg-black text-white"
+            disabled={selectedCount === 0}
+          >
+            Save
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -126,6 +126,8 @@ export type VacancyRange = {
 
   // Optional per-day time overrides (when some days have different times)
   perDayTimes?: Record<string, { start: string; end: string }>;
+  // Optional per-day wing overrides
+  perDayWings?: Record<string, string>;
   shiftStart?: string;
   shiftEnd?: string;
 
