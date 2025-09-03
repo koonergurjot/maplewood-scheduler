@@ -534,12 +534,56 @@ export default function App() {
     });
   };
 
+  const awardBundle = (
+    bundleId: string,
+    payload: { empId?: string; reason?: string; overrideUsed?: boolean },
+  ) => {
+    const empId = payload.empId;
+    const bundleVacancies = vacancies.filter(
+      (v) =>
+        v.bundleId === bundleId &&
+        v.status !== "Filled" &&
+        v.status !== "Awarded",
+    );
+    if (!bundleVacancies.length) return;
+    if (empId && empId !== "EMPTY") {
+      const hasAllBids = bundleVacancies.every((v) =>
+        bids.some(
+          (b) => b.vacancyId === v.id && b.bidderEmployeeId === empId,
+        ),
+      );
+      if (!hasAllBids) {
+        alert("Employee is missing bids on at least one bundled day.");
+        return;
+      }
+      const emp = employeesById[empId];
+      if (
+        emp &&
+        bundleVacancies.some(
+          (v) => v.classification !== emp.classification,
+        ) &&
+        !payload.overrideUsed
+      ) {
+        alert("Employee classification mismatch within bundle.");
+        return;
+      }
+    }
+    const ids = bundleVacancies.map((v) => v.id);
+    setVacancies((prev) => applyAwardVacancies(prev, ids, payload));
+    archiveBids(ids);
+  };
+
   const awardVacancy = (
     vacId: string,
     payload: { empId?: string; reason?: string; overrideUsed?: boolean },
   ) => {
-    setVacancies((prev) => applyAwardVacancy(prev, vacId, payload));
-    archiveBids([vacId]);
+    const target = vacancies.find((v) => v.id === vacId);
+    if (target?.bundleId) {
+      awardBundle(target.bundleId, payload);
+    } else {
+      setVacancies((prev) => applyAwardVacancy(prev, vacId, payload));
+      archiveBids([vacId]);
+    }
   };
 
   const resetKnownAt = (vacId: string) => {
@@ -1214,7 +1258,6 @@ export default function App() {
                             key={`bundle-${row.key}`}
                             groupId={row.key}
                             items={row.items}
-                            employees={employees}
                             settings={settings}
                             selectedIds={selectedVacancyIds}
                             onToggleSelectMany={toggleMany}
@@ -1846,19 +1889,35 @@ export function BidsPage({
                           `${newBid.bidDate}T${newBid.bidTime}:00`,
                         ).toISOString()
                       : new Date().toISOString();
-                  setBids((prev: Bid[]) => [
-                    ...prev,
-                    {
-                      vacancyId: newBid.vacancyId!,
-                      bidderEmployeeId: newBid.bidderEmployeeId!,
-                      bidderName: newBid.bidderName ?? "",
-                      bidderStatus: (newBid.bidderStatus ?? "Casual") as Status,
-                      bidderClassification: (newBid.bidderClassification ??
-                        "RCA") as Classification,
-                      bidTimestamp: ts,
-                      notes: newBid.notes ?? "",
-                    },
-                  ]);
+                  const vac = vacancies.find(
+                    (x) => x.id === newBid.vacancyId!,
+                  );
+                  const targetIds = vac?.bundleId
+                    ? vacancies
+                        .filter(
+                          (x) =>
+                            x.bundleId === vac.bundleId &&
+                            x.status !== "Filled" &&
+                            x.status !== "Awarded",
+                        )
+                        .map((x) => x.id)
+                    : [newBid.vacancyId!];
+                  setBids((prev: Bid[]) => {
+                    const arr = [...prev];
+                    for (const id of targetIds) {
+                      arr.push({
+                        vacancyId: id,
+                        bidderEmployeeId: newBid.bidderEmployeeId!,
+                        bidderName: newBid.bidderName ?? "",
+                        bidderStatus: (newBid.bidderStatus ?? "Casual") as Status,
+                        bidderClassification: (newBid.bidderClassification ??
+                          "RCA") as Classification,
+                        bidTimestamp: ts,
+                        notes: newBid.notes ?? "",
+                      });
+                    }
+                    return arr;
+                  });
                   setNewBid({});
                 }}
               >

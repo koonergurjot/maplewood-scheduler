@@ -9,8 +9,8 @@ interface Props {
   settings: Settings;
   selectedIds: string[];
   onToggleSelectMany: (ids: string[]) => void;
-  onEdit: (items: Vacancy[]) => void;
-  onSplit: (ids: string[]) => void;
+  onEdit?: (items: Vacancy[]) => void;
+  onSplit?: (ids: string[]) => void;
   onDeleteMany: (ids: string[]) => void;
   dueNextId: string | null;
 }
@@ -105,12 +105,16 @@ export default function BundleRow({
           </div>
         </td>
         <td colSpan={2} style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-          <button className="btn btn-sm" onClick={() => onEdit(items)}>
-            Edit
-          </button>
-          <button className="btn btn-sm" onClick={() => onSplit(childIds)}>
-            Split
-          </button>
+          {onEdit && (
+            <button className="btn btn-sm" onClick={() => onEdit(items)}>
+              Edit
+            </button>
+          )}
+          {onSplit && (
+            <button className="btn btn-sm" onClick={() => onSplit(childIds)}>
+              Split
+            </button>
+          )}
           <button
             className="btn btn-sm danger"
             onClick={() => onDeleteMany(childIds)}
