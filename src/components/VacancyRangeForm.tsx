@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from "react";
-import type { VacancyRange, Classification } from "../types";
+import type { VacancyRange, Classification, Vacancy } from "../types";
 import CoverageDaysModal from "./CoverageDaysModal";
 import { getDatesInRange, formatCoverageSummary } from "../utils/date";
+import { formatDateLong } from "../lib/dates";
 
 type Props = {
   open: boolean;
@@ -9,14 +10,24 @@ type Props = {
   onSave: (range: VacancyRange) => void;
   defaultClassification?: Classification;
   defaultWing?: string;
+  existingVacancies?: Vacancy[];
 };
 
 // Remove enumerateDates as we now use getDatesInRange from utils
 
-export default function VacancyRangeForm({ open, onClose, onSave, defaultClassification, defaultWing }: Props) {
+export default function VacancyRangeForm({
+  open,
+  onClose,
+  onSave,
+  defaultClassification,
+  defaultWing,
+  existingVacancies = [],
+}: Props) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [classification, setClassification] = useState<Classification>(defaultClassification ?? "RCA");
+  const [classification, setClassification] = useState<Classification>(
+    defaultClassification ?? "RCA",
+  );
   const [wing, setWing] = useState<string>(defaultWing ?? "");
   const [shiftStart, setShiftStart] = useState("06:30");
   const [shiftEnd, setShiftEnd] = useState("14:30");
@@ -47,6 +58,30 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
 
   function save() {
     if (!startDate || !endDate || workingDays.length === 0) return;
+
+    const conflictDays = workingDays.filter((d) => {
+      const t = perDayTimes[d] || { start: shiftStart, end: shiftEnd };
+      const w = perDayWings[d] ?? wing;
+      return existingVacancies.some(
+        (v) =>
+          v.shiftDate === d &&
+          v.shiftStart === t.start &&
+          v.shiftEnd === t.end &&
+          v.classification === classification &&
+          (v.wing ?? "") === (w ?? ""),
+      );
+    });
+    if (
+      conflictDays.length &&
+      !window.confirm(
+        `Selected dates conflict with existing vacancies on ${conflictDays
+          .map((d) => formatDateLong(d))
+          .join(", ")}. Continue?`,
+      )
+    ) {
+      return;
+    }
+
     const now = new Date().toISOString();
     const range: VacancyRange = {
       id: crypto.randomUUID(),
@@ -88,7 +123,12 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">Classification</span>
-            <select value={classification} onChange={e=>setClassification(e.target.value as Classification)} className="border rounded-md px-2 py-1">
+            <select
+              value={classification}
+              onChange={(e) => setClassification(e.target.value as Classification)}
+              className="border rounded-md px-2 py-1"
+              disabled={!!defaultClassification}
+            >
               <option>RCA</option><option>LPN</option><option>RN</option>
             </select>
           </label>
