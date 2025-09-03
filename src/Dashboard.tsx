@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
-import type { Employee, Vacancy } from "./App";
+import type { Employee } from "./App";
 import CalendarView from "./components/CalendarView";
+import OpenVacancies from "./components/OpenVacancies";
+import useVacancies from "./state/useVacancies";
 import "./styles/branding.css";
 
 const LS_KEY = "maplewood-scheduler-v3";
@@ -24,21 +26,17 @@ const loadState = () => {
 
 type State = {
   employees: Employee[];
-  vacancies: Vacancy[];
 };
 
 export default function Dashboard() {
-  const data: State = loadState() || { employees: [], vacancies: [] };
-  const { employees, vacancies } = data;
+  const data: State = loadState() || { employees: [] };
+  const { employees } = data;
+  const { vacancies, stageDelete, undoDelete, staged } = useVacancies();
 
   const [view, setView] = useState<"list" | "calendar">("list");
 
   const filled = useMemo(
     () => vacancies.filter((v) => v.status === "Filled" || v.status === "Awarded"),
-    [vacancies],
-  );
-  const open = useMemo(
-    () => vacancies.filter((v) => v.status !== "Filled" && v.status !== "Awarded"),
     [vacancies],
   );
 
@@ -112,14 +110,12 @@ export default function Dashboard() {
 
             <section>
               <h2>Open Shifts</h2>
-              <div className="shift-list">
-                {open.map((v) => (
-                  <div key={v.id} className="shift-card open">
-                    {v.shiftDate} {v.shiftStart}–{v.shiftEnd} • {v.wing ?? ""} • {v.classification}
-                  </div>
-                ))}
-                {open.length === 0 && <p>No open shifts.</p>}
-              </div>
+              <OpenVacancies
+                vacancies={vacancies}
+                stageDelete={stageDelete}
+                undoDelete={undoDelete}
+                staged={staged}
+              />
             </section>
 
             <section className="employee-list">

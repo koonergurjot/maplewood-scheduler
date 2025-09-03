@@ -97,6 +97,7 @@ export function useVacancies() {
     stageDelete,
     undoDelete,
     staged,
+    auditLog,
   } as const;
 }
 
