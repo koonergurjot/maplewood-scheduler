@@ -16,6 +16,7 @@ import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
+import { TrashIcon } from "./components/ui/Icon";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -522,6 +523,16 @@ export default function App() {
         v.id === vacId ? { ...v, knownAt: new Date().toISOString() } : v,
       ),
     );
+  };
+
+  const deleteVacancy = (vacId: string) => {
+    setVacancies((prev) => prev.filter((v) => v.id !== vacId));
+    setBids((prev) => prev.filter((b) => b.vacancyId !== vacId));
+    setArchivedBids((prev) => {
+      const { [vacId]: _removed, ...rest } = prev;
+      return rest;
+    });
+    setSelectedVacancyIds((ids) => ids.filter((id) => id !== vacId));
   };
 
   // Figure out which open vacancy is "due next" (soonest positive deadline)
@@ -1096,6 +1107,7 @@ export default function App() {
                       <th>Override</th>
                       <th>Reason (if overriding)</th>
                       <th>Actions</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1142,6 +1154,7 @@ export default function App() {
                           isDueNext={!!isDueNext}
                           onAward={(payload) => awardVacancy(v.id, payload)}
                           onResetKnownAt={() => resetKnownAt(v.id)}
+                          onDelete={deleteVacancy}
                         />
                       );
                     })}
@@ -1991,6 +2004,7 @@ function VacancyRow({
   isDueNext,
   onAward,
   onResetKnownAt,
+  onDelete,
 }: {
   v: Vacancy;
   recId?: string;
@@ -2008,6 +2022,7 @@ function VacancyRow({
     overrideUsed?: boolean;
   }) => void;
   onResetKnownAt: () => void;
+  onDelete: (id: string) => void;
 }) {
   const [choice, setChoice] = useState<string>("");
   const [overrideClass, setOverrideClass] = useState<boolean>(false);
@@ -2117,6 +2132,22 @@ function VacancyRow({
         </button>
         <button className="btn" onClick={handleAward} disabled={!choice}>
           Award
+        </button>
+      </td>
+      <td>
+        <button
+          className="btn btn-sm"
+          aria-label="Delete vacancy"
+          title="Delete vacancy"
+          data-testid={`vacancy-delete-${v.id}`}
+          tabIndex={0}
+          onClick={() => onDelete(v.id)}
+        >
+          {TrashIcon ? (
+            <TrashIcon style={{ width: 16, height: 16 }} aria-hidden="true" />
+          ) : (
+            "Delete"
+          )}
         </button>
       </td>
     </tr>
