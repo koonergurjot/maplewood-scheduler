@@ -567,6 +567,26 @@ export default function App() {
         alert("Employee classification mismatch within bundle.");
         return;
       }
+
+      const conflictDays = bundleVacancies
+        .filter((v) =>
+          vacancies.some(
+            (o) =>
+              o.id !== v.id &&
+              o.shiftDate === v.shiftDate &&
+              (o.status === "Filled" || o.status === "Awarded") &&
+              o.awardedTo === empId,
+          ),
+        )
+        .map((v) => formatDateLong(v.shiftDate));
+      if (
+        conflictDays.length &&
+        !window.confirm(
+          `Employee already assigned on ${conflictDays.join(", ")}. Continue?`,
+        )
+      ) {
+        return;
+      }
     }
     const ids = bundleVacancies.map((v) => v.id);
     setVacancies((prev) => applyAwardVacancies(prev, ids, payload));
@@ -581,6 +601,25 @@ export default function App() {
     if (target?.bundleId) {
       awardBundle(target.bundleId, payload);
     } else {
+      if (payload.empId && payload.empId !== "EMPTY" && target) {
+        const conflict = vacancies.some(
+          (v) =>
+            v.id !== vacId &&
+            v.shiftDate === target.shiftDate &&
+            (v.status === "Filled" || v.status === "Awarded") &&
+            v.awardedTo === payload.empId,
+        );
+        if (
+          conflict &&
+          !window.confirm(
+            `Employee already assigned on ${formatDateLong(
+              target.shiftDate,
+            )}. Continue?`,
+          )
+        ) {
+          return;
+        }
+      }
       setVacancies((prev) => applyAwardVacancy(prev, vacId, payload));
       archiveBids([vacId]);
     }
@@ -620,16 +659,12 @@ export default function App() {
   }, [vacancies, now, settings]);
 
   const filteredVacancies = useMemo(() => {
-    return vacancies.filter((v) => {
-      if (v.status === "Filled" || v.status === "Awarded") return false;
+    const passes = (v: Vacancy) => {
       if (filterWing && v.wing !== filterWing) return false;
       if (filterClass && v.classification !== filterClass) return false;
       if (filterShift) {
         const preset = SHIFT_PRESETS.find((p) => p.label === filterShift);
-        if (
-          preset &&
-          (v.shiftStart !== preset.start || v.shiftEnd !== preset.end)
-        )
+        if (preset && (v.shiftStart !== preset.start || v.shiftEnd !== preset.end))
           return false;
       }
       if (filterCountdown) {
@@ -639,10 +674,7 @@ export default function App() {
           new Date(),
           new Date(v.knownAt),
         );
-        const pct = Math.max(
-          0,
-          Math.min(1, (winMin - sinceKnownMin) / winMin),
-        );
+        const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin));
         let cdClass = "green";
         if (msLeft <= 0) cdClass = "red";
         else if (pct < 0.25) cdClass = "yellow";
@@ -651,7 +683,19 @@ export default function App() {
       if (filterStart && v.shiftDate < filterStart) return false;
       if (filterEnd && v.shiftDate > filterEnd) return false;
       return true;
-    });
+    };
+
+    const groups: Record<string, Vacancy[]> = {};
+    for (const v of vacancies) {
+      if (v.status === "Filled" || v.status === "Awarded") continue;
+      const key = v.vacationId || (v as any).bundleId || v.id;
+      (groups[key] ||= []).push(v);
+    }
+    const out: Vacancy[] = [];
+    for (const arr of Object.values(groups)) {
+      if (arr.some(passes)) out.push(...arr);
+    }
+    return out;
   }, [
     vacancies,
     filterWing,
@@ -1387,6 +1431,7 @@ export default function App() {
             open={showRangeForm}
             onClose={() => setShowRangeForm(false)}
             onSave={handleSaveRange}
+            existingVacancies={vacancies}
           />
         )}
         <BulkAwardDialog

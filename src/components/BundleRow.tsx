@@ -35,6 +35,13 @@ export default function BundleRow({
   }, [items]);
 
   const first = sorted[0];
+  const bundleClass = useMemo(() => {
+    const cls = first?.classification;
+    if (sorted.some((v) => v.classification !== cls)) {
+      console.warn("Bundle has mixed classifications", groupId);
+    }
+    return cls;
+  }, [first, sorted, groupId]);
 
   // countdown based on first shift only
   const now = Date.now();
@@ -93,7 +100,7 @@ export default function BundleRow({
             </button>
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ fontWeight: 600 }}>
-                {first.classification} • {first.wing ?? ""}
+                {bundleClass} • {first.wing ?? ""}
               </div>
               <div style={{ fontSize: 12, opacity: 0.85 }}>{dateList}</div>
             </div>
