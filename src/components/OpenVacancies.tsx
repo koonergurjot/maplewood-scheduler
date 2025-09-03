@@ -120,7 +120,29 @@ export default function OpenVacancies({
                 />
               </td>
               <td>{v.classification}</td>
-              <td>{v.shiftDate}</td>
+              <td>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <span>
+                    {v.startDate && v.endDate && v.startDate !== v.endDate
+                      ? `${v.startDate}–${v.endDate}`
+                      : v.shiftDate}
+                  </span>
+                  {v.startDate && v.endDate && v.startDate !== v.endDate && (
+                    <span className="pill" data-testid="coverage-chip">
+                      {v.coverageDates && v.coverageDates.length > 0
+                        ? `Coverage: ${v.coverageDates.length} days`
+                        : "Coverage: all days"}
+                    </span>
+                  )}
+                </div>
+              </td>
               <td>
                 {v.shiftStart}–{v.shiftEnd}
               </td>
