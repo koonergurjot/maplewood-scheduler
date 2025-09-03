@@ -36,15 +36,16 @@ export function evaluateBidWarnings(opts: {
   statDays?: Set<string>;
 }): string[] {
   const out: string[] = [];
-  const sel = new Set(bid.selectedDays ?? []);
+  const sel = new Set<string>(opts.bid.selectedDays ?? []);
   const sameDayOther = (opts.allBids || []).some(
-    b => b.bidderEmployeeId === bid.bidderEmployeeId &&
-         b.vacancyId !== bid.vacancyId &&
-         (b.selectedDays ?? []).some(d => sel.has(d))
+    (b) =>
+      b.bidderEmployeeId === opts.bid.bidderEmployeeId &&
+      b.vacancyId !== opts.bid.vacancyId &&
+      (b.selectedDays ?? []).some((d) => sel.has(d)),
   );
   if (sameDayOther) out.push("Bidder has another bid on at least one selected day.");
 
-  if (opts.statDays && [...sel].some(d => opts.statDays!.has(d))) {
+  if (opts.statDays && Array.from(sel).some((d) => opts.statDays!.has(d))) {
     out.push("Reminder: One or more selected days are stat/holiday.");
   }
   return out;

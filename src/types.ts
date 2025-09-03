@@ -73,10 +73,10 @@ export type Settings = {
     h24to72: number;
     gt72: number;
   };
-  theme: "dark" | "light";
-  fontScale: number;
-  tabOrder: string[];
-  defaultShiftPreset: string;
+  theme?: "dark" | "light";
+  fontScale?: number;
+  tabOrder?: string[];
+  defaultShiftPreset?: string;
 };
 
 export const WINGS = [
