@@ -40,10 +40,8 @@ export default function CoverageDaysModal({
 
   useEffect(() => {
     if (open) {
-      const sel: Record<string, boolean> = {};
       const init = initialSelected.length > 0 ? initialSelected : dates;
-      for (const d of dates) sel[d] = init.includes(d);
-      setSelected(sel);
+      setSelected(Object.fromEntries(dates.map((d) => [d, init.includes(d)])));
       setTimes(initialTimes || {});
       setWings(initialWings || {});
     }
