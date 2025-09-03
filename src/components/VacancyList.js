@@ -5,7 +5,7 @@ import { useVacancyFilters } from "../hooks/useVacancyFilters";
 import { WINGS, SHIFT_PRESETS } from "../types";
 import { deadlineFor, pickWindowMinutes, fmtCountdown } from "../lib/vacancy";
 import { minutesBetween } from "../lib/dates";
-export default function VacancyList({ vacancies, employees, employeesById, recommendations, selectedVacancyIds, setSelectedVacancyIds, settings, now, dueNextId, awardVacancy, resetKnownAt, }) {
+export default function VacancyList({ vacancies, employees, employeesById, recommendations, selectedVacancyIds, setSelectedVacancyIds, settings, now, dueNextId, awardVacancy, resetKnownAt, deleteVacancy = () => { }, }) {
     const { filterWing, setFilterWing, filterClass, setFilterClass, filterShift, setFilterShift, filterCountdown, setFilterCountdown, filterStart, setFilterStart, filterEnd, setFilterEnd, filtersOpen, setFiltersOpen, } = useVacancyFilters();
     const filteredVacancies = useMemo(() => {
         return vacancies.filter((v) => {
@@ -62,7 +62,7 @@ export default function VacancyList({ vacancies, employees, employeesById, recom
                                     setFilterStart("");
                                     setFilterEnd("");
                                 }, children: "Clear" })] })), _jsxs("table", { className: "vac-table responsive-table", children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { children: _jsx("input", { type: "checkbox", "aria-label": "Select all vacancies", checked: filteredVacancies.length > 0 &&
-                                                    selectedVacancyIds.length === filteredVacancies.length, onChange: (e) => toggleAllVacancies(e.target.checked) }) }), _jsx("th", { children: "Shift" }), _jsx("th", { children: "Wing" }), _jsx("th", { children: "Class" }), _jsx("th", { children: "Offering" }), _jsx("th", { children: "Recommended" }), _jsx("th", { children: "Countdown" }), _jsx("th", { children: "Assign" }), _jsx("th", { children: "Override" }), _jsx("th", { children: "Reason (if overriding)" }), _jsx("th", { children: "Actions" })] }) }), _jsx("tbody", { children: filteredVacancies.map((v) => {
+                                                    selectedVacancyIds.length === filteredVacancies.length, onChange: (e) => toggleAllVacancies(e.target.checked) }) }), _jsx("th", { children: "Shift" }), _jsx("th", { children: "Wing" }), _jsx("th", { children: "Class" }), _jsx("th", { children: "Offering" }), _jsx("th", { children: "Recommended" }), _jsx("th", { children: "Countdown" }), _jsx("th", { children: "Assign" }), _jsx("th", { children: "Override" }), _jsx("th", { children: "Reason (if overriding)" }), _jsx("th", { colSpan: 2, style: { textAlign: "center" }, children: "Actions" })] }) }), _jsx("tbody", { children: filteredVacancies.map((v) => {
                                     const rec = recommendations[v.id];
                                     const recId = rec?.id;
                                     const recName = recId
@@ -82,6 +82,6 @@ export default function VacancyList({ vacancies, employees, employeesById, recom
                                     const isDueNext = dueNextId === v.id;
                                     return (_jsx(VacancyRow, { v: v, recId: recId, recName: recName, recWhy: recWhy, employees: employees, selected: selectedVacancyIds.includes(v.id), onToggleSelect: () => setSelectedVacancyIds((ids) => ids.includes(v.id)
                                             ? ids.filter((id) => id !== v.id)
-                                            : [...ids, v.id]), countdownLabel: fmtCountdown(msLeft), countdownClass: cdClass, isDueNext: !!isDueNext, onAward: (payload) => awardVacancy(v.id, payload), onResetKnownAt: () => resetKnownAt(v.id) }, v.id));
+                                            : [...ids, v.id]), countdownLabel: fmtCountdown(msLeft), countdownClass: cdClass, isDueNext: !!isDueNext, onAward: (payload) => awardVacancy(v.id, payload), onResetKnownAt: () => resetKnownAt(v.id), onDelete: deleteVacancy }, v.id));
                                 }) })] }), filteredVacancies.length === 0 && (_jsx("div", { className: "subtitle", style: { marginTop: 8 }, children: "No open vacancies \uD83C\uDF89" }))] })] }));
 }

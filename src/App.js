@@ -7,6 +7,7 @@ import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
+import { TrashIcon } from "./components/ui/Icon";
 // ---------- Constants ----------
 const TAB_KEYS = [
     "coverage",
@@ -345,6 +346,15 @@ export default function App() {
     const resetKnownAt = (vacId) => {
         setVacancies((prev) => prev.map((v) => v.id === vacId ? { ...v, knownAt: new Date().toISOString() } : v));
     };
+    const deleteVacancy = (vacId) => {
+        setVacancies((prev) => prev.filter((v) => v.id !== vacId));
+        setBids((prev) => prev.filter((b) => b.vacancyId !== vacId));
+        setArchivedBids((prev) => {
+            const { [vacId]: _removed, ...rest } = prev;
+            return rest;
+        });
+        setSelectedVacancyIds((ids) => ids.filter((id) => id !== vacId));
+    };
     // Figure out which open vacancy is "due next" (soonest positive deadline)
     const dueNextId = useMemo(() => {
         let min = Infinity;
@@ -554,7 +564,7 @@ export default function App() {
                                                                     setFilterEnd("");
                                                                 }, children: "Clear" })] })), _jsxs("table", { className: "vac-table responsive-table", children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { children: _jsx("input", { type: "checkbox", "aria-label": "Select all vacancies", checked: filteredVacancies.length > 0 &&
                                                                                     selectedVacancyIds.length ===
-                                                                                        filteredVacancies.length, onChange: (e) => toggleAllVacancies(e.target.checked) }) }), _jsx("th", { children: "Shift" }), _jsx("th", { children: "Wing" }), _jsx("th", { children: "Class" }), _jsx("th", { children: "Offering" }), _jsx("th", { children: "Recommended" }), _jsx("th", { children: "Countdown" }), _jsx("th", { children: "Assign" }), _jsx("th", { children: "Override" }), _jsx("th", { children: "Reason (if overriding)" }), _jsx("th", { children: "Actions" })] }) }), _jsx("tbody", { children: filteredVacancies.map((v) => {
+                                                                                        filteredVacancies.length, onChange: (e) => toggleAllVacancies(e.target.checked) }) }), _jsx("th", { children: "Shift" }), _jsx("th", { children: "Wing" }), _jsx("th", { children: "Class" }), _jsx("th", { children: "Offering" }), _jsx("th", { children: "Recommended" }), _jsx("th", { children: "Countdown" }), _jsx("th", { children: "Assign" }), _jsx("th", { children: "Override" }), _jsx("th", { children: "Reason (if overriding)" }), _jsx("th", { colSpan: 2, style: { textAlign: "center" }, children: "Actions" })] }) }), _jsx("tbody", { children: filteredVacancies.map((v) => {
                                                                     const rec = recommendations[v.id];
                                                                     const recId = rec?.id;
                                                                     const recName = recId
@@ -574,7 +584,7 @@ export default function App() {
                                                                     const isDueNext = dueNextId === v.id;
                                                                     return (_jsx(VacancyRow, { v: v, recId: recId, recName: recName, recWhy: recWhy, employees: employees, selected: selectedVacancyIds.includes(v.id), onToggleSelect: () => setSelectedVacancyIds((ids) => ids.includes(v.id)
                                                                             ? ids.filter((id) => id !== v.id)
-                                                                            : [...ids, v.id]), countdownLabel: fmtCountdown(msLeft), countdownClass: cdClass, isDueNext: !!isDueNext, onAward: (payload) => awardVacancy(v.id, payload), onResetKnownAt: () => resetKnownAt(v.id) }, v.id));
+                                                                            : [...ids, v.id]), countdownLabel: fmtCountdown(msLeft), countdownClass: cdClass, isDueNext: !!isDueNext, onAward: (payload) => awardVacancy(v.id, payload), onResetKnownAt: () => resetKnownAt(v.id), onDelete: deleteVacancy }, v.id));
                                                                 }) })] }), filteredVacancies.length === 0 && (_jsx("div", { className: "subtitle", style: { marginTop: 8 }, children: "No open vacancies \uD83C\uDF89" }))] })] })] })] })), tab === "calendar" && (_jsx("div", { className: "grid", children: _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Monthly Schedule (open shifts)" }), _jsx("div", { className: "card-c", children: _jsx(MonthlySchedule, { vacancies: vacancies }) })] }) })), tab === "bids" && (_jsx(BidsPage, { bids: bids, archivedBids: archivedBids, setBids: setBids, vacancies: vacancies, vacations: vacations, employees: employees, employeesById: employeesById })), tab === "employees" && (_jsx(EmployeesPage, { employees: employees, setEmployees: setEmployees })), tab === "archive" && _jsx(ArchivePage, { vacations: vacations }), tab === "alerts" && (_jsx("div", { className: "grid", children: _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Quick Stats" }), _jsxs("div", { className: "card-c", children: [_jsxs("div", { className: "pill", children: ["Open: ", vacancies.filter((v) => v.status !== "Filled" && v.status !== "Awarded").length] }), _jsxs("div", { className: "pill", style: { marginLeft: 6 }, children: ["Archived vacations:", " ", vacations.filter((v) => v.archived).length] })] })] }) })), tab === "settings" && (_jsx(SettingsPage, { settings: settings, setSettings: setSettings })), _jsx(BulkAwardDialog, { open: bulkAwardOpen, employees: employees, vacancies: vacancies.filter((v) => selectedVacancyIds.includes(v.id)), onClose: () => setBulkAwardOpen(false), onConfirm: (payload) => {
                             setVacancies((prev) => applyAwardVacancies(prev, selectedVacancyIds, payload));
                             archiveBids(selectedVacancyIds);
@@ -787,7 +797,7 @@ function MonthlySchedule({ vacancies }) {
                     })] }), _jsx(CoverageDayList, { dateISO: selectedISO, vacancies: vacanciesByDay.get(selectedISO) || [] })] }));
 }
 // ---------- Small components ----------
-function VacancyRow({ v, recId, recName, recWhy, employees, selected, onToggleSelect, countdownLabel, countdownClass, isDueNext, onAward, onResetKnownAt, }) {
+function VacancyRow({ v, recId, recName, recWhy, employees, selected, onToggleSelect, countdownLabel, countdownClass, isDueNext, onAward, onResetKnownAt, onDelete, }) {
     const [choice, setChoice] = useState("");
     const [overrideClass, setOverrideClass] = useState(false);
     const [reason, setReason] = useState("");
@@ -819,7 +829,7 @@ function VacancyRow({ v, recId, recName, recWhy, employees, selected, onToggleSe
                         gap: 4,
                     }, children: [_jsx("span", { children: recName }), recWhy.map((w, i) => (_jsx("span", { className: "pill", children: w }, i)))] }) }), _jsx("td", { children: _jsx("span", { className: `cd-chip ${countdownClass}`, children: countdownLabel }) }), _jsx("td", { style: { minWidth: 220 }, children: _jsx(SelectEmployee, { allowEmpty: true, employees: employees, value: choice, onChange: setChoice }) }), _jsxs("td", { style: { whiteSpace: "nowrap" }, children: [_jsx("input", { id: "override-toggle", className: "toggle-input", type: "checkbox", checked: overrideClass, onChange: (e) => setOverrideClass(e.target.checked) }), _jsx("label", { htmlFor: "override-toggle", className: "toggle-box", children: _jsx("span", { className: "subtitle", children: "Allow class override" }) })] }), _jsx("td", { style: { minWidth: 230 }, children: needReason ||
                     overrideClass ||
-                    (recId && choice && choice !== recId) ? (_jsxs("select", { value: reason, onChange: (e) => setReason(e.target.value), children: [_jsx("option", { value: "", children: "Select reason\u2026" }), OVERRIDE_REASONS.map((r) => (_jsx("option", { value: r, children: r }, r)))] })) : (_jsx("span", { className: "subtitle", children: "\u2014" })) }), _jsxs("td", { style: { display: "flex", gap: 6 }, children: [_jsx("button", { className: "btn", onClick: onResetKnownAt, children: "Reset knownAt" }), _jsx("button", { className: "btn", onClick: handleAward, disabled: !choice, children: "Award" })] })] }));
+                    (recId && choice && choice !== recId) ? (_jsxs("select", { value: reason, onChange: (e) => setReason(e.target.value), children: [_jsx("option", { value: "", children: "Select reason\u2026" }), OVERRIDE_REASONS.map((r) => (_jsx("option", { value: r, children: r }, r)))] })) : (_jsx("span", { className: "subtitle", children: "\u2014" })) }), _jsxs("td", { style: { display: "flex", gap: 6 }, children: [_jsx("button", { className: "btn", onClick: onResetKnownAt, children: "Reset knownAt" }), _jsx("button", { className: "btn", onClick: handleAward, disabled: !choice, children: "Award" })] }), _jsx("td", { children: _jsx("button", { className: "btn btn-sm", "aria-label": "Delete vacancy", title: "Delete vacancy", "data-testid": `vacancy-delete-${v.id}`, tabIndex: 0, onClick: () => onDelete(v.id), children: TrashIcon ? (_jsx(TrashIcon, { style: { width: 16, height: 16 }, "aria-hidden": "true" })) : ("Delete") }) })] }));
 }
 function SelectEmployee({ employees, value, onChange, allowEmpty = false, }) {
     const [open, setOpen] = useState(false);
