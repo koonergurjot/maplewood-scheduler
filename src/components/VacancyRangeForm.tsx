@@ -39,9 +39,16 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
   }, [workingDays]);
 
   function toggleDay(iso: string) {
-    setWorkingDays(prev =>
-      prev.includes(iso) ? prev.filter(d => d !== iso) : [...prev, iso]
-    );
+    setWorkingDays((prev) => {
+      if (prev.includes(iso)) {
+        setPerDayTimes((p) => {
+          const { [iso]: _omit, ...rest } = p;
+          return rest;
+        });
+        return prev.filter((d) => d !== iso);
+      }
+      return [...prev, iso];
+    });
   }
 
   function applyPreset(preset: "weekdays" | "every-other" | "all" | "none") {
@@ -56,6 +63,11 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
       next = allDays.filter((_, i) => i % 2 === 0);
     }
     setWorkingDays(next);
+    setPerDayTimes((prev) => {
+      const filtered: Record<string, { start: string; end: string }> = {};
+      for (const d of next) if (prev[d]) filtered[d] = prev[d];
+      return filtered;
+    });
   }
 
   function applyPresetToAll() {
@@ -70,14 +82,22 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
 
   const resetFullRange = () => {
     setWorkingDays([...allDays]);
+    setPerDayTimes((prev) => {
+      const filtered: Record<string, { start: string; end: string }> = {};
+      for (const d of allDays) if (prev[d]) filtered[d] = prev[d];
+      return filtered;
+    });
   };
-
-  // Auto-select all days when dates change and no working days selected
+  // Reinitialize selection when date range changes to keep state in sync
   React.useEffect(() => {
-    if (allDays.length > 0 && workingDays.length === 0) {
+    if (allDays.length > 0) {
       setWorkingDays([...allDays]);
+      setPerDayTimes({});
+    } else {
+      setWorkingDays([]);
+      setPerDayTimes({});
     }
-  }, [allDays, workingDays.length]);
+  }, [startDate, endDate]);
 
   function save() {
     if (!startDate || !endDate || workingDays.length === 0) return;

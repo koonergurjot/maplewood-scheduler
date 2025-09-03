@@ -3,7 +3,7 @@ import type { Vacancy } from "../types";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import Toast from "./ui/Toast";
 import { TrashIcon } from "./ui/Icon";
-import { getVacancyActiveDates } from "../lib/vacancy";
+import CoverageChip from "./ui/CoverageChip";
 
 interface Props {
   vacancies: Vacancy[];
@@ -135,17 +135,11 @@ export default function OpenVacancies({
                       ? `${v.startDate}–${v.endDate}`
                       : v.shiftDate}
                   </span>
-                  {v.startDate && v.endDate && v.startDate !== v.endDate && (
-                    <span className="pill" data-testid="coverage-chip">
-                      {(() => {
-                        const active = getVacancyActiveDates(v).length;
-                        const full = getVacancyActiveDates({ ...v, coverageDates: undefined }).length;
-                        return active === full
-                          ? "Coverage: all days"
-                          : `Coverage: ${active} days`;
-                      })()}
-                    </span>
-                  )}
+                  <CoverageChip
+                    startDate={v.startDate}
+                    endDate={v.endDate}
+                    coverageDates={v.coverageDates}
+                  />
                 </div>
               </td>
               <td>
