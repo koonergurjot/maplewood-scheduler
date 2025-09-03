@@ -1522,11 +1522,14 @@ function EmployeesPage({
               const form = e.target as HTMLFormElement;
               const name = (form.elements.namedItem("name") as HTMLInputElement)
                 .value;
-              const start = (
-                form.elements.namedItem("start") as HTMLInputElement
-              ).value;
-              const hours = Number(
-                (form.elements.namedItem("hours") as HTMLInputElement).value,
+              const classification = (
+                form.elements.namedItem("classification") as HTMLSelectElement
+              ).value as Classification;
+              const status = (
+                form.elements.namedItem("status") as HTMLSelectElement
+              ).value as Status;
+              const rank = Number(
+                (form.elements.namedItem("rank") as HTMLInputElement).value,
               );
               if (!name) return;
               const [first, ...rest] = name.trim().split(" ");
@@ -1534,37 +1537,42 @@ function EmployeesPage({
                 id: `emp_${Date.now()}`,
                 firstName: first ?? "",
                 lastName: rest.join(" "),
-                classification: "RCA",
-                status: "FT",
-                startDate: start,
-                seniorityHours: hours || 0,
-                seniorityRank: employees.length + 1,
+                classification,
+                status,
+                seniorityRank: rank || employees.length + 1,
                 active: true,
               };
-              const sorted = [...employees, newEmp]
-                .sort((a, b) => {
-                  const hDiff =
-                    (b.seniorityHours ?? 0) - (a.seniorityHours ?? 0);
-                  if (hDiff !== 0) return hDiff;
-                  return (a.seniorityRank ?? 99999) - (b.seniorityRank ?? 99999);
-                })
-                .map((e, i) => ({ ...e, seniorityRank: i + 1 }));
+              const sorted = [...employees, newEmp].sort(
+                (a, b) => (a.seniorityRank ?? 99999) - (b.seniorityRank ?? 99999),
+              );
               setEmployees(sorted);
               form.reset();
             }}
           >
-            <div className="row cols3">
+            <div className="row cols4">
               <div>
                 <label>Name</label>
                 <input name="name" type="text" />
               </div>
               <div>
-                <label>Start Date</label>
-                <input name="start" type="date" />
+                <label>Class</label>
+                <select name="classification">
+                  <option value="RCA">RCA</option>
+                  <option value="LPN">LPN</option>
+                  <option value="RN">RN</option>
+                </select>
               </div>
               <div>
-                <label>Seniority Hours</label>
-                <input name="hours" type="number" />
+                <label>Status</label>
+                <select name="status">
+                  <option value="FT">FT</option>
+                  <option value="PT">PT</option>
+                  <option value="Casual">Casual</option>
+                </select>
+              </div>
+              <div>
+                <label>Rank</label>
+                <input name="rank" type="number" />
               </div>
             </div>
             <button type="submit" style={{ marginTop: 8 }}>

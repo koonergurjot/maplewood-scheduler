@@ -639,28 +639,22 @@ function EmployeesPage({ employees, setEmployees, }) {
                                 if (!name)
                                     return;
                                 const [first, ...rest] = name.trim().split(" ");
+                                const classification = form.elements.namedItem("classification").value;
+                                const status = form.elements.namedItem("status").value;
+                                const rank = Number(form.elements.namedItem("rank").value);
                                 const newEmp = {
                                     id: `emp_${Date.now()}`,
                                     firstName: first ?? "",
                                     lastName: rest.join(" "),
-                                    classification: "RCA",
-                                    status: "FT",
-                                    startDate: start,
-                                    seniorityHours: hours || 0,
-                                    seniorityRank: employees.length + 1,
+                                    classification,
+                                    status,
+                                    seniorityRank: rank || employees.length + 1,
                                     active: true,
                                 };
-                                const sorted = [...employees, newEmp]
-                                    .sort((a, b) => {
-                                    const hDiff = (b.seniorityHours ?? 0) - (a.seniorityHours ?? 0);
-                                    if (hDiff !== 0)
-                                        return hDiff;
-                                    return (a.seniorityRank ?? 99999) - (b.seniorityRank ?? 99999);
-                                })
-                                    .map((e, i) => ({ ...e, seniorityRank: i + 1 }));
+                                const sorted = [...employees, newEmp].sort((a, b) => (a.seniorityRank ?? 99999) - (b.seniorityRank ?? 99999));
                                 setEmployees(sorted);
                                 form.reset();
-                            }, children: [_jsxs("div", { className: "row cols3", children: [_jsxs("div", { children: [_jsx("label", { children: "Name" }), _jsx("input", { name: "name", type: "text" })] }), _jsxs("div", { children: [_jsx("label", { children: "Start Date" }), _jsx("input", { name: "start", type: "date" })] }), _jsxs("div", { children: [_jsx("label", { children: "Seniority Hours" }), _jsx("input", { name: "hours", type: "number" })] })] }), _jsx("button", { type: "submit", style: { marginTop: 8 }, children: "Add" })] }) })] }), _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Employees" }), _jsx("div", { className: "card-c", children: _jsxs("table", { className: "responsive-table", children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { children: "ID" }), _jsx("th", { children: "Name" }), _jsx("th", { children: "Start Date" }), _jsx("th", { children: "Seniority Hrs" }), _jsx("th", { children: "Class" }), _jsx("th", { children: "Status" }), _jsx("th", { children: "Rank" }), _jsx("th", { children: "Active" })] }) }), _jsx("tbody", { children: employees.map((e) => (_jsxs("tr", { children: [_jsx("td", { children: e.id }), _jsxs("td", { children: [e.firstName, " ", e.lastName] }), _jsx("td", { children: e.startDate }), _jsx("td", { children: e.seniorityHours ?? 0 }), _jsx("td", { children: e.classification }), _jsx("td", { children: e.status }), _jsx("td", { children: e.seniorityRank }), _jsx("td", { children: e.active ? "Yes" : "No" })] }, e.id))) })] }) })] })] }));
+                            }, children: [_jsxs("div", { className: "row cols4", children: [_jsxs("div", { children: [_jsx("label", { children: "Name" }), _jsx("input", { name: "name", type: "text" })] }), _jsxs("div", { children: [_jsx("label", { children: "Class" }), _jsxs("select", { name: "classification", children: [_jsx("option", { value: "RCA", children: "RCA" }), _jsx("option", { value: "LPN", children: "LPN" }), _jsx("option", { value: "RN", children: "RN" })] })] }), _jsxs("div", { children: [_jsx("label", { children: "Status" }), _jsxs("select", { name: "status", children: [_jsx("option", { value: "FT", children: "FT" }), _jsx("option", { value: "PT", children: "PT" }), _jsx("option", { value: "Casual", children: "Casual" })] })] }), _jsxs("div", { children: [_jsx("label", { children: "Rank" }), _jsx("input", { name: "rank", type: "number" })] })] }), _jsx("button", { type: "submit", style: { marginTop: 8 }, children: "Add" })] }) })] }), _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Employees" }), _jsx("div", { className: "card-c", children: _jsxs("table", { className: "responsive-table", children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { children: "ID" }), _jsx("th", { children: "Name" }), _jsx("th", { children: "Start Date" }), _jsx("th", { children: "Seniority Hrs" }), _jsx("th", { children: "Class" }), _jsx("th", { children: "Status" }), _jsx("th", { children: "Rank" }), _jsx("th", { children: "Active" })] }) }), _jsx("tbody", { children: employees.map((e) => (_jsxs("tr", { children: [_jsx("td", { children: e.id }), _jsxs("td", { children: [e.firstName, " ", e.lastName] }), _jsx("td", { children: e.startDate }), _jsx("td", { children: e.seniorityHours ?? 0 }), _jsx("td", { children: e.classification }), _jsx("td", { children: e.status }), _jsx("td", { children: e.seniorityRank }), _jsx("td", { children: e.active ? "Yes" : "No" })] }, e.id))) })] }) })] })] }));
 }
 function ArchivePage({ vacations }) {
     const archived = vacations.filter((v) => v.archived);
