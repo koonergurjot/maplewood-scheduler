@@ -3,6 +3,7 @@ import type { Vacancy } from "../types";
 import useVacancies from "../state/useVacancies";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import Toast from "./ui/Toast";
+import { datesInRange } from "../utils/date";
 
 export default function OpenVacancies() {
   const { vacancies, stageDelete, undoDelete, staged } = useVacancies();
@@ -65,11 +66,19 @@ export default function OpenVacancies() {
             <th>Role</th>
             <th>Date</th>
             <th>Time</th>
+            <th>Coverage</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          {vacancies.map((v) => (
+          {vacancies.map((v) => {
+            const dates =
+              v.coverageDates && v.coverageDates.length
+                ? v.coverageDates
+                : v.startDate && v.endDate
+                ? datesInRange(v.startDate, v.endDate)
+                : [v.shiftDate];
+            return (
             <tr key={v.id}>
               <td>
                 <input
@@ -84,6 +93,16 @@ export default function OpenVacancies() {
                 {v.shiftStart}–{v.shiftEnd}
               </td>
               <td>
+                {dates.length > 1 && (
+                  <span
+                    className="pill"
+                    title={dates.join(", ")}
+                  >
+                    Coverage: {dates.length} days
+                  </span>
+                )}
+              </td>
+              <td>
                 <button
                   className="btn btn-sm"
                   title="Delete vacancy"
@@ -95,10 +114,11 @@ export default function OpenVacancies() {
                 </button>
               </td>
             </tr>
-          ))}
+            );
+          })}
           {vacancies.length === 0 && (
             <tr>
-              <td colSpan={5} style={{ textAlign: "center" }}>
+              <td colSpan={6} style={{ textAlign: "center" }}>
                 No vacancies
               </td>
             </tr>

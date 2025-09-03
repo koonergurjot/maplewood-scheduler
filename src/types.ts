@@ -36,6 +36,14 @@ export type Vacancy = {
   shiftDate: string;
   shiftStart: string;
   shiftEnd: string;
+  // For multi-day vacancies, start and end dates of the range
+  startDate?: string; // ISO yyyy-mm-dd
+  endDate?: string; // ISO yyyy-mm-dd
+  /**
+   * ISO dates within the start/end range that actually require coverage.
+   * Defaults to all dates in the range when omitted.
+   */
+  coverageDates?: string[];
   knownAt: string;
   offeringTier: any;
   offeringRoundStartedAt?: string;

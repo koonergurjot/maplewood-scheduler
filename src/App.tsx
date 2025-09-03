@@ -16,6 +16,8 @@ import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
+import CoverageDaysModal from "./components/vacancy/CoverageDaysModal";
+import { datesInRange } from "./utils/date";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -69,6 +71,14 @@ export type Vacancy = {
   shiftDate: string; // ISO date
   shiftStart: string; // HH:mm
   shiftEnd: string; // HH:mm
+  // When representing a multi-day vacancy, these mark the overall range
+  startDate?: string; // ISO yyyy-mm-dd
+  endDate?: string; // ISO yyyy-mm-dd
+  /**
+   * Inclusive set of dates within start->end that actually require coverage.
+   * Defaults to all dates in the range when omitted.
+   */
+  coverageDates?: string[];
   knownAt: string; // ISO datetime
   offeringTier: OfferingTier;
   offeringRoundStartedAt?: string;
@@ -402,6 +412,7 @@ export default function App() {
     shiftEnd: defaultShift.end,
     shiftPreset: defaultShift.label,
   });
+  const [coverageModalOpen, setCoverageModalOpen] = useState(false);
 
   useEffect(() => {
     setNewVacay((v) => ({
@@ -413,6 +424,17 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultShift]);
 
+  // Reconcile coverage dates when start/end changes
+  useEffect(() => {
+    setNewVacay((v) => {
+      if (!v.startDate || !v.endDate) return v;
+      const all = datesInRange(v.startDate, v.endDate);
+      const existing = v.coverageDates && v.coverageDates.length ? v.coverageDates : all;
+      const intersection = existing.filter((d) => all.includes(d));
+      return { ...v, coverageDates: intersection.length ? intersection : all };
+    });
+  }, [newVacay.startDate, newVacay.endDate]);
+
   const vacDateRef = useRef<HTMLInputElement>(null);
   const vacStartRef = useRef<HTMLInputElement>(null);
   const vacEndRef = useRef<HTMLInputElement>(null);
@@ -420,6 +442,10 @@ export default function App() {
     ref.current?.focus();
     ref.current?.showPicker();
   };
+  const diffDays =
+    newVacay.startDate && newVacay.endDate
+      ? datesInRange(newVacay.startDate, newVacay.endDate).length - 1
+      : 0;
 
   const [multiDay, setMultiDay] = useState(false);
 
@@ -453,8 +479,9 @@ export default function App() {
     };
     setVacations((prev) => [vac, ...prev]);
 
-    // one vacancy per day in range
-    const days = dateRangeInclusive(v.startDate!, v.endDate!);
+    // one vacancy per selected day in range
+    const allDays = dateRangeInclusive(v.startDate!, v.endDate!);
+    const days = v.coverageDates && v.coverageDates.length ? v.coverageDates : allDays;
     const nowISO = new Date().toISOString();
     const vxs: Vacancy[] = days.map((d) => ({
       id: `VAC-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
@@ -465,6 +492,9 @@ export default function App() {
       shiftDate: d,
       shiftStart: v.shiftStart ?? defaultShift.start,
       shiftEnd: v.shiftEnd ?? defaultShift.end,
+      startDate: v.startDate!,
+      endDate: v.endDate!,
+      coverageDates: days,
       knownAt: nowISO,
       offeringTier: "CASUALS",
       offeringRoundStartedAt: nowISO,
@@ -860,25 +890,39 @@ export default function App() {
                           }
                         />
                       </div>
-                      <div onClick={() => handleDateFieldClick(vacEndRef)}>
-                        <label htmlFor="vac-end">End Date</label>
-                        <input
-                          ref={vacEndRef}
-                          id="vac-end"
-                          type="date"
-                          value={newVacay.endDate ?? ""}
-                          onChange={(e) =>
-                            setNewVacay((v) => ({ ...v, endDate: e.target.value }))
-                          }
-                        />
-                      </div>
-                    </>
-                  )}
-                  <div>
-                    <label>Shift</label>
-                    <select
-                      value={newVacay.shiftPreset ?? defaultShift.label}
-                      onChange={(e) => {
+                  <div onClick={() => handleDateFieldClick(vacEndRef)}>
+                    <label htmlFor="vac-end">End Date</label>
+                    <input
+                      ref={vacEndRef}
+                      id="vac-end"
+                      type="date"
+                      value={newVacay.endDate ?? ""}
+                      onChange={(e) =>
+                        setNewVacay((v) => ({ ...v, endDate: e.target.value }))
+                      }
+                    />
+                  </div>
+                </>
+              )}
+              {multiDay && diffDays >= 1 && (
+                <div style={{ gridColumn: "1 / -1" }} className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    className="px-2 py-1 rounded-md border"
+                    onClick={() => setCoverageModalOpen(true)}
+                  >
+                    Select coverage days
+                  </button>
+                  <span className="text-xs text-gray-600">
+                    Choose only the days we actually need to cover.
+                  </span>
+                </div>
+              )}
+                <div>
+                  <label>Shift</label>
+                  <select
+                    value={newVacay.shiftPreset ?? defaultShift.label}
+                    onChange={(e) => {
                         const preset = SHIFT_PRESETS.find(
                           (p) => p.label === e.target.value,
                         );
@@ -1212,6 +1256,18 @@ export default function App() {
         {tab === "settings" && (
           <SettingsPage settings={settings} setSettings={setSettings} />
         )}
+        <CoverageDaysModal
+          open={coverageModalOpen}
+          role={newVacay.classification ?? ""}
+          startDate={newVacay.startDate ?? ""}
+          endDate={newVacay.endDate ?? ""}
+          initialSelected={newVacay.coverageDates}
+          onClose={() => setCoverageModalOpen(false)}
+          onSave={(sel) => {
+            setNewVacay((v) => ({ ...v, coverageDates: sel }));
+            setCoverageModalOpen(false);
+          }}
+        />
         <BulkAwardDialog
           open={bulkAwardOpen}
           employees={employees}

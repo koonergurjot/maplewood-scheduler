@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Vacancy } from "../types";
 import { loadState, saveState } from "../utils/storage";
+import { datesInRange } from "../utils/date";
 
 export type AuditEntry = {
   id: string;
@@ -17,14 +18,18 @@ const UNDO_MS = 10000;
 export function useVacancies() {
   const persisted: any = loadState() || {};
   let initialVacancies: Vacancy[] = Array.isArray(persisted.vacancies)
-    ? persisted.vacancies.map((v: any) => ({
-        id:
+    ? persisted.vacancies.map((v: any) => {
+        const id =
           v.id ||
           (typeof crypto !== "undefined" && "randomUUID" in crypto
             ? crypto.randomUUID()
-            : Date.now().toString()),
-        ...v,
-      }))
+            : Date.now().toString());
+        let coverage = v.coverageDates as string[] | undefined;
+        if (!coverage && v.startDate && v.endDate) {
+          coverage = datesInRange(v.startDate, v.endDate);
+        }
+        return { id, ...v, coverageDates: coverage } as Vacancy;
+      })
     : [];
 
   // backfill ids if needed
