@@ -4,6 +4,7 @@ import type { Vacancy, Employee } from "../types";
 import { OVERRIDE_REASONS } from "../types";
 import { matchText } from "../lib/text";
 import CoverageChip from "./ui/CoverageChip";
+import { TrashIcon } from "./ui/Icon";
 
 export default function VacancyRow({
   v,
@@ -18,6 +19,7 @@ export default function VacancyRow({
   isDueNext,
   onAward,
   onResetKnownAt,
+  onDelete,
 }: {
   v: Vacancy;
   recId?: string;
@@ -31,6 +33,7 @@ export default function VacancyRow({
   isDueNext: boolean;
   onAward: (payload: { empId?: string; reason?: string; overrideUsed?: boolean }) => void;
   onResetKnownAt: () => void;
+  onDelete: (id: string) => void;
 }) {
   const [choice, setChoice] = useState<string>("");
   const [overrideClass, setOverrideClass] = useState<boolean>(false);
@@ -124,6 +127,22 @@ export default function VacancyRow({
         </button>
         <button className="btn" onClick={handleAward} disabled={!choice}>
           Award
+        </button>
+      </td>
+      <td>
+        <button
+          className="btn btn-sm"
+          aria-label="Delete vacancy"
+          title="Delete vacancy"
+          data-testid={`vacancy-delete-${v.id}`}
+          tabIndex={0}
+          onClick={() => onDelete(v.id)}
+        >
+          {TrashIcon ? (
+            <TrashIcon style={{ width: 16, height: 16 }} aria-hidden="true" />
+          ) : (
+            "Delete"
+          )}
         </button>
       </td>
     </tr>

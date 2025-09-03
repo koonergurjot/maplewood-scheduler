@@ -26,6 +26,7 @@ interface Props {
   setBids?: (u: any) => void;
   bids?: any[];
   archivedBids?: Record<string, any[]>;
+  deleteVacancy?: (id: string) => void;
 }
 
 export default function VacancyList({
@@ -40,6 +41,7 @@ export default function VacancyList({
   dueNextId,
   awardVacancy,
   resetKnownAt,
+  deleteVacancy = () => {},
 }: Props) {
   const {
     filterWing,
@@ -190,6 +192,7 @@ export default function VacancyList({
               <th>Override</th>
               <th>Reason (if overriding)</th>
               <th>Actions</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -230,6 +233,7 @@ export default function VacancyList({
                   isDueNext={!!isDueNext}
                   onAward={(payload) => awardVacancy(v.id, payload)}
                   onResetKnownAt={() => resetKnownAt(v.id)}
+                  onDelete={deleteVacancy}
                 />
               );
             })}
