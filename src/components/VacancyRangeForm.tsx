@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import type { VacancyRange, Classification } from "../types";
 import CoverageDaysModal from "./CoverageDaysModal";
 import { getDatesInRange, formatCoverageSummary } from "../utils/date";
-import { appConfig } from "../config";
 
 type Props = {
   open: boolean;
@@ -107,7 +106,7 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
           </label>
         </div>
 
-        {appConfig.features.coverageDayPicker && isMultiDay && allDays.length > 0 && (
+        {isMultiDay && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-medium">Coverage Days</h3>
