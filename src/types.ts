@@ -30,6 +30,7 @@ export type Vacation = {
 export type Vacancy = {
   id: string;
   vacationId?: string;
+  bundleId?: string;
   reason: string;
   classification: Classification;
   wing?: string;
