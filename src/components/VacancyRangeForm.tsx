@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import type { VacancyRange, Classification } from "../types";
 import CoverageDaysModal from "./CoverageDaysModal";
-import { getDatesInRange, formatCoverageSummary, isWeekday } from "../utils/date";
+import { getDatesInRange, formatCoverageSummary } from "../utils/date";
 import { appConfig } from "../config";
 
 type Props = {
@@ -22,7 +22,8 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
   const [shiftStart, setShiftStart] = useState("06:30");
   const [shiftEnd, setShiftEnd] = useState("14:30");
   const [workingDays, setWorkingDays] = useState<string[]>([]);
-  const [perDayTimes, setPerDayTimes] = useState<Record<string,{start:string;end:string}>>({});
+  const [perDayTimes, setPerDayTimes] = useState<Record<string, { start: string; end: string }>>({});
+  const [perDayWings, setPerDayWings] = useState<Record<string, string>>({});
   const [showCoverageModal, setShowCoverageModal] = useState(false);
 
   const allDays = useMemo(() => {
@@ -32,70 +33,16 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
 
   const isMultiDay = allDays.length > 1;
 
-  const selectedRecord = useMemo(() => {
-    const rec: Record<string, boolean> = {};
-    for (const d of workingDays) rec[d] = true;
-    return rec;
-  }, [workingDays]);
-
-  function toggleDay(iso: string) {
-    setWorkingDays((prev) => {
-      if (prev.includes(iso)) {
-        setPerDayTimes((p) => {
-          const { [iso]: _omit, ...rest } = p;
-          return rest;
-        });
-        return prev.filter((d) => d !== iso);
-      }
-      return [...prev, iso];
-    });
-  }
-
-  function applyPreset(preset: "weekdays" | "every-other" | "all" | "none") {
-    let next: string[] = [];
-    if (preset === "all") {
-      next = [...allDays];
-    } else if (preset === "none") {
-      next = [];
-    } else if (preset === "weekdays") {
-      next = allDays.filter(isWeekday);
-    } else if (preset === "every-other") {
-      next = allDays.filter((_, i) => i % 2 === 0);
-    }
-    setWorkingDays(next);
-    setPerDayTimes((prev) => {
-      const filtered: Record<string, { start: string; end: string }> = {};
-      for (const d of next) if (prev[d]) filtered[d] = prev[d];
-      return filtered;
-    });
-  }
-
-  function applyPresetToAll() {
-    const upd: Record<string,{start:string;end:string}> = {};
-    for (const d of workingDays) upd[d] = { start: shiftStart, end: shiftEnd };
-    setPerDayTimes(upd);
-  }
-
-  function updateTime(d: string, field: "start"|"end", value: string) {
-    setPerDayTimes(prev => ({ ...prev, [d]: { start: prev[d]?.start ?? shiftStart, end: prev[d]?.end ?? shiftEnd, [field]: value } as any }));
-  }
-
-  const resetFullRange = () => {
-    setWorkingDays([...allDays]);
-    setPerDayTimes((prev) => {
-      const filtered: Record<string, { start: string; end: string }> = {};
-      for (const d of allDays) if (prev[d]) filtered[d] = prev[d];
-      return filtered;
-    });
-  };
   // Reinitialize selection when date range changes to keep state in sync
   React.useEffect(() => {
     if (allDays.length > 0) {
       setWorkingDays([...allDays]);
       setPerDayTimes({});
+      setPerDayWings({});
     } else {
       setWorkingDays([]);
       setPerDayTimes({});
+      setPerDayWings({});
     }
   }, [startDate, endDate]);
 
@@ -112,6 +59,7 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
       knownAt: now,
       workingDays: [...workingDays].sort(),
       perDayTimes,
+      perDayWings,
       shiftStart,
       shiftEnd,
       offeringStep: "Casuals",
@@ -163,21 +111,12 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-medium">Coverage Days</h3>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={resetFullRange}
-                  className="text-sm underline"
-                  data-testid="reset-full-range"
-                >
-                  Reset to full range
-                </button>
-                <button
-                  onClick={() => setShowCoverageModal(true)}
-                  className="px-3 py-2 rounded-md border bg-blue-50 hover:bg-blue-100"
-                >
-                  Edit coverage days
-                </button>
-              </div>
+              <button
+                onClick={() => setShowCoverageModal(true)}
+                className="px-3 py-2 rounded-md border bg-blue-50 hover:bg-blue-100"
+              >
+                Edit coverage days
+              </button>
             </div>
 
             <div className="p-3 bg-gray-50 rounded-md mb-2">
@@ -190,37 +129,6 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
                 </p>
               )}
             </div>
-
-            {workingDays.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium">Per-day Time Overrides (Optional)</h4>
-                  <button onClick={applyPresetToAll} className="px-2 py-1 text-sm rounded-md border">
-                    Apply default time to all days
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-auto border rounded-md p-2">
-                  {workingDays.map((d: string) => (
-                    <label key={d} className="flex items-center gap-2 px-2 py-1 rounded bg-green-50">
-                      <span className="min-w-[8rem] text-sm">{d}</span>
-                      <input 
-                        type="time" 
-                        value={(perDayTimes[d]?.start) ?? shiftStart} 
-                        onChange={e=>updateTime(d,"start",e.target.value)} 
-                        className="border rounded-md px-1 py-0.5 text-sm" 
-                      />
-                      <span>—</span>
-                      <input 
-                        type="time" 
-                        value={(perDayTimes[d]?.end) ?? shiftEnd} 
-                        onChange={e=>updateTime(d,"end",e.target.value)} 
-                        className="border rounded-md px-1 py-0.5 text-sm" 
-                      />
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -239,9 +147,18 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
           open={showCoverageModal}
           onClose={() => setShowCoverageModal(false)}
           dates={allDays}
-          selected={selectedRecord}
-          onToggle={toggleDay}
-          onApplyPreset={applyPreset}
+          defaultShiftStart={shiftStart}
+          defaultShiftEnd={shiftEnd}
+          defaultWing={wing}
+          initialSelected={workingDays}
+          initialTimes={perDayTimes}
+          initialWings={perDayWings}
+          onSave={({ selectedDates, perDayTimes: times, perDayWings: wings }) => {
+            setWorkingDays(selectedDates);
+            setPerDayTimes(times);
+            setPerDayWings(wings);
+            setShowCoverageModal(false);
+          }}
         />
       </div>
     </div>
