@@ -681,9 +681,6 @@ export default function App() {
         <div className="nav">
           <div>
             <div className="title">Maplewood Scheduler</div>
-            <div className="subtitle">
-              Vacations → vacancies • bids • seniority
-            </div>
           </div>
           <div className="toolbar">
             <button

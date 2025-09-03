@@ -3,8 +3,8 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { recommend } from "./recommend";
 import { isoDate, combineDateTime, formatDateLong, formatDowShort, buildCalendar, prevMonth, nextMonth, minutesBetween, } from "./lib/dates";
-import { matchText } from "./lib/text";
 import { groupVacanciesByDate } from "./lib/vacancy";
+import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
@@ -485,7 +485,7 @@ export default function App() {
 
         /* Due next highlight */
         .due-next{ box-shadow: 0 0 0 2px var(--brand) inset; }
-      ` }), _jsxs("div", { className: "container", children: [_jsxs("div", { className: "nav", children: [_jsxs("div", { children: [_jsx("div", { className: "title", children: "Maplewood Scheduler" }), _jsx("div", { className: "subtitle", children: "Vacations \u2192 vacancies \u2022 bids \u2022 seniority" })] }), _jsxs("div", { className: "toolbar", children: [_jsx("button", { className: "btn", onClick: () => setSettings((s) => ({
+      ` }), _jsxs("div", { className: "container", children: [_jsxs("div", { className: "nav", children: [_jsx("div", { children: _jsx("div", { className: "title", children: "Maplewood Scheduler" }) }), _jsxs("div", { className: "toolbar", children: [_jsx("button", { className: "btn", onClick: () => setSettings((s) => ({
                                             ...s,
                                             theme: s.theme === "dark" ? "light" : "dark",
                                         })), children: settings.theme === "dark" ? "Light Mode" : "Dark Mode" }), _jsx(Link, { to: "/agreement", className: "btn", children: "Agreement" }), _jsx(Link, { to: "/audit-log", className: "btn", children: "Audit Log" }), _jsxs("div", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [_jsx("span", { className: "subtitle", children: "Text size" }), _jsx("input", { type: "range", min: 0.85, max: 1.6, step: 0.05, value: settings.fontScale, onChange: (e) => setSettings((s) => ({
@@ -772,7 +772,8 @@ function MonthlySchedule({ vacancies }) {
     const todayISO = isoDate(today);
     const calDays = useMemo(() => buildCalendar(year, month), [year, month]);
     const vacanciesByDay = useMemo(() => {
-        const all = vacancies.filter((v) => (v.status !== "Filled" && v.status !== "Awarded") || v.shiftDate >= todayISO);
+        const all = vacancies.filter((v) => (v.status !== "Filled" && v.status !== "Awarded") ||
+            v.shiftDate >= todayISO);
         return groupVacanciesByDate(all);
     }, [vacancies, todayISO]);
     const monthLabel = new Date(year, month, 1).toLocaleString(undefined, {
