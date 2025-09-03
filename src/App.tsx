@@ -16,6 +16,7 @@ import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
+import { TrashIcon } from "./components/ui/Icon";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -524,6 +525,12 @@ export default function App() {
     );
   };
 
+  const stageDelete = (ids: string[]) => {
+    setVacancies((prev) => prev.filter((v) => !ids.includes(v.id)));
+    archiveBids(ids);
+    setSelectedVacancyIds((curr) => curr.filter((id) => !ids.includes(id)));
+  };
+
   // Figure out which open vacancy is "due next" (soonest positive deadline)
   const dueNextId = useMemo(() => {
     let min = Infinity;
@@ -985,17 +992,12 @@ export default function App() {
                     {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
                   </button>
                   {selectedVacancyIds.length > 0 && (
-                    <>
-                      <button
-                        className="btn btn-sm"
-                        onClick={() => setBulkAwardOpen(true)}
-                      >
-                        Bulk Award
-                      </button>
-                      <span className="badge">
-                        {selectedVacancyIds.length} selected
-                      </span>
-                    </>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => setBulkAwardOpen(true)}
+                    >
+                      Bulk Award
+                    </button>
                   )}
                 </div>
                 {filtersOpen && (
@@ -1069,6 +1071,42 @@ export default function App() {
                     </button>
                   </div>
                 )}
+                {selectedVacancyIds.length > 0 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 8,
+                      marginBottom: 8,
+                      border: "1px solid var(--stroke)",
+                      padding: 8,
+                      borderRadius: 8,
+                    }}
+                  >
+                    <span>{selectedVacancyIds.length} selected</span>
+                    <button
+                      className="btn btn-sm danger"
+                      data-testid="vacancy-delete-selected"
+                      aria-label="Delete selected vacancies"
+                      tabIndex={0}
+                      onClick={() => stageDelete(selectedVacancyIds)}
+                      title="Delete selected vacancies"
+                    >
+                      <span
+                        style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                      >
+                        {TrashIcon ? (
+                          <TrashIcon style={{ width: 16, height: 16 }} aria-hidden="true" />
+                        ) : (
+                          "Delete"
+                        )}
+                        <span>Delete selected</span>
+                      </span>
+                    </button>
+                  </div>
+                )}
+
                 <table className="vac-table responsive-table">
                   <thead>
                     <tr>

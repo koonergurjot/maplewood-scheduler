@@ -3,8 +3,14 @@ import type { Vacancy, Employee, Settings } from "../types";
 import VacancyRow from "./VacancyRow";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
 import { WINGS, SHIFT_PRESETS } from "../types";
-import { deadlineFor, pickWindowMinutes, fmtCountdown, archiveBidsForVacancy } from "../lib/vacancy";
+import {
+  deadlineFor,
+  pickWindowMinutes,
+  fmtCountdown,
+  archiveBidsForVacancy,
+} from "../lib/vacancy";
 import { minutesBetween } from "../lib/dates";
+import { TrashIcon } from "./ui/Icon";
 
 export interface Recommendation {
   id?: string;
@@ -26,6 +32,8 @@ interface Props {
   setBids?: (u: any) => void;
   bids?: any[];
   archivedBids?: Record<string, any[]>;
+  stageDelete?: (ids: string[]) => void;
+  openConfirm?: (ids: string[]) => void;
 }
 
 export default function VacancyList({
@@ -40,6 +48,8 @@ export default function VacancyList({
   dueNextId,
   awardVacancy,
   resetKnownAt,
+  stageDelete,
+  openConfirm,
 }: Props) {
   const {
     filterWing,
@@ -166,6 +176,46 @@ export default function VacancyList({
             </button>
           </div>
         )}
+        {selectedVacancyIds.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 8,
+              border: "1px solid var(--stroke)",
+              padding: 8,
+              borderRadius: 8,
+            }}
+          >
+            <span>{selectedVacancyIds.length} selected</span>
+            <button
+              className="btn btn-sm danger"
+              data-testid="vacancy-delete-selected"
+              aria-label="Delete selected vacancies"
+              tabIndex={0}
+              onClick={() =>
+                stageDelete
+                  ? stageDelete(selectedVacancyIds)
+                  : openConfirm?.(selectedVacancyIds)
+              }
+              title="Delete selected vacancies"
+            >
+              <span
+                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+              >
+                {TrashIcon ? (
+                  <TrashIcon style={{ width: 16, height: 16 }} aria-hidden="true" />
+                ) : (
+                  "Delete"
+                )}
+                <span>Delete selected</span>
+              </span>
+            </button>
+          </div>
+        )}
+
         <table className="vac-table responsive-table">
           <thead>
             <tr>

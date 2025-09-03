@@ -3,9 +3,10 @@ import { useMemo } from "react";
 import VacancyRow from "./VacancyRow";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
 import { WINGS, SHIFT_PRESETS } from "../types";
-import { deadlineFor, pickWindowMinutes, fmtCountdown } from "../lib/vacancy";
+import { deadlineFor, pickWindowMinutes, fmtCountdown, } from "../lib/vacancy";
 import { minutesBetween } from "../lib/dates";
-export default function VacancyList({ vacancies, employees, employeesById, recommendations, selectedVacancyIds, setSelectedVacancyIds, settings, now, dueNextId, awardVacancy, resetKnownAt, }) {
+import { TrashIcon } from "./ui/Icon";
+export default function VacancyList({ vacancies, employees, employeesById, recommendations, selectedVacancyIds, setSelectedVacancyIds, settings, now, dueNextId, awardVacancy, resetKnownAt, stageDelete, openConfirm, }) {
     const { filterWing, setFilterWing, filterClass, setFilterClass, filterShift, setFilterShift, filterCountdown, setFilterCountdown, filterStart, setFilterStart, filterEnd, setFilterEnd, filtersOpen, setFiltersOpen, } = useVacancyFilters();
     const filteredVacancies = useMemo(() => {
         return vacancies.filter((v) => {
@@ -61,7 +62,18 @@ export default function VacancyList({ vacancies, employees, employeesById, recom
                                     setFilterCountdown("");
                                     setFilterStart("");
                                     setFilterEnd("");
-                                }, children: "Clear" })] })), _jsxs("table", { className: "vac-table responsive-table", children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { children: _jsx("input", { type: "checkbox", "aria-label": "Select all vacancies", checked: filteredVacancies.length > 0 &&
+                                }, children: "Clear" })] })), selectedVacancyIds.length > 0 && (_jsxs("div", { style: {
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: 8,
+                            marginBottom: 8,
+                            border: "1px solid var(--stroke)",
+                            padding: 8,
+                            borderRadius: 8,
+                        }, children: [_jsxs("span", { children: [selectedVacancyIds.length, " selected"] }), _jsx("button", { className: "btn btn-sm danger", "data-testid": "vacancy-delete-selected", "aria-label": "Delete selected vacancies", tabIndex: 0, onClick: () => stageDelete
+                                    ? stageDelete(selectedVacancyIds)
+                                    : openConfirm?.(selectedVacancyIds), title: "Delete selected vacancies", children: _jsxs("span", { style: { display: "inline-flex", alignItems: "center", gap: 4 }, children: [TrashIcon ? (_jsx(TrashIcon, { style: { width: 16, height: 16 }, "aria-hidden": "true" })) : ("Delete"), _jsx("span", { children: "Delete selected" })] }) })] })), _jsxs("table", { className: "vac-table responsive-table", children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { children: _jsx("input", { type: "checkbox", "aria-label": "Select all vacancies", checked: filteredVacancies.length > 0 &&
                                                     selectedVacancyIds.length === filteredVacancies.length, onChange: (e) => toggleAllVacancies(e.target.checked) }) }), _jsx("th", { children: "Shift" }), _jsx("th", { children: "Wing" }), _jsx("th", { children: "Class" }), _jsx("th", { children: "Offering" }), _jsx("th", { children: "Recommended" }), _jsx("th", { children: "Countdown" }), _jsx("th", { children: "Assign" }), _jsx("th", { children: "Override" }), _jsx("th", { children: "Reason (if overriding)" }), _jsx("th", { children: "Actions" })] }) }), _jsx("tbody", { children: filteredVacancies.map((v) => {
                                     const rec = recommendations[v.id];
                                     const recId = rec?.id;
