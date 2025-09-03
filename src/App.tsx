@@ -21,6 +21,7 @@ import { TrashIcon } from "./components/ui/Icon";
 import VacancyRangeForm from "./components/VacancyRangeForm";
 import { appConfig } from "./config";
 import type { VacancyRange } from "./types";
+import { expandRangeToVacancies } from "./lib/expandRange";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -491,25 +492,7 @@ export default function App() {
   };
 
   const handleSaveRange = (range: VacancyRange) => {
-    const nowISO = new Date().toISOString();
-    const vxs: Vacancy[] = range.workingDays.map((d) => ({
-      id: `VAC-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
-      reason: range.reason,
-      classification: range.classification,
-      wing: range.wing,
-      shiftDate: d,
-      shiftStart:
-        range.perDayTimes?.[d]?.start ?? range.shiftStart ?? "06:30",
-      shiftEnd:
-        range.perDayTimes?.[d]?.end ?? range.shiftEnd ?? "14:30",
-      knownAt: nowISO,
-      offeringTier: "CASUALS",
-      offeringRoundStartedAt: nowISO,
-      offeringRoundMinutes: 120,
-      offeringAutoProgress: true,
-      offeringStep: range.offeringStep,
-      status: range.status,
-    }));
+    const vxs = expandRangeToVacancies(range);
     setVacancies((prev) => [...vxs, ...prev]);
   };
 
