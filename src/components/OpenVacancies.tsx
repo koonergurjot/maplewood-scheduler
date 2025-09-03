@@ -2,12 +2,14 @@ import { useState } from "react";
 import type { Vacancy } from "../types";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import Toast from "./ui/Toast";
+import { TrashIcon } from "./ui/Icon";
 
 interface Props {
   vacancies: Vacancy[];
   stageDelete: (ids: string[]) => void;
   undoDelete: () => void;
   staged: Vacancy[] | null;
+  readOnly?: boolean;
 }
 
 export default function OpenVacancies({
@@ -15,6 +17,7 @@ export default function OpenVacancies({
   stageDelete,
   undoDelete,
   staged,
+  readOnly = false,
 }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, setPending] = useState<string[] | null>(null);
@@ -55,15 +58,38 @@ export default function OpenVacancies({
 
   return (
     <div>
-      {selected.length > 0 && (
-        <button
-          className="btn btn-sm danger"
-          data-testid="vacancy-delete-selected"
-          aria-label="Delete selected vacancies"
-          onClick={() => confirmDelete(selected)}
+      {!readOnly && selected.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 8,
+            border: "1px solid var(--stroke)",
+            padding: 8,
+            borderRadius: 8,
+          }}
         >
-          Delete selected
-        </button>
+          <span>{selected.length} selected</span>
+          <button
+            className="btn btn-sm danger"
+            data-testid="vacancy-delete-selected"
+            aria-label="Delete selected vacancies"
+            tabIndex={0}
+            onClick={() => confirmDelete(selected)}
+            title="Delete selected vacancies"
+          >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              {TrashIcon ? (
+                <TrashIcon style={{ width: 16, height: 16 }} aria-hidden="true" />
+              ) : (
+                "Delete"
+              )}
+              <span>Delete selected</span>
+            </span>
+          </button>
+        </div>
       )}
       <table className="responsive-table">
         <thead>
@@ -79,7 +105,7 @@ export default function OpenVacancies({
             <th>Role</th>
             <th>Date</th>
             <th>Time</th>
-            <th></th>
+            <th style={{ textAlign: "right", minWidth: 60 }}>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -90,6 +116,7 @@ export default function OpenVacancies({
                   type="checkbox"
                   checked={selected.includes(v.id)}
                   onChange={() => toggleSelect(v.id)}
+                  aria-label={`Select vacancy ${v.id}`}
                 />
               </td>
               <td>{v.classification}</td>
@@ -97,16 +124,23 @@ export default function OpenVacancies({
               <td>
                 {v.shiftStart}–{v.shiftEnd}
               </td>
-              <td>
-                <button
-                  className="btn btn-sm"
-                  title="Delete vacancy"
-                  aria-label="Delete vacancy"
-                  data-testid={`vacancy-delete-${v.id}`}
-                  onClick={() => confirmDelete([v.id])}
-                >
-                  🗑
-                </button>
+              <td style={{ textAlign: "right" }}>
+                {!readOnly && (
+                  <button
+                    className="btn btn-sm"
+                    title="Delete vacancy"
+                    aria-label="Delete vacancy"
+                    data-testid={`vacancy-delete-${v.id}`}
+                    tabIndex={0}
+                    onClick={() => confirmDelete([v.id])}
+                  >
+                    {TrashIcon ? (
+                      <TrashIcon style={{ width: 16, height: 16 }} aria-hidden="true" />
+                    ) : (
+                      "Delete"
+                    )}
+                  </button>
+                )}
               </td>
             </tr>
           ))}
