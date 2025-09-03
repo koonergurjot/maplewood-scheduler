@@ -135,7 +135,13 @@ export default function OpenVacancies({
                     onClick={() => confirmDelete([v.id])}
                   >
                     {TrashIcon ? (
-                      <TrashIcon style={{ width: 16, height: 16 }} aria-hidden="true" />
+                      <>
+                        <TrashIcon
+                          style={{ width: 16, height: 16 }}
+                          aria-hidden="true"
+                        />
+                        <span className="sr-only">Delete vacancy</span>
+                      </>
                     ) : (
                       "Delete"
                     )}
