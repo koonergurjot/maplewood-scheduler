@@ -30,7 +30,7 @@ export type Vacation = {
 export type Vacancy = {
   id: string;
   vacationId?: string;
-  bundleId?: string;
+  bundleId?: string; // ties multi-day vacancies together
   reason: string;
   classification: Classification;
   wing?: string;

@@ -462,18 +462,28 @@ export default function App() {
     };
     setVacations((prev) => [vac, ...prev]);
 
-    // one vacancy per day in range
-    const days = dateRangeInclusive(v.startDate!, v.endDate!);
+    // one vacancy per coverage day in range
+    const days: string[] =
+      (v as any).coverageDates?.length > 0
+        ? (v as any).coverageDates
+        : dateRangeInclusive(v.startDate!, v.endDate!);
+    const bundleId =
+      days.length > 1
+        ? `BND-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+        : undefined;
     const nowISO = new Date().toISOString();
     const vxs: Vacancy[] = days.map((d) => ({
       id: `VAC-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
       vacationId: vac.id,
+      ...(bundleId ? { bundleId } : {}),
       reason: "Vacation Backfill",
       classification: vac.classification,
-      wing: vac.wing,
+      wing: (v as any).perDayWings?.[d] ?? vac.wing,
       shiftDate: d,
-      shiftStart: v.shiftStart ?? defaultShift.start,
-      shiftEnd: v.shiftEnd ?? defaultShift.end,
+      shiftStart:
+        (v as any).perDayTimes?.[d]?.start ?? v.shiftStart ?? defaultShift.start,
+      shiftEnd:
+        (v as any).perDayTimes?.[d]?.end ?? v.shiftEnd ?? defaultShift.end,
       knownAt: nowISO,
       offeringTier: "CASUALS",
       offeringRoundStartedAt: nowISO,
