@@ -688,7 +688,7 @@ export default function App() {
     const groups: Record<string, Vacancy[]> = {};
     for (const v of vacancies) {
       if (v.status === "Filled" || v.status === "Awarded") continue;
-      const key = v.vacationId || (v as any).bundleId || v.id;
+      const key = v.bundleId || v.id;
       (groups[key] ||= []).push(v);
     }
     const out: Vacancy[] = [];
@@ -714,14 +714,14 @@ export default function App() {
     );
   };
 
-  // Build rows: bundle by vacationId (fallback to bundleId)
+  // Build rows: bundle by bundleId only
   const openVacancies = useMemo(() => filteredVacancies, [filteredVacancies]);
 
-  // Group vacancies by vacationId or bundleId
+  // Group vacancies by bundleId
   const groups = useMemo(() => {
     const by: Record<string, Vacancy[]> = {};
     for (const v of openVacancies) {
-      const key = v.vacationId || (v as any).bundleId || "";
+      const key = v.bundleId || "";
       if (!key) continue;
       (by[key] ||= []).push(v);
     }
@@ -738,7 +738,7 @@ export default function App() {
     const r: Row[] = [];
     for (const k of bundledKeys) r.push({ type: "bundle", key: k, items: groups[k] });
     for (const v of openVacancies) {
-      const k = v.vacationId || (v as any).bundleId || "";
+      const k = v.bundleId || "";
       if (!k || (groups[k]?.length ?? 0) < 2)
         r.push({ type: "single", key: v.id, item: v });
     }
