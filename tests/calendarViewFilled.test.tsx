@@ -2,20 +2,20 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { expect, test } from "vitest";
 import CalendarView from "../src/components/CalendarView";
-import type { Vacancy } from "../src/App";
+import type { Vacancy } from "../src/types";
 
 test("filled shifts hidden by default and toggle shows them", () => {
   const todayIso = new Date().toISOString().slice(0, 10);
-  const base: any = {
+  const base: Omit<Vacancy, "id" | "status"> = {
     reason: "Test",
     classification: "RN",
-    date: todayIso,
+    shiftDate: todayIso,
     shiftStart: "08:00",
     shiftEnd: "16:00",
     knownAt: new Date().toISOString(),
     offeringTier: "CASUALS",
     offeringStep: "Casuals",
-  };
+  } as const;
   const vacancies: Vacancy[] = [
     { ...base, id: "v1", status: "Open" },
     { ...base, id: "v2", status: "Pending" as any },

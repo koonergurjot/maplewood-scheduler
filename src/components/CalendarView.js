@@ -1,6 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import React from "react";
 import { buildCalendar, isoDate, prevMonth, nextMonth } from "../lib/dates";
+import { groupVacanciesByDate } from "../lib/vacancy";
 function monthLabel(y, m) {
     return new Date(y, m, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
@@ -14,11 +15,9 @@ export default function CalendarView({ vacancies }) {
     // Group events by ISO yyyy-mm-dd
     const eventsByDate = React.useMemo(() => {
         const map = {};
-        for (const v of vacancies ?? []) {
-            const d = v.date || v.start?.slice(0, 10);
-            if (!d)
-                continue;
-            (map[d] || (map[d] = [])).push(v);
+        const grouped = groupVacanciesByDate(vacancies ?? []);
+        for (const [d, arr] of grouped.entries()) {
+            map[d] = arr;
         }
         return map;
     }, [vacancies]);

@@ -3,6 +3,7 @@ import { useState } from "react";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import Toast from "./ui/Toast";
 import { TrashIcon } from "./ui/Icon";
+import { getVacancyActiveDates } from "../lib/vacancy";
 
 export default function OpenVacancies({ vacancies, stageDelete, undoDelete, staged, readOnly = false, }) {
   const [selected, setSelected] = useState([]);
@@ -124,10 +125,13 @@ export default function OpenVacancies({ vacancies, stageDelete, undoDelete, stag
                               _jsx("span", {
                                 className: "pill",
                                 "data-testid": "coverage-chip",
-                                children:
-                                  v.coverageDates && v.coverageDates.length > 0
-                                    ? `Coverage: ${v.coverageDates.length} days`
-                                    : "Coverage: all days",
+                                children: (() => {
+                                  const active = getVacancyActiveDates(v).length;
+                                  const full = getVacancyActiveDates({ ...v, coverageDates: undefined }).length;
+                                  return active === full
+                                    ? "Coverage: all days"
+                                    : `Coverage: ${active} days`;
+                                })(),
                               }),
                           ],
                         }),

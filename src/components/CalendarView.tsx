@@ -2,6 +2,7 @@
 import React from "react";
 import type { Vacancy } from "../types";
 import { buildCalendar, isoDate, prevMonth, nextMonth } from "../lib/dates";
+import { groupVacanciesByDate } from "../lib/vacancy";
 
 type Props = { vacancies: Vacancy[] };
 
@@ -23,10 +24,9 @@ export default function CalendarView({ vacancies }: Props) {
   // Group events by ISO yyyy-mm-dd
   const eventsByDate = React.useMemo(() => {
     const map: Record<string, any[]> = {};
-    for (const v of vacancies ?? []) {
-      const d = (v as any).date || (v as any).start?.slice(0,10);
-      if (!d) continue;
-      (map[d] ||= []).push(v);
+    const grouped = groupVacanciesByDate(vacancies ?? []);
+    for (const [d, arr] of grouped.entries()) {
+      map[d] = arr;
     }
     return map;
   }, [vacancies]);
