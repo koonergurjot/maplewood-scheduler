@@ -1,5 +1,5 @@
 import fs from "fs";
-import pdfParse from "pdf-parse";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { fileURLToPath } from "url";
 
 const uploadDir = new URL("./uploads", import.meta.url);
@@ -28,8 +28,18 @@ export async function loadAgreement(filePath) {
     // correctly on startup.
     const isPdf = buffer.slice(0, 4).toString() === "%PDF";
     if (isPdf) {
-      const data = await pdfParse(buffer);
-      agreementText = data.text;
+      const pdfDocument = await pdfjsLib.getDocument({
+        data: new Uint8Array(buffer),
+      }).promise;
+      
+      let extractedText = "";
+      for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
+        const page = await pdfDocument.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(" ");
+        extractedText += pageText + "\n";
+      }
+      agreementText = extractedText;
     } else {
       agreementText = buffer.toString();
     }
