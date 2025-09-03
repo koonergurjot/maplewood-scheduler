@@ -30,6 +30,32 @@ export function getVacancyActiveDates(v) {
     const end = v.endDate ?? v.shiftDate;
     return getDatesInRange(start, end);
 }
+
+export function coverageDatesForSubmit(v, selectedDates) {
+    const full = getVacancyActiveDates({ ...v, coverageDates: undefined });
+    const sortedSel = [...selectedDates].sort();
+    const sortedFull = [...full].sort();
+    if (sortedSel.length === sortedFull.length && sortedSel.every((d, i) => d === sortedFull[i])) {
+        return undefined;
+    }
+    return selectedDates;
+}
+
+export function hydrateCoverageSelection(v) {
+    return getVacancyActiveDates(v);
+}
+
+export function groupVacanciesByDate(vacs) {
+    const map = new Map();
+    for (const v of vacs) {
+        for (const d of getVacancyActiveDates(v)) {
+            const arr = map.get(d) || [];
+            arr.push(v);
+            map.set(d, arr);
+        }
+    }
+    return map;
+}
 export function fmtCountdown(msLeft) {
     const neg = msLeft < 0;
     const abs = Math.abs(msLeft);

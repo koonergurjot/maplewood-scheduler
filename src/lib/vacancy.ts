@@ -32,6 +32,47 @@ export function getVacancyActiveDates(v: Vacancy): string[] {
   return getDatesInRange(start, end);
 }
 
+/**
+ * Given a vacancy and a selected set of coverage days, decide what should be
+ * persisted to the vacancy record. If the selection matches the full inclusive
+ * range, we omit `coverageDates` to avoid storing redundant data.
+ */
+export function coverageDatesForSubmit(
+  v: Vacancy,
+  selectedDates: string[],
+): string[] | undefined {
+  const full = getVacancyActiveDates({ ...v, coverageDates: undefined });
+  const sortedSel = [...selectedDates].sort();
+  const sortedFull = [...full].sort();
+  if (
+    sortedSel.length === sortedFull.length &&
+    sortedSel.every((d, i) => d === sortedFull[i])
+  ) {
+    return undefined;
+  }
+  return selectedDates;
+}
+
+/** Hydrate coverage selection for editing forms. */
+export function hydrateCoverageSelection(v: Vacancy): string[] {
+  return getVacancyActiveDates(v);
+}
+
+/** Group vacancies by the dates they actually require coverage on. */
+export function groupVacanciesByDate(
+  vacs: Vacancy[],
+): Map<string, Vacancy[]> {
+  const map = new Map<string, Vacancy[]>();
+  for (const v of vacs) {
+    for (const d of getVacancyActiveDates(v)) {
+      const arr = map.get(d) || [];
+      arr.push(v);
+      map.set(d, arr);
+    }
+  }
+  return map;
+}
+
 export function fmtCountdown(msLeft: number) {
   const neg = msLeft < 0;
   const abs = Math.abs(msLeft);

@@ -12,6 +12,7 @@ import {
   nextMonth,
   minutesBetween,
 } from "./lib/dates";
+import { groupVacanciesByDate } from "./lib/vacancy";
 import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
@@ -1898,19 +1899,12 @@ function MonthlySchedule({ vacancies }: { vacancies: Vacancy[] }) {
 
   const calDays = useMemo(() => buildCalendar(year, month), [year, month]);
   const vacanciesByDay = useMemo(() => {
-    const m = new Map<string, Vacancy[]>();
-    vacancies.forEach((v) => {
-      if (
+    const all = vacancies.filter(
+      (v) =>
         (v.status !== "Filled" && v.status !== "Awarded") ||
-        v.shiftDate >= todayISO
-      ) {
-        const k = v.shiftDate;
-        const arr = m.get(k) || [];
-        arr.push(v);
-        m.set(k, arr);
-      }
-    });
-    return m;
+        v.shiftDate >= todayISO,
+    );
+    return groupVacanciesByDate(all);
   }, [vacancies, todayISO]);
 
   const monthLabel = new Date(year, month, 1).toLocaleString(undefined, {

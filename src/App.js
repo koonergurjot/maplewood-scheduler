@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { recommend } from "./recommend";
 import { isoDate, combineDateTime, formatDateLong, formatDowShort, buildCalendar, prevMonth, nextMonth, minutesBetween, } from "./lib/dates";
 import { matchText } from "./lib/text";
+import { groupVacanciesByDate } from "./lib/vacancy";
 import { reorder } from "./utils/reorder";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
@@ -771,17 +772,8 @@ function MonthlySchedule({ vacancies }) {
     const todayISO = isoDate(today);
     const calDays = useMemo(() => buildCalendar(year, month), [year, month]);
     const vacanciesByDay = useMemo(() => {
-        const m = new Map();
-        vacancies.forEach((v) => {
-            if ((v.status !== "Filled" && v.status !== "Awarded") ||
-                v.shiftDate >= todayISO) {
-                const k = v.shiftDate;
-                const arr = m.get(k) || [];
-                arr.push(v);
-                m.set(k, arr);
-            }
-        });
-        return m;
+        const all = vacancies.filter((v) => (v.status !== "Filled" && v.status !== "Awarded") || v.shiftDate >= todayISO);
+        return groupVacanciesByDate(all);
     }, [vacancies, todayISO]);
     const monthLabel = new Date(year, month, 1).toLocaleString(undefined, {
         month: "long",
