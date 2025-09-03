@@ -1,4 +1,5 @@
 import { useState } from "react";
+import CoverageChip from "./ui/CoverageChip";
 import type { Vacancy } from "../types";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import Toast from "./ui/Toast";
@@ -134,13 +135,11 @@ export default function OpenVacancies({
                       ? `${v.startDate}–${v.endDate}`
                       : v.shiftDate}
                   </span>
-                  {v.startDate && v.endDate && v.startDate !== v.endDate && (
-                    <span className="pill" data-testid="coverage-chip">
-                      {v.coverageDates && v.coverageDates.length > 0
-                        ? `Coverage: ${v.coverageDates.length} days`
-                        : "Coverage: all days"}
-                    </span>
-                  )}
+                  <CoverageChip
+                    startDate={v.startDate}
+                    endDate={v.endDate}
+                    coverageDates={v.coverageDates}
+                  />
                 </div>
               </td>
               <td>

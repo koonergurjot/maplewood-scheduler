@@ -72,7 +72,6 @@ export default function VacancyRow({
             startDate={v.startDate} 
             endDate={v.endDate} 
             coverageDates={v.coverageDates}
-            variant="compact"
           />
         </div>
       </td>
