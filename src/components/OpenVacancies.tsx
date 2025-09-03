@@ -1,11 +1,21 @@
 import { useState } from "react";
 import type { Vacancy } from "../types";
-import useVacancies from "../state/useVacancies";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import Toast from "./ui/Toast";
 
-export default function OpenVacancies() {
-  const { vacancies, stageDelete, undoDelete, staged } = useVacancies();
+interface Props {
+  vacancies: Vacancy[];
+  stageDelete: (ids: string[]) => void;
+  undoDelete: () => void;
+  staged: Vacancy[] | null;
+}
+
+export default function OpenVacancies({
+  vacancies,
+  stageDelete,
+  undoDelete,
+  staged,
+}: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, setPending] = useState<string[] | null>(null);
 
@@ -15,11 +25,15 @@ export default function OpenVacancies() {
     );
   };
 
+  const openVacancies = vacancies.filter(
+    (v) => v.status !== "Filled" && v.status !== "Awarded",
+  );
+
   const allChecked =
-    vacancies.length > 0 && selected.length === vacancies.length;
+    openVacancies.length > 0 && selected.length === openVacancies.length;
 
   const toggleAll = (checked: boolean) => {
-    setSelected(checked ? vacancies.map((v) => v.id) : []);
+    setSelected(checked ? openVacancies.map((v) => v.id) : []);
   };
 
   const confirmDelete = (ids: string[]) => {
@@ -69,7 +83,7 @@ export default function OpenVacancies() {
           </tr>
         </thead>
         <tbody>
-          {vacancies.map((v) => (
+          {openVacancies.map((v) => (
             <tr key={v.id}>
               <td>
                 <input
@@ -96,7 +110,7 @@ export default function OpenVacancies() {
               </td>
             </tr>
           ))}
-          {vacancies.length === 0 && (
+          {openVacancies.length === 0 && (
             <tr>
               <td colSpan={5} style={{ textAlign: "center" }}>
                 No vacancies
