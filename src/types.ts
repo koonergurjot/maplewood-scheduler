@@ -47,6 +47,11 @@ export type Vacancy = {
   awardedAt?: string;
   awardReason?: string;
   overrideUsed?: boolean;
+  
+  // For multi-day vacancies converted from VacancyRange
+  startDate?: string;     // YYYY-MM-DD (when this is part of a range)
+  endDate?: string;       // YYYY-MM-DD (when this is part of a range)
+  coverageDates?: string[]; // ISO dates for days that actually require coverage
 };
 
 // Extend Bid for range coverage (safe: all optional)

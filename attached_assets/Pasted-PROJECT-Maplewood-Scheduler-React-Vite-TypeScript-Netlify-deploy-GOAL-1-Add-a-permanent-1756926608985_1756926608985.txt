@@ -1,0 +1,99 @@
+PROJECT: Maplewood Scheduler (React + Vite + TypeScript, Netlify deploy)
+
+GOAL
+1) Add a permanent DELETE action for “Open Vacancies” with a confirm dialog.
+2) Add a “Coverage Days” picker for multi-day vacancies so admins can select which days actually require coverage (e.g., exclude regular days-off within a 2-week span).
+3) Propose 3–5 small “easy win” improvements and implement the simplest ones that reduce friction or fix obvious bugs.
+
+CONTEXT & ASSUMPTIONS
+- Tech: React, TypeScript, Vite. Keep code Netlify-friendly (no server-only APIs).
+- Data model: Vacancies already have startDate and endDate. Extend with an optional array: `coverageDates: string[]` (ISO yyyy-mm-dd).
+- State source: If vacancies are currently in localStorage or a simple store, update that. If a fake API layer exists, update it there too. Provide a minimal migration/backfill so existing items remain valid.
+- UI: There is a list/table of open vacancies and an edit/create form.
+- Accessibility: Keyboard and screen-reader friendly (focus trap, ARIA labels, ESC to close dialogs).
+- UX: Don’t clutter; keep components small and cohesive.
+
+REQUIREMENTS
+
+A) DELETE OPEN VACANCY
+- Add a visible “Delete” control for each vacancy in the Open Vacancies list and on its detail/edit screen.
+- On click, open a modal:
+  - Title: “Delete vacancy?”
+  - Body: “This action permanently deletes the vacancy. This cannot be undone.”
+  - Buttons: “Cancel” (default), “Delete” (destructive)
+- Only delete after explicit confirmation. After deletion:
+  - Remove the item from state/storage.
+  - Optimistically update the UI.
+  - Show a toast/snackbar: “Vacancy deleted.”
+- Add basic guard rails: disable the Delete button while processing; handle errors with a non-blocking toast.
+
+B) COVERAGE DAYS PICKER (for 2+ day spans)
+- In the vacancy create/edit form, if `(endDate - startDate) >= 1 day`, show a “Coverage Days” button that opens a modal.
+- Modal contents:
+  - Calendar or date-list of all days in the range with checkboxes/toggles.
+  - Presets:
+    - “All days”
+    - “Weekdays only (Mon–Fri)”
+    - “4-on/2-off pattern” (starting from startDate)
+    - “5-on/2-off pattern” (starting from startDate)
+  - “Clear selection”
+- Live summary (e.g., “Selected 8 of 14 days”).
+- Save writes to `coverageDates[]`. If empty, treat as “All days require coverage.”
+- Show a compact chip/tag on the vacancy row like: `Coverage: 8 days` (and in details view, optionally a tooltip listing dates).
+- Validation:
+  - `coverageDates` must be a subset of the inclusive range.
+  - Normalize to ISO date strings (no time).
+  - Persist reliably to localStorage / store.
+
+C) EASY WINS (Do these if fast and low-risk)
+Implement at least two of the following:
+1. Add a confirm modal for “Cancel Edit” actions to avoid accidental loss.
+2. Add loading/empty states to the Open Vacancies list.
+3. Add keyboard shortcuts in modals: ESC closes, Enter confirms when safe.
+4. Add a small “Are you sure?” prompt if users attempt to navigate away with unsaved edits.
+5. Add basic input validation messages (startDate ≤ endDate, title required).
+6. Add a subtle visual distinction for destructive buttons (outline + danger color) and disable them when invalid.
+
+D) CODE QUALITY & BUILD
+- Keep components small; colocate styles and tests.
+- TypeScript strictness: no `any` if avoidable; add types for vacancy, store actions, and modal props.
+- Add a tiny unit test set for:
+  - `getDatesInRange(start, end)` utility.
+  - `applyPreset(pattern, range)` utility (weekdays, 4-on/2-off, 5-on/2-off).
+  - “Delete vacancy” reducer/store action.
+- Ensure package.json has:
+  - "build": "vite build"
+  - "dev": "vite"
+  - "preview": "vite preview"
+  - "test": "vitest run"
+- Keep imports tree-shakable. Don’t add heavy libs.
+
+E) ACCEPTANCE CRITERIA
+- I can delete a vacancy from both list and detail views with a confirmation dialog; vacancy disappears immediately and persists after refresh.
+- For multi-day vacancies, I can open the Coverage Days modal, select dates or apply a preset, save, and see an accurate “Coverage: N days” chip.
+- `coverageDates` persist across reloads and export/import (if the app supports it).
+- Basic tests pass via `npm run test`.
+- No console errors; Netlify build via `npm run build` succeeds.
+- Accessibility: Modals have focus trap, ARIA labels, and are keyboard operable.
+
+F) FILES TO TOUCH (adjust to actual structure)
+- Components:
+  - `src/components/vacancies/OpenVacanciesList.tsx`
+  - `src/components/vacancies/VacancyForm.tsx`
+  - `src/components/common/ConfirmModal.tsx`
+  - `src/components/vacancies/CoverageDaysModal.tsx`
+- Store/State:
+  - `src/store/vacancies.ts` (or equivalent)
+  - `src/utils/date.ts` (new: range + pattern helpers)
+- Tests:
+  - `src/utils/date.test.ts`
+  - `src/store/vacancies.test.ts`
+
+G) NOTES
+- Prefer native <dialog> or a lightweight modal implementation.
+- Keep UI consistent with existing design tokens.
+- If you find small bugs related to these areas, fix them and briefly comment the change.
+
+Deliverables:
+- Updated code with the above features.
+- Brief summary in a root `CHANGELOG.md` describing changes and any new env/config needed.

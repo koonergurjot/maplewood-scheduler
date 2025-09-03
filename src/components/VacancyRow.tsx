@@ -3,6 +3,7 @@ import { formatDateLong, formatDowShort } from "../lib/dates";
 import type { Vacancy, Employee } from "../types";
 import { OVERRIDE_REASONS } from "../types";
 import { matchText } from "../lib/text";
+import CoverageChip from "./ui/CoverageChip";
 
 export default function VacancyRow({
   v,
@@ -60,7 +61,17 @@ export default function VacancyRow({
         <input type="checkbox" checked={selected} onChange={onToggleSelect} />
       </td>
       <td>
-        <span className="pill">{formatDowShort(v.shiftDate)}</span> {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span>
+            <span className="pill">{formatDowShort(v.shiftDate)}</span> {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}
+          </span>
+          <CoverageChip 
+            startDate={v.startDate} 
+            endDate={v.endDate} 
+            coverageDates={v.coverageDates}
+            variant="compact"
+          />
+        </div>
       </td>
       <td>{v.wing ?? ""}</td>
       <td>{v.classification}</td>

@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
 import type { VacancyRange, Classification } from "../types";
+import CoverageDaysModal from "./CoverageDaysModal";
+import { getDatesInRange, formatCoverageSummary } from "../utils/date";
 
 type Props = {
   open: boolean;
@@ -9,15 +11,7 @@ type Props = {
   defaultWing?: string;
 };
 
-function enumerateDates(startISO: string, endISO: string): string[] {
-  const out: string[] = [];
-  const d = new Date(startISO + "T00:00:00");
-  const end = new Date(endISO + "T00:00:00");
-  for (; d <= end; d.setDate(d.getDate() + 1)) {
-    out.push(d.toISOString().slice(0,10));
-  }
-  return out;
-}
+// Remove enumerateDates as we now use getDatesInRange from utils
 
 export default function VacancyRangeForm({ open, onClose, onSave, defaultClassification, defaultWing }: Props) {
   const [startDate, setStartDate] = useState("");
@@ -28,11 +22,14 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
   const [shiftEnd, setShiftEnd] = useState("14:30");
   const [workingDays, setWorkingDays] = useState<string[]>([]);
   const [perDayTimes, setPerDayTimes] = useState<Record<string,{start:string;end:string}>>({});
+  const [showCoverageModal, setShowCoverageModal] = useState(false);
 
   const allDays = useMemo(() => {
     if (!startDate || !endDate) return [];
-    return enumerateDates(startDate, endDate);
+    return getDatesInRange(startDate, endDate);
   }, [startDate, endDate]);
+
+  const isMultiDay = allDays.length > 1;
 
   function toggleDay(iso: string) {
     setWorkingDays(prev => prev.includes(iso) ? prev.filter(d => d !== iso) : [...prev, iso]);
@@ -47,6 +44,18 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
   function updateTime(d: string, field: "start"|"end", value: string) {
     setPerDayTimes(prev => ({ ...prev, [d]: { start: prev[d]?.start ?? shiftStart, end: prev[d]?.end ?? shiftEnd, [field]: value } as any }));
   }
+
+  const handleCoverageDaysChange = (selectedDates: string[]) => {
+    setWorkingDays(selectedDates);
+    setShowCoverageModal(false);
+  };
+
+  // Auto-select all days when dates change and no working days selected
+  React.useEffect(() => {
+    if (allDays.length > 0 && workingDays.length === 0) {
+      setWorkingDays([...allDays]);
+    }
+  }, [allDays, workingDays.length]);
 
   function save() {
     if (!startDate || !endDate || workingDays.length === 0) return;
@@ -108,30 +117,82 @@ export default function VacancyRangeForm({ open, onClose, onSave, defaultClassif
           </label>
         </div>
 
-        {!!allDays.length && (
+        {isMultiDay && allDays.length > 0 && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-medium">Pick working days in this range</h3>
-              <button onClick={applyPresetToAll} className="px-2 py-1 rounded-md border">Apply default time to all picked days</button>
+              <h3 className="font-medium">Coverage Days</h3>
+              <button 
+                onClick={() => setShowCoverageModal(true)}
+                className="px-3 py-2 rounded-md border bg-blue-50 hover:bg-blue-100"
+              >
+                Select Coverage Days
+              </button>
             </div>
-            <div className="grid grid-cols-2 gap-2 max-h-56 overflow-auto border rounded-md p-2">
-              {allDays.map((d: string) => (
-                <label key={d} className={"flex items-center gap-2 px-2 py-1 rounded "+(workingDays.includes(d)?"bg-green-50":"")}>
-                  <input type="checkbox" checked={workingDays.includes(d)} onChange={()=>toggleDay(d)} />
-                  <span className="min-w-[8rem]">{d}</span>
-                  <input type="time" value={ (perDayTimes[d]?.start) ?? shiftStart } onChange={e=>updateTime(d,"start",e.target.value)} className="border rounded-md px-1 py-0.5" />
-                  <span>—</span>
-                  <input type="time" value={ (perDayTimes[d]?.end) ?? shiftEnd } onChange={e=>updateTime(d,"end",e.target.value)} className="border rounded-md px-1 py-0.5" />
-                </label>
-              ))}
+            
+            <div className="p-3 bg-gray-50 rounded-md mb-2">
+              <p className="text-sm text-gray-600 mb-1">
+                <strong>Coverage Summary:</strong> {formatCoverageSummary(workingDays, allDays)}
+              </p>
+              {workingDays.length > 0 && (
+                <p className="text-xs text-gray-500">
+                  Selected days: {workingDays.join(", ")}
+                </p>
+              )}
             </div>
+
+            {workingDays.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-medium">Per-day Time Overrides (Optional)</h4>
+                  <button onClick={applyPresetToAll} className="px-2 py-1 text-sm rounded-md border">
+                    Apply default time to all days
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-auto border rounded-md p-2">
+                  {workingDays.map((d: string) => (
+                    <label key={d} className="flex items-center gap-2 px-2 py-1 rounded bg-green-50">
+                      <span className="min-w-[8rem] text-sm">{d}</span>
+                      <input 
+                        type="time" 
+                        value={(perDayTimes[d]?.start) ?? shiftStart} 
+                        onChange={e=>updateTime(d,"start",e.target.value)} 
+                        className="border rounded-md px-1 py-0.5 text-sm" 
+                      />
+                      <span>—</span>
+                      <input 
+                        type="time" 
+                        value={(perDayTimes[d]?.end) ?? shiftEnd} 
+                        onChange={e=>updateTime(d,"end",e.target.value)} 
+                        className="border rounded-md px-1 py-0.5 text-sm" 
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="px-3 py-2 rounded-md border">Cancel</button>
-          <button onClick={save} className="px-3 py-2 rounded-md bg-black text-white">Save range</button>
+          <button 
+            onClick={save} 
+            className="px-3 py-2 rounded-md bg-black text-white"
+            disabled={!startDate || !endDate || workingDays.length === 0}
+          >
+            Save range
+          </button>
         </div>
+
+        <CoverageDaysModal
+          open={showCoverageModal}
+          onClose={() => setShowCoverageModal(false)}
+          onSave={handleCoverageDaysChange}
+          startDate={startDate}
+          endDate={endDate}
+          initialSelection={workingDays}
+          title="Select Coverage Days"
+        />
       </div>
     </div>
   );
