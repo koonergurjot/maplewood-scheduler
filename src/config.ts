@@ -1,6 +1,6 @@
 export const appConfig = {
   features: {
-    coverageDayPicker: false,
+    coverageDayPicker: true,
   },
 } as const;
 

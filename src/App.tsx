@@ -18,6 +18,9 @@ import { reorder } from "./utils/reorder";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
 import { TrashIcon } from "./components/ui/Icon";
+import VacancyRangeForm from "./components/VacancyRangeForm";
+import { appConfig } from "./config";
+import type { VacancyRange } from "./types";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -302,6 +305,7 @@ export default function App() {
   );
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
   const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
+  const [showRangeForm, setShowRangeForm] = useState(false);
   const persistedSettings = persisted?.settings ?? {};
   const storedOrder: string[] = persistedSettings.tabOrder || [];
   const mergedOrder = [
@@ -484,6 +488,29 @@ export default function App() {
       shiftPreset: defaultShift.label,
     });
     setMultiDay(false);
+  };
+
+  const handleSaveRange = (range: VacancyRange) => {
+    const nowISO = new Date().toISOString();
+    const vxs: Vacancy[] = range.workingDays.map((d) => ({
+      id: `VAC-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+      reason: range.reason,
+      classification: range.classification,
+      wing: range.wing,
+      shiftDate: d,
+      shiftStart:
+        range.perDayTimes?.[d]?.start ?? range.shiftStart ?? "06:30",
+      shiftEnd:
+        range.perDayTimes?.[d]?.end ?? range.shiftEnd ?? "14:30",
+      knownAt: nowISO,
+      offeringTier: "CASUALS",
+      offeringRoundStartedAt: nowISO,
+      offeringRoundMinutes: 120,
+      offeringAutoProgress: true,
+      offeringStep: range.offeringStep,
+      status: range.status,
+    }));
+    setVacancies((prev) => [...vxs, ...prev]);
   };
 
   const archiveBids = (vacancyIds: string[]) => {
@@ -993,6 +1020,14 @@ export default function App() {
                   >
                     {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
                   </button>
+                  {appConfig.features.coverageDayPicker && (
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => setShowRangeForm(true)}
+                    >
+                      New Multi-Day Vacancy
+                    </button>
+                  )}
                   {selectedVacancyIds.length > 0 && (
                     <>
                       <button
@@ -1223,6 +1258,13 @@ export default function App() {
 
         {tab === "settings" && (
           <SettingsPage settings={settings} setSettings={setSettings} />
+        )}
+        {appConfig.features.coverageDayPicker && (
+          <VacancyRangeForm
+            open={showRangeForm}
+            onClose={() => setShowRangeForm(false)}
+            onSave={handleSaveRange}
+          />
         )}
         <BulkAwardDialog
           open={bulkAwardOpen}
