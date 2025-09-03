@@ -20,6 +20,7 @@ import BulkAwardDialog from "./components/BulkAwardDialog";
 import { TrashIcon } from "./components/ui/Icon";
 import VacancyRangeForm from "./components/VacancyRangeForm";
 import BundleRow from "./components/BundleRow";
+import CoverageDaysModal from "./components/CoverageDaysModal";
 import { appConfig } from "./config";
 import type { VacancyRange } from "./types";
 import { expandRangeToVacancies } from "./lib/expandRange";
@@ -328,6 +329,7 @@ export default function App() {
   const [filterStart, setFilterStart] = useState<string>("");
   const [filterEnd, setFilterEnd] = useState<string>("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [editingBundle, setEditingBundle] = useState<Vacancy[] | null>(null);
 
   // Tick for countdowns
   const [now, setNow] = useState<number>(Date.now());
