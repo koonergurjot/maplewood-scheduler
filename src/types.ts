@@ -22,6 +22,7 @@ export type Vacation = {
   wing: string;
   startDate: string;
   endDate: string;
+  coverageDates?: string[];
   notes?: string;
   archived?: boolean;
   archivedAt?: string;

@@ -14,8 +14,9 @@
     "skipLibCheck": true,
     "strict": true,
     "types": [
+      "vitest/globals",
       "vite/client",
-      "node"
+      "@testing-library/jest-dom"
     ]
   },
   "include": [

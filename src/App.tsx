@@ -57,6 +57,7 @@ export type Vacation = {
   wing: string; // wing where the employee's shift is being covered
   startDate: string; // ISO YYYY-MM-DD
   endDate: string; // ISO YYYY-MM-DD
+  coverageDates?: string[];
   notes?: string;
   archived?: boolean;
   archivedAt?: string; // ISO
@@ -429,8 +430,8 @@ export default function App() {
     setNewVacay((v) => {
       if (!v.startDate || !v.endDate) return v;
       const all = datesInRange(v.startDate, v.endDate);
-      const existing = v.coverageDates && v.coverageDates.length ? v.coverageDates : all;
-      const intersection = existing.filter((d) => all.includes(d));
+      const existing: string[] = v.coverageDates && v.coverageDates.length ? v.coverageDates : all;
+      const intersection = existing.filter((d: string) => all.includes(d));
       return { ...v, coverageDates: intersection.length ? intersection : all };
     });
   }, [newVacay.startDate, newVacay.endDate]);
@@ -481,9 +482,9 @@ export default function App() {
 
     // one vacancy per selected day in range
     const allDays = dateRangeInclusive(v.startDate!, v.endDate!);
-    const days = v.coverageDates && v.coverageDates.length ? v.coverageDates : allDays;
+    const days: string[] = v.coverageDates && v.coverageDates.length ? v.coverageDates : allDays;
     const nowISO = new Date().toISOString();
-    const vxs: Vacancy[] = days.map((d) => ({
+    const vxs: Vacancy[] = days.map((d: string) => ({
       id: `VAC-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
       vacationId: vac.id,
       reason: "Vacation Backfill",

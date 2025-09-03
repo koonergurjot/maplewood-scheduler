@@ -16,7 +16,7 @@ export type CoverageDaysModalProps = {
   onSave: (selectedISO: string[]) => void;
 };
 
-export default function CoverageDaysModal({
+export function CoverageDaysModal({
   open,
   role,
   startDate,
@@ -32,7 +32,7 @@ export default function CoverageDaysModal({
 
   useEffect(() => {
     if (!open) return;
-    const init = initialSelected && initialSelected.length ? initialSelected : all;
+    const init = initialSelected !== undefined ? initialSelected : all;
     setSelected(new Set(init));
     setError(null);
   }, [open, initialSelected, startDate, endDate]);
@@ -165,3 +165,5 @@ export default function CoverageDaysModal({
     </div>
   );
 }
+
+export default CoverageDaysModal;
