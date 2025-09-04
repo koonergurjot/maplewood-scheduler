@@ -31,7 +31,7 @@ export function validateTime(time) {
     if (!time) {
         return { isValid: false, error: "Time is required" };
     }
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    const timeRegex = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timeRegex.test(time)) {
         return { isValid: false, error: "Time must be in HH:MM format" };
     }
@@ -50,16 +50,14 @@ export function validateTimeRange(startTime, endTime) {
         return endValid;
     }
     // Convert times to minutes for comparison
-    const [startHour, startMin] = startTime.split(':').map(Number);
-    const [endHour, endMin] = endTime.split(':').map(Number);
+    const [startHour, startMin] = startTime.split(":").map(Number);
+    const [endHour, endMin] = endTime.split(":").map(Number);
     const startMinutes = startHour * 60 + startMin;
     const endMinutes = endHour * 60 + endMin;
-    // Handle overnight shifts
-    if (endMinutes <= startMinutes && endHour < 12) {
-        // Assume end time is next day if it's before start and in AM
-        return { isValid: true };
-    }
     if (startMinutes >= endMinutes) {
+        if (startHour >= 20) {
+            return { isValid: true };
+        }
         return { isValid: false, error: "Start time must be before end time" };
     }
     return { isValid: true };

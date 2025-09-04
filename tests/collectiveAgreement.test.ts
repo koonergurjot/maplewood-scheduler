@@ -2,15 +2,24 @@ import { describe, it, expect, vi } from "vitest";
 import fs from "fs";
 import path from "path";
 
-// Mock pdf-parse so we don't rely on the actual library which expects
+// Mock pdfjs so we don't rely on the actual library which expects
 // additional assets when bundled for tests.
-vi.mock("pdf-parse", () => ({
-  default: async () => ({ text: "Hello Agreement" }),
+vi.mock("pdfjs-dist/legacy/build/pdf.mjs", () => ({
+  getDocument: () => ({
+    promise: Promise.resolve({
+      numPages: 1,
+      getPage: async () => ({
+        getTextContent: async () => ({
+          items: [{ str: "Hello Agreement" }],
+        }),
+      }),
+    }),
+  }),
 }));
 
 describe("collectiveAgreement", () => {
   it("parses PDFs without relying on file extension", async () => {
-    // Import after mocking pdf-parse so the mock is applied.
+    // Import after mocking pdfjs so the mock is applied.
     const { loadAgreement, searchAgreement } = await import(
       "../server/collectiveAgreement.js"
     );
