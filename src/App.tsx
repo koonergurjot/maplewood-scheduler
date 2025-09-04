@@ -804,7 +804,7 @@ export default function App() {
 
         *{box-sizing:border-box}
         body,html,#root{height:100%;margin:0;-webkit-text-size-adjust:100%}
-        .container{max-width:min(95vw,1600px); margin:0 auto}
+        .container{max-width:min(100%,1600px); margin:0 auto}
         .nav{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:14px}
         .title{font-size:22px;font-weight:800}
         .subtitle{color:var(--muted);font-size:13px}
