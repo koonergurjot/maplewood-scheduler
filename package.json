@@ -16,7 +16,8 @@
     "format": "prettier -w .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "depcheck": "depcheck --skip-missing true"
+    "depcheck": "depcheck --skip-missing true",
+    "diag:imports": "tsx scripts/find-missing-imports.ts"
   },
   "dependencies": {
     "@types/react": "^18.3.3",
