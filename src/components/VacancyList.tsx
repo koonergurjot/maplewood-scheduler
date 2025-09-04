@@ -190,18 +190,9 @@ export default function VacancyList({
                   onChange={(e) => toggleAllVacancies(e.target.checked)}
                 />
               </th>
-              <th>Shift</th>
-              <th>Wing</th>
-              <th>Class</th>
-              <th>Offering</th>
-              <th>Recommended</th>
+              <th>Details</th>
               <th>Countdown</th>
-              <th>Assign</th>
-              <th>Override</th>
-              <th>Reason (if overriding)</th>
-              <th style={{ textAlign: "center" }}>
-                Actions
-              </th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>

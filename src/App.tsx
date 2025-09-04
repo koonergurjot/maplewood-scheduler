@@ -224,18 +224,6 @@ function deadlineFor(v: Vacancy, settings: Settings) {
   return new Date(new Date(v.knownAt).getTime() + winMin * 60000);
 }
 
-function fmtCountdown(msLeft: number) {
-  const neg = msLeft < 0;
-  const abs = Math.abs(msLeft);
-  const totalSec = Math.floor(abs / 1000);
-  const d = Math.floor(totalSec / 86400);
-  const h = Math.floor((totalSec % 86400) / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  const core = d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`;
-  return neg ? `Due ${core} ago` : core;
-}
-
 export const applyAwardVacancy = (
   vacs: Vacancy[],
   vacId: string,
@@ -762,18 +750,18 @@ export default function App() {
         a.type === "bundle"
           ? Math.min(
               ...a.items.map((x) =>
-                new Date(`${x.shiftDate}T${x.shiftStart}:00`).getTime(),
+                combineDateTime(x.shiftDate, x.shiftStart).getTime(),
               ),
             )
-          : new Date(`${a.item.shiftDate}T${a.item.shiftStart}:00`).getTime();
+          : combineDateTime(a.item.shiftDate, a.item.shiftStart).getTime();
       const bTime =
         b.type === "bundle"
           ? Math.min(
               ...b.items.map((x) =>
-                new Date(`${x.shiftDate}T${x.shiftStart}:00`).getTime(),
+                combineDateTime(x.shiftDate, x.shiftStart).getTime(),
               ),
             )
-          : new Date(`${b.item.shiftDate}T${b.item.shiftStart}:00`).getTime();
+          : combineDateTime(b.item.shiftDate, b.item.shiftStart).getTime();
       return aTime - bTime;
     });
     return r;
@@ -1314,18 +1302,9 @@ export default function App() {
                           }
                         />
                       </th>
-                      <th>Shift</th>
-                      <th>Wing</th>
-                      <th>Class</th>
-                      <th>Offering</th>
-                      <th>Recommended</th>
+                      <th>Details</th>
                       <th>Countdown</th>
-                      <th>Assign</th>
-                      <th>Override</th>
-                      <th>Reason (if overriding)</th>
-                      <th colSpan={2} style={{ textAlign: "center" }}>
-                        Actions
-                      </th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1359,19 +1338,6 @@ export default function App() {
                       const recWhy = rec?.why ?? [];
                       const coveredName =
                         vacations.find((x) => x.id === v.vacationId)?.employeeName ?? "";
-                      const msLeft = deadlineFor(v, settings).getTime() - now;
-                      const winMin = pickWindowMinutes(v, settings);
-                      const sinceKnownMin = minutesBetween(
-                        new Date(),
-                        new Date(v.knownAt),
-                      );
-                      const pct = Math.max(
-                        0,
-                        Math.min(1, (winMin - sinceKnownMin) / winMin),
-                      );
-                      let cdClass = "cd-green";
-                      if (msLeft <= 0) cdClass = "cd-red";
-                      else if (pct < 0.25) cdClass = "cd-yellow";
                       const isDueNext = dueNextId === v.id;
 
                       return (
@@ -1390,13 +1356,13 @@ export default function App() {
                                 : [...ids, v.id],
                             )
                           }
-                          countdownLabel={fmtCountdown(msLeft)}
-                          countdownClass={cdClass}
                           isDueNext={!!isDueNext}
                           onAward={(payload) => awardVacancy(v.id, payload)}
                           onResetKnownAt={() => resetKnownAt(v.id)}
                           onDelete={deleteVacancy}
                           coveredName={coveredName}
+                          settings={settings}
+                          now={now}
                         />
                       );
                     })}
