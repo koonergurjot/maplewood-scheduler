@@ -58,6 +58,11 @@ export default function BundleRow({
     ? `${recEmp.firstName ?? ""} ${recEmp.lastName ?? ""}`.trim()
     : "—";
 
+  const distinctWings = Array.from(
+    new Set(sorted.map((v) => v.wing).filter(Boolean))
+  );
+  const multipleWings = distinctWings.length > 1;
+
   const [open, setOpen] = React.useState(false);
   const [pickOpen, setPickOpen] = React.useState(false);
 
@@ -69,11 +74,20 @@ export default function BundleRow({
       >
         <CellSelect checked={allSelected} onChange={toggleAll} />
         <CellDetails
-          rightTag={recWhy.map((w, i) => (
-            <span key={i} className="pill">
-              {w}
-            </span>
-          ))}
+          rightTag={
+            <>
+              {multipleWings && (
+                <span className="pill" title={distinctWings.join(", ")}>
+                  Multiple wings
+                </span>
+              )}
+              {recWhy.map((w, i) => (
+                <span key={i} className="pill">
+                  {w}
+                </span>
+              ))}
+            </>
+          }
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <div style={{ fontWeight: 600 }}>{title}</div>
@@ -141,8 +155,16 @@ export default function BundleRow({
           <td />
           <td colSpan={3}>
             <div className="bundle-expand">
-              {sorted.map((v) => (
-                <div key={v.id} style={{ display: "flex", gap: 8, padding: "4px 0" }}>
+              {sorted.map((v, i) => (
+                <div
+                  key={v.id}
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    padding: "4px 0",
+                    borderTop: i === 0 ? undefined : "1px solid var(--stroke)",
+                  }}
+                >
                   <div style={{ minWidth: 160 }}>{formatDateLong(v.shiftDate)}</div>
                   <div style={{ minWidth: 100 }}>
                     {v.shiftStart}–{v.shiftEnd}
