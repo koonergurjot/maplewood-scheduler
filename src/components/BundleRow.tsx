@@ -2,6 +2,7 @@ import React from "react";
 import type { Vacancy, Employee, Settings } from "../types";
 import { formatDateLong, combineDateTime, minutesBetween } from "../lib/dates";
 import { deadlineFor, pickWindowMinutes, fmtCountdown } from "../lib/vacancy";
+import EmployeePickerModal from "./EmployeePickerModal";
 
 type Props = {
   groupId: string;
@@ -17,7 +18,7 @@ type Props = {
 };
 
 export default function BundleRow({
-  groupId, items, settings, selectedIds,
+  groupId, items, employees, settings, selectedIds,
   onToggleSelectMany, onDeleteMany, onSplitBundle,
   onAwardBundle, dueNextId,
 }: Props) {
@@ -44,6 +45,7 @@ export default function BundleRow({
   else if (pct < 0.25) cdClass = "cd-yellow";
 
   const [open, setOpen] = React.useState(false);
+  const [pickOpen, setPickOpen] = React.useState(false);
   const explicitDates = sorted.map(v => formatDateLong(v.shiftDate)).join(", ");
 
   return (
@@ -61,12 +63,20 @@ export default function BundleRow({
         <td><div className={`countdown ${cdClass}`}>{fmtCountdown(msLeft)}</div></td>
         <td style={{textAlign:"right"}}>
           <button className="btn btn-sm" onClick={() => setOpen(o => !o)}>{open ? "Hide" : "Expand"}</button>
-          {onAwardBundle && <button className="btn btn-sm" onClick={() => onAwardBundle("_PICK_IN_UI_")}>Award Bundle</button>}
+          <button className="btn btn-sm" onClick={() => setPickOpen(true)}>Award Bundle</button>
           <button className="btn btn-sm" onClick={toggleAll}>Select</button>
           <button className="btn btn-sm" onClick={() => onSplitBundle(childIds)}>Split</button>
           <button className="btn btn-sm danger" onClick={() => onDeleteMany(childIds)}>Delete</button>
         </td>
       </tr>
+
+      <EmployeePickerModal
+        open={pickOpen}
+        employees={employees}
+        classification={first.classification}
+        onClose={() => setPickOpen(false)}
+        onSelect={(eid) => { setPickOpen(false); onAwardBundle?.(eid); }}
+      />
       {open && (
         <tr>
           <td />
