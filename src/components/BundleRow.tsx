@@ -52,10 +52,11 @@ export default function BundleRow({
 
   const rec = recommendations[primary.id];
   const recId = rec?.id;
+  const recWhy = rec?.why ?? [];
   const recEmp = recId ? employees.find((e) => e.id === recId) : undefined;
   const recName = recEmp
     ? `${recEmp.firstName ?? ""} ${recEmp.lastName ?? ""}`.trim()
-    : "";
+    : "—";
 
   const [open, setOpen] = React.useState(false);
   const [pickOpen, setPickOpen] = React.useState(false);
@@ -68,24 +69,32 @@ export default function BundleRow({
       >
         <CellSelect checked={allSelected} onChange={toggleAll} />
         <CellDetails
-          rightTag=
-            {recId ? (
-              <span
-                className="pill"
-                style={{ cursor: "pointer" }}
-                onClick={() => onAwardBundle?.(recId)}
-              >
-                {recName}
-              </span>
-            ) : undefined}
+          rightTag={recWhy.map((w, i) => (
+            <span key={i} className="pill">
+              {w}
+            </span>
+          ))}
         >
-          <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <div style={{ fontWeight: 600 }}>{title}</div>
             <div
               className="subtitle"
               style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
             >
               {dateList}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {recId ? (
+                <span
+                  className="pill"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => onAwardBundle?.(recId)}
+                >
+                  {recName}
+                </span>
+              ) : (
+                <span className="subtitle">—</span>
+              )}
             </div>
           </div>
         </CellDetails>
