@@ -1346,6 +1346,8 @@ export default function App() {
                           }`.trim()
                         : "—";
                       const recWhy = rec?.why ?? [];
+                      const coveredName =
+                        vacations.find((x) => x.id === v.vacationId)?.employeeName ?? "";
                       const msLeft = deadlineFor(v, settings).getTime() - now;
                       const winMin = pickWindowMinutes(v, settings);
                       const sinceKnownMin = minutesBetween(
@@ -1383,6 +1385,7 @@ export default function App() {
                           onAward={(payload) => awardVacancy(v.id, payload)}
                           onResetKnownAt={() => resetKnownAt(v.id)}
                           onDelete={deleteVacancy}
+                          coveredName={coveredName}
                         />
                       );
                     })}
@@ -2274,6 +2277,7 @@ function VacancyRow({
   onAward,
   onResetKnownAt,
   onDelete,
+  coveredName,
 }: {
   v: Vacancy;
   recId?: string;
@@ -2292,6 +2296,7 @@ function VacancyRow({
   }) => void;
   onResetKnownAt: () => void;
   onDelete: (id: string) => void;
+  coveredName?: string;
 }) {
   const [choice, setChoice] = useState<string>("");
   const [overrideClass, setOverrideClass] = useState<boolean>(false);
@@ -2335,6 +2340,7 @@ function VacancyRow({
       <td>
         <span className="pill">{formatDowShort(v.shiftDate)}</span>{" "}
         {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}
+        {coveredName && <> • Covering {coveredName}</>}
       </td>
       <td>{v.wing ?? ""}</td>
       <td>{v.classification}</td>
