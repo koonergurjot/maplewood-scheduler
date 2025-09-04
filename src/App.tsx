@@ -1585,10 +1585,10 @@ function EmployeesPage({
           <table className="responsive-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th></th>
                 <th>Name</th>
-                <th>Start Date</th>
-                <th>Seniority Hrs</th>
+                <th></th>
+                <th></th>
                 <th>Class</th>
                 <th>Status</th>
                 <th>Rank</th>
@@ -1598,12 +1598,12 @@ function EmployeesPage({
             <tbody>
               {employees.map((e) => (
                 <tr key={e.id}>
-                  <td>{e.id}</td>
+                  <td></td>
                   <td>
                     {e.firstName} {e.lastName}
                   </td>
-                  <td>{e.startDate}</td>
-                  <td>{e.seniorityHours ?? 0}</td>
+                  <td></td>
+                  <td></td>
                   <td>{e.classification}</td>
                   <td>{e.status}</td>
                   <td>{e.seniorityRank}</td>
