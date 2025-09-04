@@ -132,3 +132,47 @@
 .btn{ cursor:pointer; }
 .btn.btn-sm{ padding:4px 8px; font-size:12px; }
 .btn.primary{ background:#0b5; color:#fff; border:none; }
+
+/* vacancy row shared cells */
+.cell-select {
+  width: 40px;
+}
+
+.cell-details__wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cell-countdown {
+  text-align: right;
+}
+
+.cell-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.countdown {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  font-weight: 700;
+}
+
+.cd-green {
+  background: rgba(22,163,74,.12);
+}
+
+.cd-yellow {
+  background: rgba(245,158,11,.12);
+}
+
+.cd-red {
+  background: rgba(239,68,68,.12);
+}
+
