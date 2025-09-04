@@ -121,14 +121,12 @@ export default function VacancyRow({
         )}
       </td>
       <CellActions>
-        <button className="btn" onClick={onResetKnownAt}>
+        <button className="btn btn-sm" onClick={onResetKnownAt}>
           Reset timer
         </button>
-        <button className="btn" onClick={handleAward} disabled={!choice}>
+        <button className="btn btn-sm" onClick={handleAward} disabled={!choice}>
           Award
         </button>
-      </CellActions>
-      <td>
         <button
           className="btn btn-sm"
           aria-label="Delete vacancy"
@@ -143,7 +141,7 @@ export default function VacancyRow({
             "Delete"
           )}
         </button>
-      </td>
+      </CellActions>
     </tr>
   );
 }
