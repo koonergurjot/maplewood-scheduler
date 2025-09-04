@@ -464,15 +464,12 @@ export default function App() {
     };
     setVacations((prev) => [vac, ...prev]);
 
-    // one vacancy per coverage day in range
-    const days: string[] =
-      (v as any).coverageDates?.length > 0
-        ? (v as any).coverageDates
-        : dateRangeInclusive(v.startDate!, v.endDate!);
-    const bundleId =
-      days.length > 1
-        ? `BND-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
-        : undefined;
+    // explode the range into daily vacancies
+    const days = dateRangeInclusive(v.startDate!, v.endDate!);
+    const isBundle = days.length >= 2;
+    const bundleId = isBundle
+      ? `BND-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+      : undefined;
     const nowISO = new Date().toISOString();
     const vxs: Vacancy[] = days.map((d) => ({
       id: `VAC-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
@@ -483,9 +480,9 @@ export default function App() {
       wing: (v as any).perDayWings?.[d] ?? vac.wing,
       shiftDate: d,
       shiftStart:
-        (v as any).perDayTimes?.[d]?.start ?? v.shiftStart ?? defaultShift.start,
+        (v as any).perDayTimes?.[d]?.start ?? (v.shiftStart ?? defaultShift.start),
       shiftEnd:
-        (v as any).perDayTimes?.[d]?.end ?? v.shiftEnd ?? defaultShift.end,
+        (v as any).perDayTimes?.[d]?.end ?? (v.shiftEnd ?? defaultShift.end),
       knownAt: nowISO,
       offeringTier: "CASUALS",
       offeringRoundStartedAt: nowISO,
