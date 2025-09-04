@@ -9,7 +9,8 @@
     "build:ci": "tsc -p tsconfig.ci.json && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "prebuild": "npm run typecheck"
+    "prebuild": "npm run typecheck",
+    "test": "vitest run"
   },
   "dependencies": {
     "@types/react": "^18.3.3",
