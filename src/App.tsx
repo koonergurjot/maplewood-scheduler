@@ -776,6 +776,12 @@ export default function App() {
     ids.forEach((id) => deleteVacancy(id));
   };
 
+  const splitBundle = (ids: string[]) => {
+    setVacancies((prev) =>
+      prev.map((v) => (ids.includes(v.id) ? { ...v, bundleId: undefined } : v)),
+    );
+  };
+
   return (
     <div
       className="app"
@@ -1299,10 +1305,13 @@ export default function App() {
                             key={`bundle-${row.key}`}
                             groupId={row.key}
                             items={row.items}
+                            employees={employees}
                             settings={settings}
                             selectedIds={selectedVacancyIds}
                             onToggleSelectMany={toggleMany}
                             onDeleteMany={deleteMany}
+                            onSplitBundle={splitBundle}
+                            onAwardBundle={(empId) => awardBundle(row.key, { empId })}
                             dueNextId={dueNextId}
                           />
                         );

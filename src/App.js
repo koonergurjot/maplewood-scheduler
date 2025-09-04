@@ -544,6 +544,9 @@ export default function App() {
     const deleteMany = (ids) => {
         ids.forEach((id) => deleteVacancy(id));
     };
+    const splitBundle = (ids) => {
+        setVacancies((prev) => prev.map((v) => (ids.includes(v.id) ? { ...v, bundleId: undefined } : v)));
+    };
     return (_jsxs("div", { className: "app", "data-theme": settings.theme, style: { fontSize: `${(settings.fontScale || 1) * 16}px` }, children: [_jsx("style", { children: `
         /* Themes */
         :root{ --baseRadius:14px; }
@@ -693,7 +696,7 @@ export default function App() {
                                                                                     selectedVacancyIds.length ===
                                                                                         filteredVacancies.length, onChange: (e) => toggleAllVacancies(e.target.checked) }) }), _jsx("th", { children: "Shift" }), _jsx("th", { children: "Wing" }), _jsx("th", { children: "Class" }), _jsx("th", { children: "Offering" }), _jsx("th", { children: "Recommended" }), _jsx("th", { children: "Countdown" }), _jsx("th", { children: "Assign" }), _jsx("th", { children: "Override" }), _jsx("th", { children: "Reason (if overriding)" }), _jsx("th", { colSpan: 2, style: { textAlign: "center" }, children: "Actions" })] }) }), _jsx("tbody", { children: rows.map((row) => {
                                                                     if (row.type === "bundle") {
-                                                                        return (_jsx(BundleRow, { groupId: row.key, items: row.items, settings: settings, selectedIds: selectedVacancyIds, onToggleSelectMany: toggleMany, onDeleteMany: deleteMany, dueNextId: dueNextId }, `bundle-${row.key}`));
+                                                                        return (_jsx(BundleRow, { groupId: row.key, items: row.items, employees: employees, settings: settings, selectedIds: selectedVacancyIds, onToggleSelectMany: toggleMany, onDeleteMany: deleteMany, onSplitBundle: splitBundle, onAwardBundle: (empId) => awardBundle(row.key, { empId }), dueNextId: dueNextId }, `bundle-${row.key}`));
                                                                     }
                                                                     const v = row.item;
                                                                     const rec = recommendations[v.id];
@@ -763,14 +766,12 @@ function EmployeesPage({ employees, setEmployees, }) {
                                 const form = e.target;
                                 const name = form.elements.namedItem("name")
                                     .value;
-                                const start = form.elements.namedItem("start").value;
-                                const hours = Number(form.elements.namedItem("hours").value);
-                                if (!name)
-                                    return;
-                                const [first, ...rest] = name.trim().split(" ");
                                 const classification = form.elements.namedItem("classification").value;
                                 const status = form.elements.namedItem("status").value;
                                 const rank = Number(form.elements.namedItem("rank").value);
+                                if (!name)
+                                    return;
+                                const [first, ...rest] = name.trim().split(" ");
                                 const newEmp = {
                                     id: `emp_${Date.now()}`,
                                     firstName: first ?? "",
