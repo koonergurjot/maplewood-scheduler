@@ -184,20 +184,23 @@ export default function VacancyRangeForm({
 
         <CoverageDaysModal
           open={showCoverageModal}
-          onClose={() => setShowCoverageModal(false)}
-          dates={allDays}
-          defaultShiftStart={shiftStart}
-          defaultShiftEnd={shiftEnd}
-          defaultWing={wing}
-          initialSelected={workingDays}
-          initialTimes={perDayTimes}
-          initialWings={perDayWings}
-          onSave={({ selectedDates, perDayTimes: times, perDayWings: wings }) => {
+          startDate={startDate}
+          endDate={endDate}
+          defaultStart={shiftStart}
+          defaultEnd={shiftEnd}
+          classification={classification}
+          initial={{
+            selectedDates: workingDays,
+            perDayTimes,
+            perDayWing: perDayWings,
+          }}
+          onSave={({ selectedDates, perDayTimes: times, perDayWing: wings }) => {
             setWorkingDays(selectedDates);
             setPerDayTimes(times);
             setPerDayWings(wings);
             setShowCoverageModal(false);
           }}
+          onClose={() => setShowCoverageModal(false)}
         />
       </div>
     </div>

@@ -433,6 +433,12 @@ export default function App() {
   };
 
   const [multiDay, setMultiDay] = useState(false);
+  const [coverageOpen, setCoverageOpen] = useState(false);
+  const [coverage, setCoverage] = useState<{
+    selectedDates?: string[];
+    perDayTimes?: Record<string, { start: string; end: string }>;
+    perDayWing?: Record<string, string>;
+  } | null>(null);
 
   // Actions
   const addVacationAndGenerate = (
@@ -465,24 +471,28 @@ export default function App() {
     setVacations((prev) => [vac, ...prev]);
 
     // explode the range into daily vacancies
-    const days = dateRangeInclusive(v.startDate!, v.endDate!);
-    const isBundle = days.length >= 2;
+    const allDays = dateRangeInclusive(v.startDate!, v.endDate!);
+    const chosenDays =
+      coverage?.selectedDates?.length ? coverage.selectedDates : allDays;
+    const isBundle = chosenDays.length >= 2;
     const bundleId = isBundle
       ? `BND-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
       : undefined;
     const nowISO = new Date().toISOString();
-    const vxs: Vacancy[] = days.map((d) => ({
+    const vxs: Vacancy[] = chosenDays.map((d) => ({
       id: `VAC-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
       vacationId: vac.id,
       ...(bundleId ? { bundleId } : {}),
       reason: "Vacation Backfill",
       classification: vac.classification,
-      wing: (v as any).perDayWings?.[d] ?? vac.wing,
+      wing: coverage?.perDayWing?.[d] ?? v.wing!,
       shiftDate: d,
       shiftStart:
-        (v as any).perDayTimes?.[d]?.start ?? (v.shiftStart ?? defaultShift.start),
+        coverage?.perDayTimes?.[d]?.start ??
+        (v.shiftStart ?? defaultShift.start),
       shiftEnd:
-        (v as any).perDayTimes?.[d]?.end ?? (v.shiftEnd ?? defaultShift.end),
+        coverage?.perDayTimes?.[d]?.end ??
+        (v.shiftEnd ?? defaultShift.end),
       knownAt: nowISO,
       offeringTier: "CASUALS",
       offeringRoundStartedAt: nowISO,
@@ -492,6 +502,7 @@ export default function App() {
       status: "Open",
     }));
     setVacancies((prev) => [...vxs, ...prev]);
+    setCoverage(null);
 
     setNewVacay({
       wing: WINGS[0],
@@ -1058,6 +1069,15 @@ export default function App() {
                       </div>
                     </>
                   )}
+                  {multiDay && appConfig.features.coverageDayPicker && (
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={() => setCoverageOpen(true)}
+                    >
+                      Edit coverage days
+                    </button>
+                  )}
                   <div>
                     <label>Shift</label>
                     <select
@@ -1424,6 +1444,22 @@ export default function App() {
 
         {tab === "settings" && (
           <SettingsPage settings={settings} setSettings={setSettings} />
+        )}
+        {coverageOpen && (
+          <CoverageDaysModal
+            open={coverageOpen}
+            startDate={newVacay.startDate ?? ""}
+            endDate={newVacay.endDate ?? ""}
+            defaultStart={newVacay.shiftStart ?? defaultShift.start}
+            defaultEnd={newVacay.shiftEnd ?? defaultShift.end}
+            classification={newVacay.classification ?? ""}
+            initial={coverage ?? undefined}
+            onSave={(payload) => {
+              setCoverage(payload);
+              setCoverageOpen(false);
+            }}
+            onClose={() => setCoverageOpen(false)}
+          />
         )}
         {appConfig.features.coverageDayPicker && (
           <VacancyRangeForm
