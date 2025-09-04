@@ -21,7 +21,15 @@ interface Props {
   settings: Settings;
   now: number;
   dueNextId: string | null;
-  awardVacancy: (id: string, payload: { empId?: string; reason?: string; overrideUsed?: boolean }) => void;
+  awardVacancy: (
+    id: string,
+    payload: {
+      empId?: string;
+      reason?: string;
+      overrideUsed?: boolean;
+      skipConflictCheck?: boolean;
+    },
+  ) => void;
   resetKnownAt: (id: string) => void;
   setBids?: (u: any) => void;
   bids?: any[];

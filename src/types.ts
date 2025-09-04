@@ -69,6 +69,10 @@ export type Bid = {
   coverageType?: "full" | "some-days" | "partial-day";
   selectedDays?: string[]; // ISO dates if not full
   timeOverrides?: Record<string, { start: string; end: string }>;
+  id?: string;
+  employeeId?: string;
+  createdAt?: string;
+  source?: string;
 };
 
 export type Settings = {
