@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatDateLong, formatDowShort } from "../lib/dates";
 import type { Vacancy, Employee } from "../types";
 import { OVERRIDE_REASONS } from "../types";
@@ -162,6 +162,9 @@ function SelectEmployee({
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  useEffect(() => {
+    if (!value) setQ("");
+  }, [value]);
   const list = employees
     .filter((e) => matchText(q, `${e.firstName} ${e.lastName} ${e.id}`))
     .slice(0, 50);
