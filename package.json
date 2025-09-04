@@ -9,7 +9,7 @@
     "build:ci": "tsc -p tsconfig.ci.json && vite build",
     "preview": "vite preview --strictPort",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "prebuild": "npm run typecheck",
+    "prebuild": "tsc --noEmit",
     "clean:fs:dry": "tsx scripts/cleanupFs.ts",
     "clean:fs:apply": "tsx scripts/cleanupFs.ts --apply",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
