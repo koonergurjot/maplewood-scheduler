@@ -1,181 +1,191 @@
-import React, { useEffect, useState } from "react";
-import { getDayOfWeekShort } from "../utils/date";
+import React, { useMemo, useState } from "react";
 
-type Preset = "four-two" | "custom";
-
-type Result = {
-  selectedDates: string[];
-  perDayTimes: Record<string, { start: string; end: string }>;
-  perDayWings: Record<string, string>;
+type Times = { start: string; end: string };
+type Props = {
+  open: boolean;
+  startDate: string;
+  endDate: string;
+  defaultStart: string;
+  defaultEnd: string;
+  classification: string;
+  initial?: {
+    selectedDates?: string[];
+    perDayTimes?: Record<string, Times>;
+    perDayWing?: Record<string, string>;
+  };
+  onSave: (payload: {
+    selectedDates: string[];
+    perDayTimes: Record<string, Times>;
+    perDayWing: Record<string, string>;
+  }) => void;
+  onClose: () => void;
 };
 
-interface Props {
-  open: boolean;
-  onClose: () => void;
-  dates: string[];
-  defaultShiftStart: string;
-  defaultShiftEnd: string;
-  defaultWing: string;
-  initialSelected: string[];
-  initialTimes: Record<string, { start: string; end: string }>;
-  initialWings: Record<string, string>;
-  onSave: (res: Result) => void;
+function isoDatesInclusive(a: string, b: string): string[] {
+  const out: string[] = [];
+  const start = new Date(a + "T00:00:00");
+  const end = new Date(b + "T00:00:00");
+  for (let d = new Date(start); d.getTime() <= end.getTime(); d.setDate(d.getDate() + 1)) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    out.push(`${y}-${m}-${day}`);
+  }
+  return out;
+}
+
+function formatShort(iso: string) {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", weekday: "short" });
 }
 
 export default function CoverageDaysModal({
   open,
-  onClose,
-  dates,
-  defaultShiftStart,
-  defaultShiftEnd,
-  defaultWing,
-  initialSelected,
-  initialTimes,
-  initialWings,
+  startDate,
+  endDate,
+  defaultStart,
+  defaultEnd,
+  classification,
+  initial,
   onSave,
+  onClose,
 }: Props) {
-  const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [times, setTimes] = useState<Record<string, { start: string; end: string }>>({});
-  const [wings, setWings] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (open) {
-      const init = initialSelected.length > 0 ? initialSelected : dates;
-      setSelected(Object.fromEntries(dates.map((d) => [d, init.includes(d)])));
-      setTimes(initialTimes || {});
-      setWings(initialWings || {});
+  const allDates = useMemo(() => isoDatesInclusive(startDate, endDate), [startDate, endDate]);
+  const [selected, setSelected] = useState<Record<string, boolean>>(() => {
+    const init = Object.fromEntries(allDates.map((d) => [d, true]));
+    if (initial?.selectedDates?.length) {
+      allDates.forEach((d) => {
+        init[d] = initial.selectedDates!.includes(d);
+      });
     }
-  }, [open, dates, initialSelected, initialTimes, initialWings]);
+    return init;
+  });
+  const [perDayTimes, setPerDayTimes] = useState<Record<string, Times>>(() => {
+    const init: Record<string, Times> = {};
+    allDates.forEach((d) => {
+      init[d] = initial?.perDayTimes?.[d] ?? { start: defaultStart, end: defaultEnd };
+    });
+    return init;
+  });
+  const [perDayWing, setPerDayWing] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    allDates.forEach((d) => {
+      init[d] = initial?.perDayWing?.[d] ?? "";
+    });
+    return init;
+  });
 
   if (!open) return null;
 
-  const toggle = (d: string) => {
-    setSelected((prev) => ({ ...prev, [d]: !prev[d] }));
-  };
-
-  const updateTime = (d: string, field: "start" | "end", value: string) => {
-    setTimes((prev) => ({
-      ...prev,
-      [d]: { start: prev[d]?.start ?? defaultShiftStart, end: prev[d]?.end ?? defaultShiftEnd, [field]: value } as any,
-    }));
-  };
-
-  const updateWing = (d: string, value: string) => {
-    setWings((prev) => ({ ...prev, [d]: value }));
-  };
-
-  const applyPreset = (preset: Preset) => {
+  const applyFourOnTwoOff = () => {
     const next: Record<string, boolean> = {};
-    if (preset === "four-two") {
-      dates.forEach((d, idx) => {
-        next[d] = idx % 6 < 4;
-      });
-    } else {
-      dates.forEach((d) => {
-        next[d] = true;
-      });
+    let onCount = 0;
+    for (let i = 0; i < allDates.length; i++) {
+      const d = allDates[i];
+      next[d] = onCount < 4;
+      onCount = (onCount + 1) % 6;
     }
     setSelected(next);
   };
 
-  const handleSave = () => {
-    const selectedDates = dates.filter((d) => selected[d]);
-    const filteredTimes: Record<string, { start: string; end: string }> = {};
-    const filteredWings: Record<string, string> = {};
-    for (const d of selectedDates) {
-      const t = times[d];
-      if (t && (t.start !== defaultShiftStart || t.end !== defaultShiftEnd)) {
-        filteredTimes[d] = t;
-      }
-      const w = wings[d];
-      if (w && w !== defaultWing) {
-        filteredWings[d] = w;
-      }
-    }
-    onSave({ selectedDates, perDayTimes: filteredTimes, perDayWings: filteredWings });
+  const save = () => {
+    const chosen = allDates.filter((d) => selected[d]);
+    onSave({
+      selectedDates: chosen,
+      perDayTimes: Object.fromEntries(chosen.map((d) => [d, perDayTimes[d]])),
+      perDayWing: Object.fromEntries(chosen.map((d) => [d, perDayWing[d] ?? ""])),
+    });
   };
 
-  const selectedCount = dates.filter((d) => selected[d]).length;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" role="dialog" aria-modal="true">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-xl p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Coverage Days</h2>
-          <button onClick={onClose} className="px-2 py-1 rounded-md border">
-            Close
-          </button>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-          <div className="flex gap-2">
+    <div className="modal-overlay" role="dialog" aria-modal="true">
+      <div className="modal">
+        <div className="modal-h">Coverage days • Class: {classification}</div>
+        <div className="modal-c" style={{ maxHeight: 420, overflow: "auto" }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
             <button
-              className="px-2 py-1 rounded-md border text-sm"
-              onClick={() => applyPreset("four-two")}
+              className="btn btn-sm"
+              onClick={() =>
+                setSelected(Object.fromEntries(allDates.map((d) => [d, true])))
+              }
             >
-              4-on/2-off
+              All
             </button>
             <button
-              className="px-2 py-1 rounded-md border text-sm"
-              onClick={() => applyPreset("custom")}
+              className="btn btn-sm"
+              onClick={() =>
+                setSelected(Object.fromEntries(allDates.map((d) => [d, false])))
+              }
             >
-              Custom
+              None
             </button>
+            <button className="btn btn-sm" onClick={applyFourOnTwoOff}>
+              4-on / 2-off
+            </button>
+            <span style={{ fontSize: 12, opacity: 0.7, marginLeft: 6 }}>
+              Toggle dates; times & wing per day are optional.
+            </span>
           </div>
-          <p className="text-sm">
-            {selectedCount} of {dates.length} selected
-          </p>
-        </div>
 
-        <div className="flex flex-col gap-2 max-h-64 overflow-auto mb-4">
-          {dates.map((d) => {
-            const isSelected = !!selected[d];
-            const date = new Date(d + "T00:00:00");
-            const label = `${getDayOfWeekShort(d)} ${date
-              .getDate()
-              .toString()
-              .padStart(2, "0")}`;
-            return (
-              <label key={d} className="flex items-center gap-2">
-                <input type="checkbox" checked={isSelected} onChange={() => toggle(d)} />
-                <span className="w-28 text-sm">{label}</span>
-                <input
-                  type="time"
-                  value={times[d]?.start ?? defaultShiftStart}
-                  onChange={(e) => updateTime(d, "start", e.target.value)}
-                  disabled={!isSelected}
-                  className="border rounded-md px-1 py-0.5 text-sm"
-                />
-                <span>—</span>
-                <input
-                  type="time"
-                  value={times[d]?.end ?? defaultShiftEnd}
-                  onChange={(e) => updateTime(d, "end", e.target.value)}
-                  disabled={!isSelected}
-                  className="border rounded-md px-1 py-0.5 text-sm"
-                />
-                <input
-                  type="text"
-                  value={wings[d] ?? ""}
-                  onChange={(e) => updateWing(d, e.target.value)}
-                  disabled={!isSelected}
-                  className="border rounded-md px-1 py-0.5 text-sm w-24"
-                  placeholder="Wing"
-                />
-              </label>
-            );
-          })}
+          {allDates.map((d) => (
+            <div
+              key={d}
+              className="row"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "auto 1fr auto auto auto",
+                gap: 8,
+                alignItems: "center",
+                padding: "4px 0",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={!!selected[d]}
+                onChange={(e) =>
+                  setSelected((s) => ({ ...s, [d]: e.target.checked }))
+                }
+                aria-label={`Include ${d}`}
+              />
+              <div style={{ minWidth: 160 }}>{formatShort(d)}</div>
+              <input
+                type="time"
+                value={perDayTimes[d].start}
+                onChange={(e) =>
+                  setPerDayTimes((t) => ({
+                    ...t,
+                    [d]: { ...t[d], start: e.target.value },
+                  }))
+                }
+              />
+              <input
+                type="time"
+                value={perDayTimes[d].end}
+                onChange={(e) =>
+                  setPerDayTimes((t) => ({
+                    ...t,
+                    [d]: { ...t[d], end: e.target.value },
+                  }))
+                }
+              />
+              <input
+                placeholder="Wing (optional)"
+                value={perDayWing[d] ?? ""}
+                onChange={(e) =>
+                  setPerDayWing((w) => ({ ...w, [d]: e.target.value }))
+                }
+              />
+            </div>
+          ))}
         </div>
-
-        <div className="mt-2 flex justify-end gap-2">
-          <button onClick={onClose} className="px-3 py-2 rounded-md border">
+        <div
+          className="modal-f"
+          style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}
+        >
+          <button className="btn" onClick={onClose}>
             Cancel
           </button>
-          <button
-            onClick={handleSave}
-            className="px-3 py-2 rounded-md bg-black text-white"
-            disabled={selectedCount === 0}
-          >
+          <button className="btn primary" onClick={save}>
             Save
           </button>
         </div>
