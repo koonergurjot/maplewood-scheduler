@@ -5,7 +5,12 @@ import { OVERRIDE_REASONS } from "../types";
 import { matchText } from "../lib/text";
 import CoverageChip from "./ui/CoverageChip";
 import { TrashIcon } from "./ui/Icon";
-import { CellSelect, CellDetails, CellCountdown, CellActions } from "./rows/RowCells";
+import {
+  CellSelect,
+  CellDetails,
+  CellCountdown,
+  CellActions,
+} from "./rows/RowCells";
 
 export default function VacancyRow({
   v,
@@ -16,12 +21,11 @@ export default function VacancyRow({
   selected,
   onToggleSelect,
   isDueNext,
-  onAward,
-  onResetKnownAt,
+  awardVacancy,
+  resetKnownAt,
   onDelete,
   coveredName,
   settings,
-  now,
 }: {
   v: Vacancy;
   recId?: string;
@@ -31,12 +35,15 @@ export default function VacancyRow({
   selected: boolean;
   onToggleSelect: () => void;
   isDueNext: boolean;
-  onAward: (payload: { empId?: string; reason?: string; overrideUsed?: boolean }) => void;
-  onResetKnownAt: () => void;
+  awardVacancy: (payload: {
+    empId?: string;
+    reason?: string;
+    overrideUsed?: boolean;
+  }) => void;
+  resetKnownAt: () => void;
   onDelete: (id: string) => void;
   coveredName?: string;
   settings: Settings;
-  now: number;
 }) {
   const [choice, setChoice] = useState<string>("");
   const [overrideClass, setOverrideClass] = useState<boolean>(false);
@@ -55,26 +62,37 @@ export default function VacancyRow({
       alert("Please select a reason for this override.");
       return;
     }
-    onAward({ empId: choice || undefined, reason: reason || undefined, overrideUsed: overrideClass });
+    awardVacancy({
+      empId: choice || undefined,
+      reason: reason || undefined,
+      overrideUsed: overrideClass,
+    });
     setChoice("");
     setReason("");
     setOverrideClass(false);
   }
 
   return (
-    <tr className={`${isDueNext ? "due-next " : ""}${selected ? "selected" : ""}`.trim()} aria-selected={selected} tabIndex={0}>
-      <CellSelect checked={selected} onChange={() => onToggleSelect()} />
+    <tr
+      className={`${isDueNext ? "due-next " : ""}${
+        selected ? "selected" : ""
+      }`.trim()}
+      aria-selected={selected}
+      tabIndex={0}
+    >
+      <CellSelect
+        checked={selected}
+        onChange={onToggleSelect}
+        ariaLabel={`Select vacancy ${v.id}`}
+      />
       <CellDetails
-        rightTag={recWhy.map((w, i) => (
-          <span key={i} className="pill">
-            {w}
-          </span>
-        ))}
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        title={
+          <div
+            style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}
+          >
             <span>
-              <span className="pill">{formatDowShort(v.shiftDate)}</span> {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}
+              <span className="pill">{formatDowShort(v.shiftDate)}</span>{" "}
+              {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}
               {coveredName && <> • Covering {coveredName}</>}
             </span>
             <CoverageChip
@@ -84,18 +102,32 @@ export default function VacancyRow({
               variant="compact"
             />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        }
+        subtitle={
+          <div
+            style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}
+          >
             {v.wing && <span className="pill">{v.wing}</span>}
             <span className="pill">{v.classification}</span>
             <span className="pill">{v.offeringStep}</span>
             <span>{recName}</span>
           </div>
-        </div>
-      </CellDetails>
-      <CellCountdown vacancy={v} settings={settings} now={now} />
+        }
+        rightTag={recWhy.map((w, i) => (
+          <span key={i} className="pill">
+            {w}
+          </span>
+        ))}
+      />
+      <CellCountdown source={v} settings={settings} />
       <CellActions>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <SelectEmployee allowEmpty employees={employees} value={choice} onChange={setChoice} />
+          <SelectEmployee
+            allowEmpty
+            employees={employees}
+            value={choice}
+            onChange={setChoice}
+          />
           <div style={{ whiteSpace: "nowrap" }}>
             <input
               id={`override-toggle-${v.id}`}
@@ -121,10 +153,14 @@ export default function VacancyRow({
             <span className="subtitle">—</span>
           )}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-            <button className="btn btn-sm" onClick={onResetKnownAt}>
+            <button className="btn btn-sm" onClick={resetKnownAt}>
               Reset timer
             </button>
-            <button className="btn btn-sm" onClick={handleAward} disabled={!choice}>
+            <button
+              className="btn btn-sm"
+              onClick={handleAward}
+              disabled={!choice}
+            >
               Award
             </button>
             <button

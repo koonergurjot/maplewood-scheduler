@@ -1,0 +1,25 @@
+table.vacancies { width:100%; border-collapse:separate; border-spacing:0; }
+table.vacancies thead th { position:sticky; top:0; background:#fff; z-index:2; text-align:left; font-weight:600; padding:10px 12px; border-bottom:1px solid #e9e9e9; }
+table.vacancies tbody tr { border-bottom:1px solid #f0f0f0; }
+table.vacancies tbody tr:nth-child(odd) { background:#fafafa; }
+table.vacancies tbody tr:hover { background:#f6faff; }
+
+td.cell-select { width:40px; padding:10px 12px; }
+td.cell-details { padding:10px 12px; }
+.cell-details__wrap { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.cell-details__title { font-weight:600; font-size:14px; line-height:1.3; }
+.cell-details__subtitle { font-size:12px; opacity:.85; margin-top:2px; }
+.cell-details__tag { white-space:nowrap; font-size:12px; opacity:.85; }
+
+td.cell-countdown { width:140px; padding:10px 12px; }
+.countdown.cd-red { color:#b30000; }
+.countdown.cd-yellow { color:#925f00; }
+.countdown.cd-green { color:#266a2e; }
+
+td.cell-actions { width:1%; white-space:nowrap; text-align:right; padding:10px 12px; }
+.btn-row { display:inline-flex; gap:6px; }
+.badge { display:inline-block; padding:2px 6px; font-size:11px; border-radius:999px; background:#eef2f7; color:#334155; }
+.badge-wing { background:#eefaf3; color:#206341; }
+.badge-class { background:#eef2ff; color:#42389d; }
+
+.section-h { position:sticky; top:36px; z-index:1; background:#fff; padding:6px 12px; font-weight:600; color:#364152; border-top:1px solid #e9e9e9; border-bottom:1px solid #e9e9e9; }

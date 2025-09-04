@@ -7,6 +7,7 @@ import Dashboard from "./Dashboard";
 import AuditLog from "./AuditLog";
 import "./styles/responsive.css";
 import "./styles/color-map.css";
+import "./styles/vacancies-redesign.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

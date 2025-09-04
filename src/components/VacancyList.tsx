@@ -221,11 +221,10 @@ export default function VacancyList({
                     )
                   }
                   isDueNext={!!isDueNext}
-                  onAward={(payload) => awardVacancy(v.id, payload)}
-                  onResetKnownAt={() => resetKnownAt(v.id)}
+                  awardVacancy={(payload) => awardVacancy(v.id, payload)}
+                  resetKnownAt={() => resetKnownAt(v.id)}
                   onDelete={deleteVacancy}
                   settings={settings}
-                  now={now}
                 />
               );
             })}
