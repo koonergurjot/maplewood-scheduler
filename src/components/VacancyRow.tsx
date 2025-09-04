@@ -20,6 +20,7 @@ export default function VacancyRow({
   onAward,
   onResetKnownAt,
   onDelete,
+  coveredName,
 }: {
   v: Vacancy;
   recId?: string;
@@ -34,6 +35,7 @@ export default function VacancyRow({
   onAward: (payload: { empId?: string; reason?: string; overrideUsed?: boolean }) => void;
   onResetKnownAt: () => void;
   onDelete: (id: string) => void;
+  coveredName?: string;
 }) {
   const [choice, setChoice] = useState<string>("");
   const [overrideClass, setOverrideClass] = useState<boolean>(false);
@@ -67,10 +69,11 @@ export default function VacancyRow({
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span>
             <span className="pill">{formatDowShort(v.shiftDate)}</span> {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}
+            {coveredName && <> • Covering {coveredName}</>}
           </span>
-          <CoverageChip 
-            startDate={v.startDate} 
-            endDate={v.endDate} 
+          <CoverageChip
+            startDate={v.startDate}
+            endDate={v.endDate}
             coverageDates={v.coverageDates}
             variant="compact"
           />
