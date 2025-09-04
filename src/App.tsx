@@ -493,12 +493,18 @@ export default function App() {
     }));
     setVacancies((prev) => [...vxs, ...prev]);
 
-    setNewVacay({
+    setNewVacay((prev) => ({
+      employeeId: prev.employeeId,
+      employeeName: prev.employeeName,
+      classification: prev.classification,
       wing: WINGS[0],
+      startDate: undefined,
+      endDate: undefined,
       shiftStart: defaultShift.start,
       shiftEnd: defaultShift.end,
       shiftPreset: defaultShift.label,
-    });
+      notes: undefined,
+    }));
     setMultiDay(false);
   };
 
