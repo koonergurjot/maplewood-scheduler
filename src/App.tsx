@@ -1078,7 +1078,10 @@ export default function App() {
                     <button
                       type="button"
                       className="btn btn-sm"
-                      onClick={() => setCoverageOpen(true)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCoverageOpen(true);
+                      }}
                     >
                       Edit coverage days
                     </button>
@@ -1453,11 +1456,11 @@ export default function App() {
         {coverageOpen && (
           <CoverageDaysModal
             open={coverageOpen}
-            startDate={newVacay.startDate ?? ""}
-            endDate={newVacay.endDate ?? ""}
+            startDate={newVacay.startDate!}
+            endDate={newVacay.endDate!}
             defaultStart={newVacay.shiftStart ?? defaultShift.start}
             defaultEnd={newVacay.shiftEnd ?? defaultShift.end}
-            classification={newVacay.classification ?? ""}
+            classification={newVacay.classification!}
             initial={coverage ?? undefined}
             onSave={(payload) => {
               setCoverage(payload);
