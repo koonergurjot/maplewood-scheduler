@@ -48,7 +48,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Server Components (Express Backend)
 - **Web Server**: express@5.1.0 with cors@2.8.5 for API endpoints
-- **File Handling**: multer@2.0.2 for file uploads, pdfkit@0.17.2 for PDF generation
+- **File Handling**: pdfkit@0.17.2 for PDF generation
 - **Authentication**: Token-based auth system for analytics endpoints
 
 ## Development Tools
@@ -58,7 +58,6 @@ Preferred communication style: Simple, everyday language.
 
 ## External Services Integration
 - **Analytics API**: Bearer token authentication for protected analytics endpoints
-- **Collective Agreement Search**: PDF text extraction and indexing system
 - **Export Systems**: CSV and PDF generation for reporting and data export
 
 ## Deployment Architecture

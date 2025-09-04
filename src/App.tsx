@@ -882,9 +882,6 @@ export default function App() {
             >
               {settings.theme === "dark" ? "Light Mode" : "Dark Mode"}
             </button>
-            <Link to="/agreement" className="btn">
-              Agreement
-            </Link>
             <Link to="/audit-log" className="btn">
               Audit Log
             </Link>
