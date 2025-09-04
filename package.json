@@ -8,8 +8,12 @@
     "build": "tsc -b && vite build",
     "build:ci": "tsc -p tsconfig.ci.json && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b",
-    "prebuild": "npm run typecheck"
+    "typecheck": "tsc --noEmit",
+    "prebuild": "npm run typecheck",
+    "clean:fs:dry": "tsx scripts/cleanupFs.ts",
+    "clean:fs:apply": "tsx scripts/cleanupFs.ts --apply",
+    "lint": "eslint . --ext .ts,.tsx",
+    "depcheck": "depcheck --skip-missing true"
   },
   "dependencies": {
     "@types/react": "^18.3.3",
@@ -29,9 +33,14 @@
     "@types/node": "^22.7.0",
     "@vitejs/plugin-react": "^4.3.1",
     "jsdom": "^24.0.0",
-    "typescript": "^5.4.5",
+    "typescript": "^5.4.0",
     "vite": "^5.2.0",
-    "vitest": "^1.6.0"
+    "vitest": "^1.6.0",
+    "tsx": "^4.19.0",
+    "glob": "^10.3.10",
+    "fs-extra": "^11.2.0",
+    "eslint": "^9.0.0",
+    "depcheck": "^1.4.7"
   },
   "engines": {
     "node": "18.20.8"
