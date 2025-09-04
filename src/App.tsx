@@ -153,6 +153,8 @@ const SHIFT_PRESETS = [
   { label: "Night", start: "22:30", end: "06:30" },
 ] as const;
 
+const VACANT_EMPLOYEE_ID = "__vacant__";
+
 export const OVERRIDE_REASONS = [
   "Earlier bidder within step",
   "Availability mismatch / declined",
@@ -956,12 +958,18 @@ export default function App() {
                     <label>Employee</label>
                     <EmployeeCombo
                       employees={employees}
+                      includeVacant
                       onSelect={(id) => {
                         const e = employees.find((x) => x.id === id);
                         setNewVacay((v) => ({
                           ...v,
                           employeeId: id,
-                          employeeName: e ? `${e.firstName} ${e.lastName}` : "",
+                          employeeName:
+                            id === VACANT_EMPLOYEE_ID
+                              ? "Vacant/Empty"
+                              : e
+                              ? `${e.firstName} ${e.lastName}`
+                              : "",
                           classification: (e?.classification ??
                             v.classification ??
                             "RCA") as Classification,
@@ -2495,9 +2503,11 @@ function SelectEmployee({
 function EmployeeCombo({
   employees,
   onSelect,
+  includeVacant = false,
 }: {
   employees: Employee[];
   onSelect: (id: string) => void;
+  includeVacant?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -2530,6 +2540,18 @@ function EmployeeCombo({
       />
       {open && (
         <div className="menu">
+          {includeVacant && (
+            <div
+              className="item"
+              onClick={() => {
+                onSelect(VACANT_EMPLOYEE_ID);
+                setQ("Vacant/Empty");
+                setOpen(false);
+              }}
+            >
+              Vacant/Empty
+            </div>
+          )}
           {list.map((e) => (
             <div
               key={e.id}
@@ -2546,7 +2568,7 @@ function EmployeeCombo({
               </span>
             </div>
           ))}
-          {!list.length && (
+          {!list.length && !includeVacant && (
             <div className="item" style={{ opacity: 0.7 }}>
               No matches
             </div>
