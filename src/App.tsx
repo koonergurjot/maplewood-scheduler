@@ -21,6 +21,7 @@ import VacancyRangeForm from "./components/VacancyRangeForm";
 import BundleRow from "./components/BundleRow";
 import CoverageDaysModal from "./components/CoverageDaysModal";
 import VacancyRow from "./components/VacancyRow";
+import OpenVacanciesRedesign from "./components/OpenVacanciesRedesign";
 import { appConfig } from "./config";
 import type { VacancyRange } from "./types";
 import { expandRangeToVacancies } from "./lib/expandRange";
@@ -1174,6 +1175,30 @@ export default function App() {
             <div className="card">
               <div className="card-h">Open Vacancies</div>
               <div className="card-c">
+                {appConfig.features.vacancyListRedesign ? (
+                  <OpenVacanciesRedesign
+                    vacancies={vacancies}
+                    employees={employees}
+                    settings={settings}
+                    selectedIds={selectedVacancyIds}
+                    dueNextId={dueNextId}
+                    onToggleSelect={(id) =>
+                      setSelectedVacancyIds((ids) =>
+                        ids.includes(id)
+                          ? ids.filter((x) => x !== id)
+                          : [...ids, id],
+                      )
+                    }
+                    onToggleSelectMany={toggleMany}
+                    onDelete={deleteVacancy}
+                    onDeleteMany={stageDeleteMany}
+                    awardVacancy={awardVacancy}
+                    awardBundle={awardBundle}
+                    resetKnownAt={resetKnownAt}
+                    recommendations={recommendations}
+                  />
+                ) : (
+                  <>
                 <div
                   style={{
                     marginBottom: 8,
@@ -1348,31 +1373,30 @@ export default function App() {
                         vacations.find((x) => x.id === v.vacationId)?.employeeName ?? "";
                       const isDueNext = dueNextId === v.id;
 
-                      return (
-                        <VacancyRow
-                          key={v.id}
-                          v={v}
-                          recId={recId}
-                          recName={recName}
-                          recWhy={recWhy}
-                          employees={employees}
-                          selected={selectedVacancyIds.includes(v.id)}
-                          onToggleSelect={() =>
-                            setSelectedVacancyIds((ids) =>
-                              ids.includes(v.id)
-                                ? ids.filter((id) => id !== v.id)
-                                : [...ids, v.id],
-                            )
-                          }
-                          isDueNext={!!isDueNext}
-                          onAward={(payload) => awardVacancy(v.id, payload)}
-                          onResetKnownAt={() => resetKnownAt(v.id)}
-                          onDelete={deleteVacancy}
-                          coveredName={coveredName}
-                          settings={settings}
-                          now={now}
-                        />
-                      );
+                        return (
+                          <VacancyRow
+                            key={v.id}
+                            v={v}
+                            recId={recId}
+                            recName={recName}
+                            recWhy={recWhy}
+                            employees={employees}
+                            selected={selectedVacancyIds.includes(v.id)}
+                            onToggleSelect={() =>
+                              setSelectedVacancyIds((ids) =>
+                                ids.includes(v.id)
+                                  ? ids.filter((id) => id !== v.id)
+                                  : [...ids, v.id],
+                              )
+                            }
+                            isDueNext={!!isDueNext}
+                            awardVacancy={(payload) => awardVacancy(v.id, payload)}
+                            resetKnownAt={() => resetKnownAt(v.id)}
+                            onDelete={deleteVacancy}
+                            coveredName={coveredName}
+                            settings={settings}
+                          />
+                        );
                     })}
                   </tbody>
                 </table>
@@ -1380,6 +1404,8 @@ export default function App() {
                   <div className="subtitle" style={{ marginTop: 8 }}>
                     No open vacancies 🎉
                   </div>
+                )}
+                  </>
                 )}
               </div>
             </div>

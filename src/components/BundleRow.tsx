@@ -3,7 +3,12 @@ import type { Vacancy, Employee, Settings } from "../types";
 import type { Recommendation } from "../recommend";
 import { formatDateLong, combineDateTime } from "../lib/dates";
 import EmployeePickerModal from "./EmployeePickerModal";
-import { CellSelect, CellDetails, CellCountdown, CellActions } from "./rows/RowCells";
+import {
+  CellSelect,
+  CellDetails,
+  CellCountdown,
+  CellActions,
+} from "./rows/RowCells";
 
 type Props = {
   groupId: string;
@@ -45,7 +50,6 @@ export default function BundleRow({
   const toggleAll = () => onToggleSelectMany(childIds);
   const isDueNext = dueNextId ? childIds.includes(dueNextId) : false;
 
-  const now = Date.now();
   const wingText = primary.wing ?? "Wing";
   const title = `${items.length} days • ${wingText} • ${primary.classification}`;
   const dateList = sorted.map((v) => formatDateLong(v.shiftDate)).join(", ");
@@ -72,32 +76,32 @@ export default function BundleRow({
         data-bundle-id={groupId}
         className={`${isDueNext ? "due-next " : ""}${allSelected ? "selected" : ""}`.trim()}
       >
-        <CellSelect checked={allSelected} onChange={toggleAll} />
+        <CellSelect
+          checked={allSelected}
+          onChange={toggleAll}
+          ariaLabel="Select bundle"
+        />
         <CellDetails
-          rightTag={
-            <>
-              {multipleWings && (
-                <span className="pill" title={distinctWings.join(", ")}>
-                  Multiple wings
-                </span>
-              )}
-              {recWhy.map((w, i) => (
-                <span key={i} className="pill">
-                  {w}
-                </span>
-              ))}
-            </>
-          }
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <div style={{ fontWeight: 600 }}>{title}</div>
+          title={<div style={{ fontWeight: 600 }}>{title}</div>}
+          subtitle={
             <div
-              className="subtitle"
-              style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                flexWrap: "wrap",
+              }}
             >
-              {dateList}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span
+                className="subtitle"
+                style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {dateList}
+              </span>
               {recId ? (
                 <span
                   className="pill"
@@ -110,9 +114,21 @@ export default function BundleRow({
                 <span className="subtitle">—</span>
               )}
             </div>
-          </div>
-        </CellDetails>
-        <CellCountdown vacancy={primary} settings={settings} now={now} />
+          }
+          rightTag={
+            <>
+              {multipleWings && (
+                <span className="pill" title={distinctWings.join(", ")}>Multiple wings</span>
+              )}
+              {recWhy.map((w, i) => (
+                <span key={i} className="pill">
+                  {w}
+                </span>
+              ))}
+            </>
+          }
+        />
+        <CellCountdown source={primary} settings={settings} />
         <CellActions>
           <button className="btn btn-sm" onClick={() => setOpen((o) => !o)}>
             {open ? "Hide" : "Expand"}
