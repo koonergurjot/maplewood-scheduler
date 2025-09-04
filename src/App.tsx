@@ -983,6 +983,24 @@ export default function App() {
                       }}
                     />
                   </div>
+                  {newVacay.employeeId === VACANT_EMPLOYEE_ID && (
+                    <div>
+                      <label>Classification</label>
+                      <select
+                        value={newVacay.classification ?? "RCA"}
+                        onChange={(e) =>
+                          setNewVacay((v) => ({
+                            ...v,
+                            classification: e.target.value as Classification,
+                          }))
+                        }
+                      >
+                        <option value="RCA">RCA</option>
+                        <option value="LPN">LPN</option>
+                        <option value="RN">RN</option>
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label>Wing / Unit</label>
                     <select
