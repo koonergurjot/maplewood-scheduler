@@ -51,45 +51,19 @@ export function applyPreset(
       
     case "4-on-2-off": {
       const workDays: string[] = [];
-      let workCounter = 0;
-      let isWorkPeriod = true;
-      
-      for (const date of allDates) {
-        if (isWorkPeriod && workCounter < 4) {
-          workDays.push(date);
-          workCounter++;
-        } else if (!isWorkPeriod && workCounter < 2) {
-          workCounter++;
-        }
-        
-        if ((isWorkPeriod && workCounter === 4) || (!isWorkPeriod && workCounter === 2)) {
-          isWorkPeriod = !isWorkPeriod;
-          workCounter = 0;
-        }
+      // Only include full 4-day work blocks to avoid partial cycles
+      for (let i = 0; i + 3 < allDates.length; i += 6) {
+        workDays.push(...allDates.slice(i, i + 4));
       }
-      
       return workDays;
     }
-    
+
     case "5-on-2-off": {
       const workDays: string[] = [];
-      let workCounter = 0;
-      let isWorkPeriod = true;
-      
-      for (const date of allDates) {
-        if (isWorkPeriod && workCounter < 5) {
-          workDays.push(date);
-          workCounter++;
-        } else if (!isWorkPeriod && workCounter < 2) {
-          workCounter++;
-        }
-        
-        if ((isWorkPeriod && workCounter === 5) || (!isWorkPeriod && workCounter === 2)) {
-          isWorkPeriod = !isWorkPeriod;
-          workCounter = 0;
-        }
+      // Only include full 5-day work blocks to avoid partial cycles
+      for (let i = 0; i + 4 < allDates.length; i += 7) {
+        workDays.push(...allDates.slice(i, i + 5));
       }
-      
       return workDays;
     }
     

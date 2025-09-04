@@ -2,6 +2,10 @@
 
 ## [Unreleased] - 2025-01-03
 
+### Fixed
+
+- Tightened date and time utilities and added lint/test tooling.
+
 ### Added
 
 #### Core Features

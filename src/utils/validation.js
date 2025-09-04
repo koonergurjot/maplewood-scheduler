@@ -31,8 +31,9 @@ export function validateTime(time) {
     if (!time) {
         return { isValid: false, error: "Time is required" };
     }
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    const timeRegex = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timeRegex.test(time)) {
+        // enforce zero-padded 24h format
         return { isValid: false, error: "Time must be in HH:MM format" };
     }
     return { isValid: true };
@@ -54,12 +55,12 @@ export function validateTimeRange(startTime, endTime) {
     const [endHour, endMin] = endTime.split(':').map(Number);
     const startMinutes = startHour * 60 + startMin;
     const endMinutes = endHour * 60 + endMin;
-    // Handle overnight shifts
-    if (endMinutes <= startMinutes && endHour < 12) {
-        // Assume end time is next day if it's before start and in AM
-        return { isValid: true };
-    }
-    if (startMinutes >= endMinutes) {
+    if (endMinutes <= startMinutes) {
+        const duration = 24 * 60 - startMinutes + endMinutes;
+        if (duration <= 12 * 60) {
+            // allow overnight shifts up to 12 hours
+            return { isValid: true };
+        }
         return { isValid: false, error: "Start time must be before end time" };
     }
     return { isValid: true };
