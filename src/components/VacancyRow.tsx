@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { formatDateLong, formatDowShort } from "../lib/dates";
-import type { Vacancy, Employee } from "../types";
+import type { Vacancy, Employee, Settings } from "../types";
 import { OVERRIDE_REASONS } from "../types";
 import { matchText } from "../lib/text";
 import CoverageChip from "./ui/CoverageChip";
 import { TrashIcon } from "./ui/Icon";
+import { CellSelect, CellDetails, CellCountdown, CellActions } from "./rows/RowCells";
 
 export default function VacancyRow({
   v,
@@ -14,13 +15,13 @@ export default function VacancyRow({
   employees,
   selected,
   onToggleSelect,
-  countdownLabel,
-  countdownClass,
   isDueNext,
   onAward,
   onResetKnownAt,
   onDelete,
   coveredName,
+  settings,
+  now,
 }: {
   v: Vacancy;
   recId?: string;
@@ -29,13 +30,13 @@ export default function VacancyRow({
   employees: Employee[];
   selected: boolean;
   onToggleSelect: () => void;
-  countdownLabel: string;
-  countdownClass: string;
   isDueNext: boolean;
   onAward: (payload: { empId?: string; reason?: string; overrideUsed?: boolean }) => void;
   onResetKnownAt: () => void;
   onDelete: (id: string) => void;
   coveredName?: string;
+  settings: Settings;
+  now: number;
 }) {
   const [choice, setChoice] = useState<string>("");
   const [overrideClass, setOverrideClass] = useState<boolean>(false);
@@ -62,9 +63,7 @@ export default function VacancyRow({
 
   return (
     <tr className={`${isDueNext ? "due-next " : ""}${selected ? "selected" : ""}`.trim()} aria-selected={selected} tabIndex={0}>
-      <td>
-        <input type="checkbox" checked={selected} onChange={onToggleSelect} />
-      </td>
+      <CellSelect checked={selected} onChange={() => onToggleSelect()} />
       <td>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span>
@@ -82,19 +81,16 @@ export default function VacancyRow({
       <td>{v.wing ?? ""}</td>
       <td>{v.classification}</td>
       <td>{v.offeringStep}</td>
-      <td>
-        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
-          <span>{recName}</span>
-          {recWhy.map((w, i) => (
-            <span key={i} className="pill">
-              {w}
-            </span>
-          ))}
-        </div>
-      </td>
-      <td>
-        <span className={`cd-chip ${countdownClass}`}>{countdownLabel}</span>
-      </td>
+      <CellDetails
+        rightTag={recWhy.map((w, i) => (
+          <span key={i} className="pill">
+            {w}
+          </span>
+        ))}
+      >
+        <span>{recName}</span>
+      </CellDetails>
+      <CellCountdown vacancy={v} settings={settings} now={now} />
       <td style={{ minWidth: 220 }}>
         <SelectEmployee allowEmpty employees={employees} value={choice} onChange={setChoice} />
       </td>
@@ -124,14 +120,14 @@ export default function VacancyRow({
           <span className="subtitle">—</span>
         )}
       </td>
-      <td style={{ display: "flex", gap: 6 }}>
+      <CellActions>
         <button className="btn" onClick={onResetKnownAt}>
           Reset timer
         </button>
         <button className="btn" onClick={handleAward} disabled={!choice}>
           Award
         </button>
-      </td>
+      </CellActions>
       <td>
         <button
           className="btn btn-sm"

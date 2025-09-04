@@ -3,7 +3,7 @@ import type { Vacancy, Employee, Settings } from "../types";
 import VacancyRow from "./VacancyRow";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
 import { WINGS, SHIFT_PRESETS } from "../types";
-import { deadlineFor, pickWindowMinutes, fmtCountdown, archiveBidsForVacancy } from "../lib/vacancy";
+import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
 import { minutesBetween } from "../lib/dates";
 
 export interface Recommendation {
@@ -212,14 +212,6 @@ export default function VacancyList({
                 ? `${employeesById[recId]?.firstName ?? ""} ${employeesById[recId]?.lastName ?? ""}`.trim()
                 : "—";
               const recWhy = rec?.why ?? [];
-              const dl = deadlineFor(v, settings);
-              const msLeft = dl.getTime() - now;
-              const winMin = pickWindowMinutes(v, settings);
-              const sinceKnownMin = minutesBetween(new Date(), new Date(v.knownAt));
-              const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin));
-              let cdClass = "cd-green";
-              if (msLeft <= 0) cdClass = "cd-red";
-              else if (pct < 0.25) cdClass = "cd-yellow";
               const isDueNext = dueNextId === v.id;
               return (
                 <VacancyRow
@@ -237,12 +229,12 @@ export default function VacancyList({
                         : [...ids, v.id],
                     )
                   }
-                  countdownLabel={fmtCountdown(msLeft)}
-                  countdownClass={cdClass}
                   isDueNext={!!isDueNext}
                   onAward={(payload) => awardVacancy(v.id, payload)}
                   onResetKnownAt={() => resetKnownAt(v.id)}
                   onDelete={deleteVacancy}
+                  settings={settings}
+                  now={now}
                 />
               );
             })}

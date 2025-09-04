@@ -15,10 +15,19 @@ export function CellSelect({ checked, onChange }: { checked: boolean; onChange: 
   );
 }
 
-export function CellDetails({ children }: { children: ReactNode }) {
+export function CellDetails({
+  children,
+  rightTag,
+}: {
+  children: ReactNode;
+  rightTag?: ReactNode;
+}) {
   return (
     <td>
-      <div className="cell-details__wrap">{children}</div>
+      <div className="cell-details__wrap">
+        {children}
+        {rightTag}
+      </div>
     </td>
   );
 }
