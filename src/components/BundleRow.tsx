@@ -1,49 +1,39 @@
-import React, { useState, useMemo } from "react";
-import type { Vacancy, Settings } from "../types";
+import React from "react";
+import type { Vacancy, Employee, Settings } from "../types";
 import { formatDateLong, combineDateTime, minutesBetween } from "../lib/dates";
 import { deadlineFor, pickWindowMinutes, fmtCountdown } from "../lib/vacancy";
 
-interface Props {
-  groupId: string; // bundleId
+type Props = {
+  groupId: string;
   items: Vacancy[];
+  employees: Employee[];
   settings: Settings;
   selectedIds: string[];
   onToggleSelectMany: (ids: string[]) => void;
-  onEdit?: (items: Vacancy[]) => void;
-  onSplit?: (ids: string[]) => void;
   onDeleteMany: (ids: string[]) => void;
+  onSplitBundle: (ids: string[]) => void;          // unsets bundleId on every child
+  onAwardBundle?: (employeeId: string) => void;     // optional hook
   dueNextId: string | null;
-}
+};
 
 export default function BundleRow({
-  groupId,
-  items,
-  settings,
-  selectedIds,
-  onToggleSelectMany,
-  onEdit,
-  onSplit,
-  onDeleteMany,
-  dueNextId,
+  groupId, items, settings, selectedIds,
+  onToggleSelectMany, onDeleteMany, onSplitBundle,
+  onAwardBundle, dueNextId,
 }: Props) {
-  const sorted = useMemo(() => {
-    return [...items].sort((a, b) => {
-      const aDt = combineDateTime(a.shiftDate, a.shiftStart).getTime();
-      const bDt = combineDateTime(b.shiftDate, b.shiftStart).getTime();
-      return aDt - bDt;
-    });
-  }, [items]);
+  const sorted = React.useMemo(() =>
+    [...items].sort((a,b) =>
+      combineDateTime(a.shiftDate, a.shiftStart).getTime() -
+      combineDateTime(b.shiftDate, b.shiftStart).getTime()
+    ), [items]);
 
   const first = sorted[0];
-  const bundleClass = useMemo(() => {
-    const cls = first?.classification;
-    if (sorted.some((v) => v.classification !== cls)) {
-      console.warn("Bundle has mixed classifications", groupId);
-    }
-    return cls;
-  }, [first, sorted, groupId]);
+  const childIds = sorted.map(v => v.id);
+  const allSelected = childIds.every(id => selectedIds.includes(id));
+  const toggleAll = () => onToggleSelectMany(childIds);
+  const isDueNext = dueNextId ? childIds.includes(dueNextId) : false;
 
-  // countdown based on first shift only
+  // countdown from first day only
   const now = Date.now();
   const msLeft = deadlineFor(first, settings).getTime() - now;
   const winMin = pickWindowMinutes(first, settings);
@@ -53,94 +43,46 @@ export default function BundleRow({
   if (msLeft <= 0) cdClass = "cd-red";
   else if (pct < 0.25) cdClass = "cd-yellow";
 
-  const childIds = sorted.map((v) => v.id);
-  const allSelected = childIds.every((id) => selectedIds.includes(id));
-
-  const toggleBundle = () => {
-    if (allSelected) {
-      onToggleSelectMany(childIds.filter((id) => !id.startsWith("__")));
-    } else {
-      onToggleSelectMany(childIds);
-    }
-  };
-
-  const [expanded, setExpanded] = useState(false);
-
-  const dateList = sorted
-    .map((v) =>
-      new Date(v.shiftDate + "T00:00:00").toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      }),
-    )
-    .join(", ");
-
-  const isDueNext = dueNextId ? childIds.includes(dueNextId) : false;
+  const [open, setOpen] = React.useState(false);
+  const explicitDates = sorted.map(v => formatDateLong(v.shiftDate)).join(", ");
 
   return (
     <>
       <tr data-bundle-id={groupId} className={isDueNext ? "due-next" : undefined}>
+        <td><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="Select bundle" /></td>
         <td>
-          <input
-            type="checkbox"
-            aria-label="Select bundle"
-            checked={allSelected}
-            onChange={toggleBundle}
-          />
-        </td>
-        <td colSpan={8}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button
-              className="btn btn-sm"
-              onClick={() => setExpanded((e) => !e)}
-              aria-label={expanded ? "Collapse" : "Expand"}
-              style={{ padding: "2px 6px" }}
-            >
-              {expanded ? "▾" : "▸"}
-            </button>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <div style={{ fontWeight: 600 }}>
-                {bundleClass} • {first.wing ?? ""}
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.85 }}>{dateList}</div>
+          <div style={{display:"flex", flexDirection:"column"}}>
+            <div style={{fontWeight:600}}>
+              {items.length} days • {first.wing ?? "Wing"} • {first.classification}
             </div>
+            <div style={{fontSize:12, opacity:0.85}}>{explicitDates}</div>
           </div>
         </td>
-        <td>
-          <div className={`countdown ${cdClass}`} title="Time left for first day">
-            {fmtCountdown(msLeft)}
-          </div>
-        </td>
-        <td colSpan={2} style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-          {onEdit && (
-            <button className="btn btn-sm" onClick={() => onEdit(items)}>
-              Edit
-            </button>
-          )}
-          {onSplit && (
-            <button className="btn btn-sm" onClick={() => onSplit(childIds)}>
-              Split
-            </button>
-          )}
-          <button
-            className="btn btn-sm danger"
-            onClick={() => onDeleteMany(childIds)}
-          >
-            Delete
-          </button>
+        <td><div className={`countdown ${cdClass}`}>{fmtCountdown(msLeft)}</div></td>
+        <td style={{textAlign:"right"}}>
+          <button className="btn btn-sm" onClick={() => setOpen(o => !o)}>{open ? "Hide" : "Expand"}</button>
+          {onAwardBundle && <button className="btn btn-sm" onClick={() => onAwardBundle("_PICK_IN_UI_")}>Award Bundle</button>}
+          <button className="btn btn-sm" onClick={toggleAll}>Select</button>
+          <button className="btn btn-sm" onClick={() => onSplitBundle(childIds)}>Split</button>
+          <button className="btn btn-sm danger" onClick={() => onDeleteMany(childIds)}>Delete</button>
         </td>
       </tr>
-      {expanded &&
-        sorted.map((v) => (
-          <tr key={v.id} className="bundle-child">
-            <td></td>
-            <td colSpan={8}>
-              {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd} • {v.wing ?? ""}
-            </td>
-            <td></td>
-            <td colSpan={2}></td>
-          </tr>
-        ))}
+      {open && (
+        <tr>
+          <td />
+          <td colSpan={3}>
+            <div className="bundle-expand">
+              {sorted.map(v => (
+                <div key={v.id} style={{display:"flex", gap:8, padding:"4px 0"}}>
+                  <div style={{minWidth:160}}>{formatDateLong(v.shiftDate)}</div>
+                  <div style={{minWidth:100}}>{v.shiftStart}–{v.shiftEnd}</div>
+                  <div style={{minWidth:100}}>{v.wing ?? "-"}</div>
+                </div>
+              ))}
+            </div>
+          </td>
+        </tr>
+      )}
     </>
   );
 }
