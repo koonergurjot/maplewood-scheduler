@@ -1338,6 +1338,7 @@ export default function App() {
                             items={row.items}
                             employees={employees}
                             settings={settings}
+                            recommendations={recommendations}
                             selectedIds={selectedVacancyIds}
                             onToggleSelectMany={toggleMany}
                             onDeleteMany={stageDeleteMany}
