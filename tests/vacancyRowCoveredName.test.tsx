@@ -3,7 +3,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import VacancyRow from "../src/components/VacancyRow";
-import type { Vacancy, Employee } from "../src/types";
+import type { Vacancy, Employee, Settings } from "../src/types";
 
 describe("VacancyRow", () => {
   it("shows the covered employee name", () => {
@@ -21,6 +21,16 @@ describe("VacancyRow", () => {
       status: "Open",
     };
 
+    const settings: Settings = {
+      responseWindows: {
+        lt2h: 30,
+        h2to4: 60,
+        h4to24: 120,
+        h24to72: 240,
+        gt72: 480,
+      },
+    };
+
     render(
       <table>
         <tbody>
@@ -31,13 +41,13 @@ describe("VacancyRow", () => {
             employees={[] as Employee[]}
             selected={false}
             onToggleSelect={() => {}}
-            countdownLabel="1h"
-            countdownClass="cd-green"
             isDueNext={false}
             onAward={() => {}}
             onResetKnownAt={() => {}}
             onDelete={() => {}}
             coveredName="Jane Doe"
+            settings={settings}
+            now={0}
           />
         </tbody>
       </table>
