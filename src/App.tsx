@@ -956,6 +956,7 @@ export default function App() {
                     <label>Employee</label>
                     <EmployeeCombo
                       employees={employees}
+                      value={newVacay.employeeId ?? ""}
                       onSelect={(id) => {
                         const e = employees.find((x) => x.id === id);
                         setNewVacay((v) => ({
@@ -1881,6 +1882,7 @@ export function BidsPage({
               <label>Employee</label>
               <EmployeeCombo
                 employees={employees}
+                value={newBid.bidderEmployeeId ?? ""}
                 onSelect={(id) => {
                   const e = employeesById[id];
                   setNewBid((b) => ({
@@ -2494,9 +2496,11 @@ function SelectEmployee({
 
 function EmployeeCombo({
   employees,
+  value,
   onSelect,
 }: {
   employees: Employee[];
+  value: string;
   onSelect: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -2509,6 +2513,9 @@ function EmployeeCombo({
         .slice(0, 50),
     [q, employees],
   );
+  useEffect(() => {
+    if (!value) setQ("");
+  }, [value]);
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       if (!ref.current) return;

@@ -1,5 +1,5 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatDateLong, formatDowShort } from "../lib/dates";
 import { OVERRIDE_REASONS } from "../types";
 import { matchText } from "../lib/text";
@@ -31,6 +31,10 @@ export default function VacancyRow({ v, recId, recName, recWhy, employees, selec
 function SelectEmployee({ employees, value, onChange, allowEmpty = false, }) {
     const [open, setOpen] = useState(false);
     const [q, setQ] = useState("");
+    useEffect(() => {
+        if (!value)
+            setQ("");
+    }, [value]);
     const list = employees
         .filter((e) => matchText(q, `${e.firstName} ${e.lastName} ${e.id}`))
         .slice(0, 50);

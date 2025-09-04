@@ -635,7 +635,7 @@ export default function App() {
                                                 localStorage.removeItem(LS_KEY);
                                                 location.reload();
                                             }
-                                        }, children: "Reset" })] })] }), _jsx("div", { className: "tabs", children: settings.tabOrder.map((k) => (_jsx("button", { className: `tab ${tab === k ? "active" : ""}`, onClick: () => setTab(k), children: k[0].toUpperCase() + k.slice(1) }, k))) }), tab === "coverage" && (_jsxs(_Fragment, { children: [_jsx(CoverageRangesPanel, {}), _jsxs("div", { className: "grid grid2", children: [_jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Add Vacation (auto-creates daily vacancies)" }), _jsx("div", { className: "card-c", children: _jsxs("div", { className: "row cols2", children: [_jsxs("div", { children: [_jsx("label", { children: "Employee" }), _jsx(EmployeeCombo, { employees: employees, onSelect: (id) => {
+                                        }, children: "Reset" })] })] }), _jsx("div", { className: "tabs", children: settings.tabOrder.map((k) => (_jsx("button", { className: `tab ${tab === k ? "active" : ""}`, onClick: () => setTab(k), children: k[0].toUpperCase() + k.slice(1) }, k))) }), tab === "coverage" && (_jsxs(_Fragment, { children: [_jsx(CoverageRangesPanel, {}), _jsxs("div", { className: "grid grid2", children: [_jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Add Vacation (auto-creates daily vacancies)" }), _jsx("div", { className: "card-c", children: _jsxs("div", { className: "row cols2", children: [_jsxs("div", { children: [_jsx("label", { children: "Employee" }), _jsx(EmployeeCombo, { employees: employees, value: newVacay.employeeId ?? "", onSelect: (id) => {
                                                                         const e = employees.find((x) => x.id === id);
                                                                         setNewVacay((v) => ({
                                                                             ...v,
@@ -851,7 +851,7 @@ export function BidsPage({ bids, archivedBids, setBids, vacancies, vacations, em
         const t = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
         setNewBid((b) => ({ ...b, bidDate: d, bidTime: t }));
     };
-    return (_jsxs("div", { className: "grid", children: [_jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Add Bid" }), _jsx("div", { className: "card-c", children: _jsxs("div", { className: "row cols2", children: [_jsxs("div", { children: [_jsx("label", { children: "Vacancy" }), _jsxs("select", { onChange: (e) => setNewBid((b) => ({ ...b, vacancyId: e.target.value })), value: newBid.vacancyId ?? "", children: [_jsx("option", { value: "", disabled: true, children: "Pick vacancy" }), openVacancies.length ? (openVacancies.map((v) => (_jsx("option", { value: v.id, children: vacWithCoveredName(v) }, v.id)))) : (_jsx("option", { disabled: true, children: "No open vacancies" }))] })] }), _jsxs("div", { children: [_jsx("label", { children: "Employee" }), _jsx(EmployeeCombo, { employees: employees, onSelect: (id) => {
+    return (_jsxs("div", { className: "grid", children: [_jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Add Bid" }), _jsx("div", { className: "card-c", children: _jsxs("div", { className: "row cols2", children: [_jsxs("div", { children: [_jsx("label", { children: "Vacancy" }), _jsxs("select", { onChange: (e) => setNewBid((b) => ({ ...b, vacancyId: e.target.value })), value: newBid.vacancyId ?? "", children: [_jsx("option", { value: "", disabled: true, children: "Pick vacancy" }), openVacancies.length ? (openVacancies.map((v) => (_jsx("option", { value: v.id, children: vacWithCoveredName(v) }, v.id)))) : (_jsx("option", { disabled: true, children: "No open vacancies" }))] })] }), _jsxs("div", { children: [_jsx("label", { children: "Employee" }), _jsx(EmployeeCombo, { employees: employees, value: newBid.bidderEmployeeId ?? "", onSelect: (id) => {
                                                 const e = employeesById[id];
                                                 setNewBid((b) => ({
                                                     ...b,
@@ -1013,13 +1013,17 @@ function SelectEmployee({ employees, value, onChange, allowEmpty = false, }) {
                             setOpen(false);
                         }, children: [e.firstName, " ", e.lastName, " ", _jsxs("span", { className: "pill", style: { marginLeft: 6 }, children: [e.classification, " ", e.status] })] }, e.id))), !list.length && (_jsx("div", { className: "item", style: { opacity: 0.7 }, children: "No matches" }))] }))] }));
 }
-function EmployeeCombo({ employees, onSelect, }) {
+function EmployeeCombo({ employees, value, onSelect, }) {
     const [open, setOpen] = useState(false);
     const [q, setQ] = useState("");
     const ref = useRef(null);
     const list = useMemo(() => employees
         .filter((e) => matchText(q, `${e.firstName} ${e.lastName} ${e.id}`))
         .slice(0, 50), [q, employees]);
+    useEffect(() => {
+        if (!value)
+            setQ("");
+    }, [value]);
     useEffect(() => {
         const onDoc = (e) => {
             if (!ref.current)
