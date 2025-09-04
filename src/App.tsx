@@ -655,7 +655,7 @@ export default function App() {
     return id;
   }, [vacancies, now, settings]);
 
-  const filteredVacancies = useMemo(() => {
+  const openVacancies = useMemo(() => {
     const passes = (v: Vacancy) => {
       if (filterWing && v.wing !== filterWing) return false;
       if (filterClass && v.classification !== filterClass) return false;
@@ -706,13 +706,8 @@ export default function App() {
   ]);
 
   const toggleAllVacancies = (checked: boolean) => {
-    setSelectedVacancyIds(
-      checked ? filteredVacancies.map((v) => v.id) : [],
-    );
+    setSelectedVacancyIds(checked ? openVacancies.map((v) => v.id) : []);
   };
-
-  // Build rows: bundle by bundleId only
-  const openVacancies = useMemo(() => filteredVacancies, [filteredVacancies]);
 
   // Group vacancies by bundleId
   const groups = useMemo(() => {
@@ -772,7 +767,7 @@ export default function App() {
     });
   };
 
-  const deleteMany = (ids: string[]) => {
+  const stageDeleteMany = (ids: string[]) => {
     ids.forEach((id) => deleteVacancy(id));
   };
 
@@ -1159,9 +1154,8 @@ export default function App() {
                     <input
                       type="checkbox"
                       checked={
-                        filteredVacancies.length > 0 &&
-                        selectedVacancyIds.length ===
-                          filteredVacancies.length
+                        openVacancies.length > 0 &&
+                        selectedVacancyIds.length === openVacancies.length
                       }
                       onChange={(e) => toggleAllVacancies(e.target.checked)}
                     />
@@ -1274,9 +1268,8 @@ export default function App() {
                           type="checkbox"
                           aria-label="Select all vacancies"
                           checked={
-                            filteredVacancies.length > 0 &&
-                            selectedVacancyIds.length ===
-                              filteredVacancies.length
+                            openVacancies.length > 0 &&
+                            selectedVacancyIds.length === openVacancies.length
                           }
                           onChange={(e) =>
                             toggleAllVacancies(e.target.checked)
@@ -1309,7 +1302,7 @@ export default function App() {
                             settings={settings}
                             selectedIds={selectedVacancyIds}
                             onToggleSelectMany={toggleMany}
-                            onDeleteMany={deleteMany}
+                            onDeleteMany={stageDeleteMany}
                             onSplitBundle={splitBundle}
                             onAwardBundle={(empId) => awardBundle(row.key, { empId })}
                             dueNextId={dueNextId}
@@ -1367,7 +1360,7 @@ export default function App() {
                     })}
                   </tbody>
                 </table>
-                {filteredVacancies.length === 0 && (
+                {openVacancies.length === 0 && (
                   <div className="subtitle" style={{ marginTop: 8 }}>
                     No open vacancies 🎉
                   </div>
