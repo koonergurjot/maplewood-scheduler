@@ -64,23 +64,6 @@ export default function VacancyRow({
   return (
     <tr className={`${isDueNext ? "due-next " : ""}${selected ? "selected" : ""}`.trim()} aria-selected={selected} tabIndex={0}>
       <CellSelect checked={selected} onChange={() => onToggleSelect()} />
-      <td>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span>
-            <span className="pill">{formatDowShort(v.shiftDate)}</span> {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}
-            {coveredName && <> • Covering {coveredName}</>}
-          </span>
-          <CoverageChip
-            startDate={v.startDate}
-            endDate={v.endDate}
-            coverageDates={v.coverageDates}
-            variant="compact"
-          />
-        </div>
-      </td>
-      <td>{v.wing ?? ""}</td>
-      <td>{v.classification}</td>
-      <td>{v.offeringStep}</td>
       <CellDetails
         rightTag={recWhy.map((w, i) => (
           <span key={i} className="pill">
@@ -88,59 +71,78 @@ export default function VacancyRow({
           </span>
         ))}
       >
-        <span>{recName}</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span>
+              <span className="pill">{formatDowShort(v.shiftDate)}</span> {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}
+              {coveredName && <> • Covering {coveredName}</>}
+            </span>
+            <CoverageChip
+              startDate={v.startDate}
+              endDate={v.endDate}
+              coverageDates={v.coverageDates}
+              variant="compact"
+            />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            {v.wing && <span className="pill">{v.wing}</span>}
+            <span className="pill">{v.classification}</span>
+            <span className="pill">{v.offeringStep}</span>
+            <span>{recName}</span>
+          </div>
+        </div>
       </CellDetails>
       <CellCountdown vacancy={v} settings={settings} now={now} />
-      <td style={{ minWidth: 220 }}>
-        <SelectEmployee allowEmpty employees={employees} value={choice} onChange={setChoice} />
-      </td>
-      <td style={{ whiteSpace: "nowrap" }}>
-        <input
-          id="override-toggle"
-          className="toggle-input"
-          type="checkbox"
-          checked={overrideClass}
-          onChange={(e) => setOverrideClass(e.target.checked)}
-        />
-        <label htmlFor="override-toggle" className="toggle-box">
-          <span className="subtitle">Allow class override</span>
-        </label>
-      </td>
-      <td style={{ minWidth: 230 }}>
-        {needReason || overrideClass || (recId && choice && choice !== recId) ? (
-          <select value={reason} onChange={(e) => setReason(e.target.value)}>
-            <option value="">Select reason…</option>
-            {OVERRIDE_REASONS.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span className="subtitle">—</span>
-        )}
-      </td>
       <CellActions>
-        <button className="btn btn-sm" onClick={onResetKnownAt}>
-          Reset timer
-        </button>
-        <button className="btn btn-sm" onClick={handleAward} disabled={!choice}>
-          Award
-        </button>
-        <button
-          className="btn btn-sm"
-          aria-label="Delete vacancy"
-          title="Delete vacancy"
-          data-testid={`vacancy-delete-${v.id}`}
-          tabIndex={0}
-          onClick={() => onDelete(v.id)}
-        >
-          {TrashIcon ? (
-            <TrashIcon style={{ width: 16, height: 16 }} aria-hidden="true" />
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <SelectEmployee allowEmpty employees={employees} value={choice} onChange={setChoice} />
+          <div style={{ whiteSpace: "nowrap" }}>
+            <input
+              id={`override-toggle-${v.id}`}
+              className="toggle-input"
+              type="checkbox"
+              checked={overrideClass}
+              onChange={(e) => setOverrideClass(e.target.checked)}
+            />
+            <label htmlFor={`override-toggle-${v.id}`} className="toggle-box">
+              <span className="subtitle">Allow class override</span>
+            </label>
+          </div>
+          {needReason || overrideClass || (recId && choice && choice !== recId) ? (
+            <select value={reason} onChange={(e) => setReason(e.target.value)}>
+              <option value="">Select reason…</option>
+              {OVERRIDE_REASONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
           ) : (
-            "Delete"
+            <span className="subtitle">—</span>
           )}
-        </button>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            <button className="btn btn-sm" onClick={onResetKnownAt}>
+              Reset timer
+            </button>
+            <button className="btn btn-sm" onClick={handleAward} disabled={!choice}>
+              Award
+            </button>
+            <button
+              className="btn btn-sm"
+              aria-label="Delete vacancy"
+              title="Delete vacancy"
+              data-testid={`vacancy-delete-${v.id}`}
+              tabIndex={0}
+              onClick={() => onDelete(v.id)}
+            >
+              {TrashIcon ? (
+                <TrashIcon style={{ width: 16, height: 16 }} aria-hidden="true" />
+              ) : (
+                "Delete"
+              )}
+            </button>
+          </div>
+        </div>
       </CellActions>
     </tr>
   );
