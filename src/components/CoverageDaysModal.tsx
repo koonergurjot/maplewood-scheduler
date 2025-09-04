@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 
 type Times = { start: string; end: string };
 type Props = {
@@ -42,6 +42,17 @@ function formatShort(iso: string) {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 function weekdayLabel(i: number) { return ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][i]; }
+
+function BodyScrollLock() {
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
+  return null;
+}
 
 export default function CoverageDaysModal({
   open, startDate, endDate, defaultStart, defaultEnd, classification, initial, onSave, onClose
@@ -138,6 +149,7 @@ export default function CoverageDaysModal({
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
+      <BodyScrollLock />
       <div className="modal">
         <div className="modal-h">Coverage days • Class: {classification}</div>
 
