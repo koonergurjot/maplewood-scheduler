@@ -99,6 +99,10 @@ export type Bid = {
   bidderClassification: Classification;
   bidTimestamp: string; // ISO
   notes?: string;
+  id?: string;
+  employeeId?: string; // alias for bidderEmployeeId when auto-created
+  createdAt?: string; // alias for bidTimestamp when auto-created
+  source?: string;
 };
 
 export type Settings = {
@@ -544,95 +548,101 @@ export default function App() {
     });
   };
 
-  const awardBundle = (
-    bundleId: string,
-    payload: { empId?: string; reason?: string; overrideUsed?: boolean },
-  ) => {
-    const empId = payload.empId;
-    const bundleVacancies = vacancies.filter(
-      (v) =>
-        v.bundleId === bundleId &&
-        v.status !== "Filled" &&
-        v.status !== "Awarded",
-    );
-    if (!bundleVacancies.length) return;
-    if (empId && empId !== "EMPTY") {
-      const hasAllBids = bundleVacancies.every((v) =>
-        bids.some(
-          (b) => b.vacancyId === v.id && b.bidderEmployeeId === empId,
-        ),
+  const ensureBundleBids = (bundleVacancies: Vacancy[], employeeId: string) => {
+    const nowISO = new Date().toISOString();
+    const emp = employeesById[employeeId];
+    const toAdd: Bid[] = [];
+    for (const v of bundleVacancies) {
+      const has = bids.some(
+        (b) => b.vacancyId === v.id && b.bidderEmployeeId === employeeId,
       );
-      if (!hasAllBids) {
-        alert("Employee is missing bids on at least one bundled day.");
-        return;
-      }
-      const emp = employeesById[empId];
-      if (
-        emp &&
-        bundleVacancies.some(
-          (v) => v.classification !== emp.classification,
-        ) &&
-        !payload.overrideUsed
-      ) {
-        alert("Employee classification mismatch within bundle.");
-        return;
-      }
-
-      const conflictDays = bundleVacancies
-        .filter((v) =>
-          vacancies.some(
-            (o) =>
-              o.id !== v.id &&
-              o.shiftDate === v.shiftDate &&
-              (o.status === "Filled" || o.status === "Awarded") &&
-              o.awardedTo === empId,
-          ),
-        )
-        .map((v) => formatDateLong(v.shiftDate));
-      if (
-        conflictDays.length &&
-        !window.confirm(
-          `Employee already assigned on ${conflictDays.join(", ")}. Continue?`,
-        )
-      ) {
-        return;
+      if (!has) {
+        toAdd.push({
+          id: `BID-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+          vacancyId: v.id,
+          bidderEmployeeId: employeeId,
+          bidderName: emp ? `${emp.firstName} ${emp.lastName}`.trim() : "",
+          bidderStatus: emp?.status ?? "FT",
+          bidderClassification: emp?.classification ?? v.classification,
+          bidTimestamp: nowISO,
+          employeeId,
+          createdAt: nowISO,
+          source: "bundle-award",
+        });
       }
     }
-    const ids = bundleVacancies.map((v) => v.id);
-    setVacancies((prev) => applyAwardVacancies(prev, ids, payload));
-    archiveBids(ids);
+    if (toAdd.length) setBids((prev) => [...prev, ...toAdd]);
+  };
+
+  const awardBundle = (bundleId: string, employeeId: string) => {
+    const kids = vacancies.filter(
+      (v) => v.bundleId === bundleId && v.status === "Open",
+    );
+    if (!kids.length) return;
+
+    const cls = kids[0].classification;
+    if (!kids.every((v) => v.classification === cls)) {
+      alert("Bundle has mixed classifications; fix before awarding.");
+      return;
+    }
+
+    const conflictDays = kids
+      .filter((v) =>
+        vacancies.some(
+          (o) =>
+            o.id !== v.id &&
+            o.shiftDate === v.shiftDate &&
+            (o.status === "Filled" || o.status === "Awarded") &&
+            o.awardedTo === employeeId,
+        ),
+      )
+      .map((v) => formatDateLong(v.shiftDate));
+    if (conflictDays.length) {
+      console.warn(
+        `Employee already assigned on ${conflictDays.join(", ")}.`,
+      );
+    }
+
+    ensureBundleBids(kids, employeeId);
+
+    for (const v of kids) {
+      awardVacancy(v.id, {
+        empId: employeeId,
+        reason: "Bundle award",
+        skipConflictCheck: true,
+      });
+    }
   };
 
   const awardVacancy = (
     vacId: string,
-    payload: { empId?: string; reason?: string; overrideUsed?: boolean },
+    payload: {
+      empId?: string;
+      reason?: string;
+      overrideUsed?: boolean;
+      skipConflictCheck?: boolean;
+    },
   ) => {
     const target = vacancies.find((v) => v.id === vacId);
-    if (target?.bundleId) {
-      awardBundle(target.bundleId, payload);
-    } else {
-      if (payload.empId && payload.empId !== "EMPTY" && target) {
-        const conflict = vacancies.some(
-          (v) =>
-            v.id !== vacId &&
-            v.shiftDate === target.shiftDate &&
-            (v.status === "Filled" || v.status === "Awarded") &&
-            v.awardedTo === payload.empId,
-        );
-        if (
-          conflict &&
-          !window.confirm(
-            `Employee already assigned on ${formatDateLong(
-              target.shiftDate,
-            )}. Continue?`,
-          )
-        ) {
-          return;
-        }
+    if (payload.empId && payload.empId !== "EMPTY" && target && !payload.skipConflictCheck) {
+      const conflict = vacancies.some(
+        (v) =>
+          v.id !== vacId &&
+          v.shiftDate === target.shiftDate &&
+          (v.status === "Filled" || v.status === "Awarded") &&
+          v.awardedTo === payload.empId,
+      );
+      if (
+        conflict &&
+        !window.confirm(
+          `Employee already assigned on ${formatDateLong(target.shiftDate)}. Continue?`,
+        )
+      ) {
+        return;
       }
-      setVacancies((prev) => applyAwardVacancy(prev, vacId, payload));
-      archiveBids([vacId]);
     }
+    setVacancies((prev) => applyAwardVacancy(prev, vacId, payload));
+    archiveBids([vacId]);
   };
 
   const resetKnownAt = (vacId: string) => {
@@ -1332,7 +1342,7 @@ export default function App() {
                             onToggleSelectMany={toggleMany}
                             onDeleteMany={stageDeleteMany}
                             onSplitBundle={splitBundle}
-                            onAwardBundle={(empId) => awardBundle(row.key, { empId })}
+                            onAwardBundle={(empId) => awardBundle(row.key, empId)}
                             dueNextId={dueNextId}
                           />
                         );
