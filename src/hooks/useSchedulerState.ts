@@ -8,6 +8,7 @@ import type {
   VacancyRange,
 } from "../types";
 import { loadState, saveState } from "../utils/storage";
+import { bundleContiguousVacanciesByRef } from "../lib/bundles";
 
 const defaultSettings: Settings = {
   responseWindows: { lt2h: 7, h2to4: 15, h4to24: 30, h24to72: 120, gt72: 1440 },
@@ -28,7 +29,10 @@ export function useSchedulerState() {
 
   const [employees, setEmployees] = useState<Employee[]>(persisted?.employees ?? []);
   const [vacations, setVacations] = useState<Vacation[]>(persisted?.vacations ?? []);
-  const [vacancies, setVacancies] = useState<Vacancy[]>(persisted?.vacancies ?? []);
+  const seededVacancies = bundleContiguousVacanciesByRef(
+    persisted?.vacancies ? [...persisted.vacancies] : [],
+  );
+  const [vacancies, setVacancies] = useState<Vacancy[]>(seededVacancies);
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
   const [archivedBids, setArchivedBids] = useState<Record<string, Bid[]>>(
     persisted?.archivedBids ?? {},
@@ -56,6 +60,23 @@ export function useSchedulerState() {
     });
   }, [employees, vacations, vacancies, bids, archivedBids, settings, vacancyRanges]);
 
+  const updateVacancy = (id: string, patch: Partial<Vacancy>) => {
+    setVacancies((prev) =>
+      prev.map((v) =>
+        v.id === id
+          ? {
+              ...v,
+              ...patch,
+              bundleId:
+                patch.bundleId === undefined ? v.bundleId : patch.bundleId,
+              bundleMode:
+                patch.bundleMode === undefined ? v.bundleMode : patch.bundleMode,
+            }
+          : v,
+      ),
+    );
+  };
+
   return {
     employees,
     setEmployees,
@@ -72,5 +93,6 @@ export function useSchedulerState() {
     employeesById,
     vacancyRanges,
     setVacancyRanges,
+    updateVacancy,
   };
 }

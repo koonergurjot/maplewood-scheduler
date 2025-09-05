@@ -26,6 +26,7 @@ import { appConfig } from "./config";
 import type { VacancyRange } from "./types";
 export { OVERRIDE_REASONS } from "./types";
 import { expandRangeToVacancies } from "./lib/expandRange";
+import { bundleContiguousVacanciesByRef } from "./lib/bundles";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -280,14 +281,16 @@ export default function App() {
     persisted?.vacations ?? [],
   );
   const [vacancies, setVacancies] = useState<Vacancy[]>(
-    (persisted?.vacancies ?? []).map((v: any) => ({
-      offeringTier: "CASUALS",
-      offeringRoundStartedAt:
-        v.offeringRoundStartedAt ?? new Date().toISOString(),
-      offeringRoundMinutes: v.offeringRoundMinutes ?? 120,
-      offeringAutoProgress: v.offeringAutoProgress ?? true,
-      ...v,
-    })),
+    bundleContiguousVacanciesByRef(
+      (persisted?.vacancies ?? []).map((v: any) => ({
+        offeringTier: "CASUALS",
+        offeringRoundStartedAt:
+          v.offeringRoundStartedAt ?? new Date().toISOString(),
+        offeringRoundMinutes: v.offeringRoundMinutes ?? 120,
+        offeringAutoProgress: v.offeringAutoProgress ?? true,
+        ...v,
+      })),
+    ),
   );
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
   const [archivedBids, setArchivedBids] = useState<Record<string, Bid[]>>(
