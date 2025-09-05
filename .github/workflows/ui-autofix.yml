@@ -1,0 +1,43 @@
+name: UI AutoFix (Open PR)
+on:
+  workflow_dispatch: {}
+  schedule: [ { cron: "0 13 * * *" } ] # daily 6am PT
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    permissions: { contents: write, pull-requests: write }
+    env:
+      BASE_URL: http://127.0.0.1:5173
+      NODE_ENV: development
+      VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      VITE_AUTH_TOKEN: ${{ secrets.VITE_AUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 18 }
+      - run: |
+          npm ci || npm i
+          npm i -D @axe-core/playwright @playwright/test playwright
+          npx playwright install --with-deps
+      - name: Start dev server (Vite on :5173)
+        run: |
+          nohup npm run dev -- --host 0.0.0.0 --port 5173 --strictPort > /dev/null 2>&1 &
+          sleep 20
+      - name: Run scan
+        run: node tools/ai-ui-autofix/scan.mjs || true
+      - name: Apply codemods (auto-fix common UI issues)
+        run: node tools/ai-ui-autofix/fixers.mjs
+      - name: Create PR with changes
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/ui-autofix
+          delete-branch: true
+          title: "fix(ui): automated pass for overlaps, modals, z-index, responsiveness"
+          commit-message: "fix(ui): automated pass for overlaps, modals, z-index, responsiveness"
+          body: |
+            This automated PR applies codemods based on the latest UI scan.
+            - Adds/ensures ui-sanity.css helpers for overflow/wrapping/z-index
+            - Ensures global import
+            - Adds modal body-scroll lock fallback and dialog aria attributes
+            - Writes scan summary
+            Re-run **UI Scan (Text Only)** after merge.

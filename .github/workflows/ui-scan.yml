@@ -1,46 +1,33 @@
 name: UI Scan (Text Only)
-
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch: {}
-
 jobs:
   ui-scan:
     runs-on: ubuntu-latest
     env:
-      # We’ll run the dev server on 5173 and point the scanner at it.
       BASE_URL: http://127.0.0.1:5173
       NODE_ENV: development
-
+      # ← Codex: keep these references; user will add the actual secrets in repo Settings:
+      VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      VITE_AUTH_TOKEN: ${{ secrets.VITE_AUTH_TOKEN }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: |
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 18 }
+      - run: |
           npm ci || npm i
           npm i -D @axe-core/playwright @playwright/test playwright
           npx playwright install --with-deps
-
-      # Use the dev server (more reliable than preview in CI)
       - name: Start dev server (Vite on :5173)
         run: |
           nohup npm run dev -- --host 0.0.0.0 --port 5173 --strictPort > /dev/null 2>&1 &
-          # Give Vite time to compile/start
           sleep 20
-
       - name: Run scan (writes tools/ai-ui-autofix/report.json)
-        run: |
-          node tools/ai-ui-autofix/scan.mjs || true
-
+        run: node tools/ai-ui-autofix/scan.mjs || true
       - name: Upload JSON report
         uses: actions/upload-artifact@v4
         with:
