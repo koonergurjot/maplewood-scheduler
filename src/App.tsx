@@ -788,14 +788,14 @@ export default function App() {
       <style>{`
         /* Themes */
         :root{ --baseRadius:14px; }
-        .app{min-height:100vh;min-height:100dvh;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);font-family:'Nunito',system-ui,Arial,sans-serif;padding:calc(18px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom)) 18px}
+        .app{min-height:100vh;min-height:100dvh;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);font-family:'Nunito',system-ui,Arial,sans-serif;padding:calc(18px + env(safe-area-inset-top)) 0 calc(18px + env(safe-area-inset-bottom)) 0}
         @supports(-webkit-touch-callout:none){.app{min-height:-webkit-fill-available}}
         [data-theme="dark"]{ --bg1:#0f172a; --bg2:#1f2937; --card:#1e293b; --cardAlt:#273446; --stroke:#334155; --text:#f1f5f9; --muted:#cbd5e1; --brand:#0d9488; --accent:#34d399; --ok:#16a34a; --warn:#f59e0b; --bad:#ef4444; --chipBg:#334155; --chipText:#f1f5f9; }
         [data-theme="light"]{ --bg1:#f0fdf4; --bg2:#ffffff; --card:#ffffff; --cardAlt:#f6fdf9; --stroke:#d1fae5; --text:#064e3b; --muted:#3f7f65; --brand:#047857; --accent:#10b981; --ok:#15803d; --warn:#b45309; --bad:#b91c1c; --chipBg:#dcfce7; --chipText:#064e3b; }
 
         *{box-sizing:border-box}
         body,html,#root{height:100%;margin:0;-webkit-text-size-adjust:100%}
-        .container{max-width:min(100%,1600px); margin:0 auto}
+        .container{max-width:min(100%,1600px); margin:0 auto; padding:0 18px}
         .nav{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:14px}
         .title{font-size:22px;font-weight:800}
         .subtitle{color:var(--muted);font-size:13px}
