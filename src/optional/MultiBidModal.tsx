@@ -1,4 +1,4 @@
-import BodyLock from "./BodyLock";
+import BodyLock from "../components/BodyLock";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
 import React, { useRef,  useMemo, useState } from "react";
@@ -43,6 +43,9 @@ export default function MultiBidModal({
 
   if (!open) return null;
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, onClose);
+
   function toggle(id: string) {
     setChosenIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }
@@ -86,10 +89,15 @@ export default function MultiBidModal({
   }, [applyToBundles, selectedVacancyIds, allVacancies]);
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" onClick={onClose}>
       <BodyLock />
-       onClick={onClose}>>
-      <div role="dialog" aria-modal="true" className="modal" ref={dialogRef} onClick={(e) => e.stopPropagation()}">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="modal"
+        ref={dialogRef}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">Bulk Bid</h2>
           <button onClick={onClose} className="px-2 py-1 rounded-md border">Close</button>
