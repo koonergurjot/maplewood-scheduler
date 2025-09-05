@@ -28,7 +28,7 @@ export default function EmployeePickerModal({ open, employees, classification, o
   if (!open) return null;
   return (
     <div className="modal-overlay">
-      <BodyLock />>
+      <BodyLock />
       <div role="dialog" aria-modal="true" className="modal" ref={dialogRef}>
         <div className="modal-h">Select employee</div>
         <input

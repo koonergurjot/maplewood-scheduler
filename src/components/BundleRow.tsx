@@ -23,6 +23,7 @@ type Props = {
   onAwardBundle?: (employeeId: string) => void;     // optional hook
   onEditCoverage?: (bundleId: string) => void;
   dueNextId: string | null;
+  coveredName?: string;
 };
 
 export default function BundleRow({
@@ -38,6 +39,7 @@ export default function BundleRow({
   onAwardBundle,
   onEditCoverage,
   dueNextId,
+  coveredName,
 }: Props) {
   const sorted = React.useMemo(() =>
     [...items].sort((a,b) =>
@@ -51,7 +53,8 @@ export default function BundleRow({
   const isDueNext = dueNextId ? childIds.includes(dueNextId) : false;
 
   const wingText = primary.wing ?? "Wing";
-  const title = `${items.length} days • ${wingText} • ${primary.classification}`;
+  const coverText = coveredName ? ` • Covering ${coveredName}` : "";
+  const title = `${items.length} days • ${wingText} • ${primary.classification}${coverText}`;
   const dateList = sorted.map((v) => formatDateLong(v.shiftDate)).join(", ");
 
   const rec = recommendations[primary.id];

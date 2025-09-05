@@ -44,9 +44,10 @@ describe("OpenVacancies", () => {
     setupLocalStorage(vacancies);
 
     let vacState: ReturnType<typeof useVacancies>;
+    const vacations: any[] = [];
     function Wrapper() {
       vacState = useVacancies();
-      return <OpenVacancies {...vacState} />;
+      return <OpenVacancies {...vacState} vacations={vacations} />;
     }
 
     render(<Wrapper />);
@@ -84,9 +85,10 @@ describe("OpenVacancies", () => {
     setupLocalStorage(vacancies);
 
     let vacState: ReturnType<typeof useVacancies>;
+    const vacations: any[] = [];
     function Wrapper() {
       vacState = useVacancies();
-      return <OpenVacancies {...vacState} />;
+      return <OpenVacancies {...vacState} vacations={vacations} />;
     }
 
     render(<Wrapper />);
@@ -109,6 +111,37 @@ describe("OpenVacancies", () => {
     expect(persisted.auditLog[0].payload.userAction).toBe("bulk");
 
     vi.useRealTimers();
+  });
+
+  it("shows covered employee name when linked to a vacation", () => {
+    const vacancies = [
+      {
+        id: "v1",
+        classification: "RN",
+        shiftDate: "2024-01-01",
+        shiftStart: "08:00",
+        shiftEnd: "16:00",
+        knownAt: "2024-01-01T00:00:00.000Z",
+        offeringTier: "CASUALS",
+        offeringStep: "Casuals",
+        status: "Open",
+        vacationId: "vac1",
+      },
+    ];
+    const vacations = [
+      { id: "vac1", employeeName: "John Doe" },
+    ];
+    setupLocalStorage(vacancies);
+
+    let vacState: ReturnType<typeof useVacancies>;
+    function Wrapper() {
+      vacState = useVacancies();
+      return <OpenVacancies {...vacState} vacations={vacations} />;
+    }
+
+    render(<Wrapper />);
+
+    expect(screen.getByText("John Doe")).toBeTruthy();
   });
 });
 
