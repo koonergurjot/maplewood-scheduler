@@ -110,14 +110,20 @@ export default function VacancyRow({
             {v.wing && <span className="pill">{v.wing}</span>}
             <span className="pill">{v.classification}</span>
             <span className="pill">{v.offeringStep}</span>
-            <span>{recName}</span>
           </div>
         }
-        rightTag={recWhy.map((w, i) => (
-          <span key={i} className="pill">
-            {w}
-          </span>
-        ))}
+        rightTag={
+          <>
+            <span className="subtitle" style={{ marginRight: 8 }}>
+              {recName}
+            </span>
+            {recWhy.map((w, i) => (
+              <span key={i} className="pill">
+                {w}
+              </span>
+            ))}
+          </>
+        }
       />
       <CellCountdown source={v} settings={settings} />
       <CellActions>

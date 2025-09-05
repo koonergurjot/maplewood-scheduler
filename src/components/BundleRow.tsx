@@ -102,23 +102,27 @@ export default function BundleRow({
               >
                 {dateList}
               </span>
+            </div>
+          }
+          rightTag={
+            <>
               {recId ? (
                 <span
                   className="pill"
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", marginRight: 8 }}
                   onClick={() => onAwardBundle?.(recId)}
                 >
                   {recName}
                 </span>
               ) : (
-                <span className="subtitle">—</span>
+                <span className="subtitle" style={{ marginRight: 8 }}>
+                  —
+                </span>
               )}
-            </div>
-          }
-          rightTag={
-            <>
               {multipleWings && (
-                <span className="pill" title={distinctWings.join(", ")}>Multiple wings</span>
+                <span className="pill" title={distinctWings.join(", ")}>
+                  Multiple wings
+                </span>
               )}
               {recWhy.map((w, i) => (
                 <span key={i} className="pill">
