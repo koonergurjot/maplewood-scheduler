@@ -1,0 +1,40 @@
+name: UI Scan (Text Only)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  ui-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install deps
+        run: |
+          npm ci || npm i
+          npm i -D playwright @axe-core/playwright
+          npx playwright install --with-deps
+
+      - name: Build & Preview
+        run: |
+          npm run build || true
+          nohup npm run preview &> /dev/null &
+          sleep 4
+
+      - name: Run scan (creates tools/ai-ui-autofix/report.json)
+        run: |
+          BASE_URL=http://localhost:5173 node tools/ai-ui-autofix/scan.mjs || true
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-report-json
+          path: tools/ai-ui-autofix/report.json
+          if-no-files-found: warn
