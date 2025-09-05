@@ -461,14 +461,13 @@ export default function App() {
     const chosenDays =
       coverage?.selectedDates?.length ? coverage.selectedDates : allDays;
     const isBundle = chosenDays.length >= 2;
-    const bundleId = isBundle
-      ? `BND-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
-      : undefined;
+    const bid = isBundle ? crypto.randomUUID() : undefined;
+    if (bid) console.debug("[bundle] created", bid, { days: chosenDays.length });
     const nowISO = new Date().toISOString();
     const vxs: Vacancy[] = chosenDays.map((d) => ({
       id: `VAC-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
       vacationId: vac.id,
-      ...(bundleId ? { bundleId } : {}),
+      ...(bid ? { bundleId: bid, bundleMode: "one-person" } : {}),
       reason: "Vacation Backfill",
       classification: vac.classification,
       wing: coverage?.perDayWing?.[d] ?? v.wing!,

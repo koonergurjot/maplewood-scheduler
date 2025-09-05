@@ -31,6 +31,7 @@ export type Vacancy = {
   id: string;
   vacationId?: string;
   bundleId?: string; // identifier linking multi-day vacancy children
+  bundleMode?: "one-person" | "per-day";
   reason: string;
   classification: Classification;
   wing?: string;

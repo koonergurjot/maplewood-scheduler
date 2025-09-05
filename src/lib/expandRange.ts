@@ -9,14 +9,13 @@ export function expandRangeToVacancies(range: VacancyRange): Vacancy[] {
   const sortedDays = [...range.workingDays].sort();
   const coverageDates =
     range.startDate === range.endDate ? undefined : sortedDays;
-  const bundleId =
-    sortedDays.length > 1
-      ? `BND-${Math.random().toString(36).slice(2, 7).toUpperCase()}`
-      : undefined;
+  const days = sortedDays.length;
+  const bundleId = days > 1 ? crypto.randomUUID() : undefined;
+  if (bundleId) console.debug("[bundle] created", bundleId, { days });
 
   return sortedDays.map<Vacancy>((d) => ({
     id: `VAC-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
-    ...(bundleId ? { bundleId } : {}),
+    ...(bundleId ? { bundleId, bundleMode: "one-person" } : {}),
     reason: range.reason,
     classification: range.classification,
     wing: range.wing,
