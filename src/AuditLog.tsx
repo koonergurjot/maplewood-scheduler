@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   filterAuditLogs,
   clearAuditLogs,
@@ -8,16 +8,12 @@ import storage from "./lib/storage";
 export default function AuditLog() {
   const [date, setDate] = useState("");
   const [vacancyId, setVacancyId] = useState("");
-  const [refresh, setRefresh] = useState(0);
+  const [, setRefresh] = useState(0);
 
-  const logs = useMemo(
-    () =>
-      filterAuditLogs(storage, {
-        date: date || undefined,
-        vacancyId: vacancyId || undefined,
-      }),
-    [date, vacancyId, refresh],
-  );
+  const logs = filterAuditLogs(storage, {
+    date: date || undefined,
+    vacancyId: vacancyId || undefined,
+  });
 
   const clear = () => {
     clearAuditLogs(storage);

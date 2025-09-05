@@ -54,7 +54,7 @@ export default function VacancyRangeForm({
       setPerDayTimes({});
       setPerDayWings({});
     }
-  }, [startDate, endDate]);
+  }, [allDays]);
 
   function save() {
     if (!startDate || !endDate || workingDays.length === 0) return;
