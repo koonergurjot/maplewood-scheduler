@@ -1,7 +1,11 @@
 import * as THREE from './lib/three.module.js';
 import { OrbitControls } from './lib/OrbitControls.js';
 import { createBoard } from './board.js';
-import { createPieces } from './pieces.js';
+import { createPieces, movePiece, findBySquare } from './pieces.js';
+import { mountHud } from './ui/hud.js';
+import { getMode, getDifficulty } from './ui/modeBar.js';
+import { initEngine, requestBestMove, cancel } from './ai/ai.js';
+import { Chess } from 'https://cdn.jsdelivr.net/npm/chess.js@1.0.0/+esm';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -27,8 +31,57 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
 dirLight.position.set(10, 10, 0);
 scene.add(dirLight);
 
+const rules = new Chess();
+
 createBoard(scene);
 createPieces(scene);
+
+await initEngine();
+mountHud({ onModeChange });
+let searchToken = 0;
+
+function onModeChange() {
+  cancel();
+  searchToken++;
+  maybeAIMove();
+}
+
+function gameOver() {
+  return (rules.game_over && rules.game_over()) || (rules.isGameOver && rules.isGameOver());
+}
+
+async function maybeAIMove() {
+  if (gameOver()) return;
+  const mode = getMode();
+  const aiColor = mode === 'ai-white' ? 'b' : mode === 'ai-black' ? 'w' : null;
+  if (!aiColor || rules.turn() !== aiColor) return;
+  const token = ++searchToken;
+  const fen = rules.fen();
+  const depth = getDifficulty();
+  const { uci } = await requestBestMove(fen, { depth });
+  if (token !== searchToken) return;
+  const move = { from: uci.slice(0, 2), to: uci.slice(2, 4) };
+  if (uci.length > 4) move.promotion = uci.slice(4);
+  if (!rules.move(move)) return;
+  const piece = findBySquare(move.from);
+  if (piece) movePiece(piece.id, move.to, true);
+}
+
+function humanMove(move) {
+  const m =
+    typeof move === 'string'
+      ? { from: move.slice(0, 2), to: move.slice(2, 4), promotion: move.slice(4) || undefined }
+      : move;
+  const result = rules.move(m);
+  if (!result) return false;
+  const piece = findBySquare(result.from);
+  if (piece) movePiece(piece.id, result.to, true);
+  searchToken++;
+  maybeAIMove();
+  return true;
+}
+
+window.makeMove = humanMove;
 
 function animate() {
   requestAnimationFrame(animate);
