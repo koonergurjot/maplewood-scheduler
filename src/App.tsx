@@ -624,14 +624,18 @@ const [showRangeForm, setShowRangeForm] = useState(false);
         ),
       )
       .map((v) => formatDateLong(v.shiftDate));
+    let reason: string | undefined;
     if (conflictDays.length) {
-      console.warn(
-        `Employee already assigned on ${conflictDays.join(", ")}.`,
-      );
+      const msg =
+        `Employee already assigned on:\n${conflictDays.join("\n")}\nOverride and award bundle?`;
+      if (!window.confirm(msg)) return;
+      const rc = window.prompt("Enter reason code for override")?.trim();
+      if (!rc) return;
+      reason = rc;
     }
     const snapshot = kids.map((k) => ({ ...k }));
     ensureBundleBids(kids, employeeId);
-    applyAwardBundle(bundleId, employeeId, "Bundle award");
+    applyAwardBundle(bundleId, employeeId, reason || "Bundle award");
     archiveBids(kids.map((v) => v.id));
 
     const emp = employeesById[employeeId];
