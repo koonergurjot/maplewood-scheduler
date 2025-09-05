@@ -1,7 +1,12 @@
 import * as THREE from './lib/three.module.js';
 import { OrbitControls } from './lib/OrbitControls.js';
-import { createBoard } from './board.js';
-import { createPieces, movePiece, findBySquare } from './pieces.js';
+import { createBoard, squareToPosition } from './board.js';
+import {
+  createPieces,
+  placeInitialPosition,
+  getPieceBySquare,
+  movePieceByUci,
+} from './pieces.js';
 import { mountHud } from './ui/hud.js';
 import { getMode, getDifficulty } from './ui/modeBar.js';
 import { initEngine, requestBestMove, cancel } from './ai/ai.js';
@@ -34,7 +39,9 @@ scene.add(dirLight);
 const rules = new Chess();
 
 createBoard(scene);
-createPieces(scene);
+await createPieces(scene, THREE, { squareToPosition });
+await placeInitialPosition();
+document.querySelector('#status')?.textContent = 'Pieces ready';
 
 await initEngine();
 mountHud({ onModeChange });
@@ -63,8 +70,7 @@ async function maybeAIMove() {
   const move = { from: uci.slice(0, 2), to: uci.slice(2, 4) };
   if (uci.length > 4) move.promotion = uci.slice(4);
   if (!rules.move(move)) return;
-  const piece = findBySquare(move.from);
-  if (piece) movePiece(piece.id, move.to, true);
+  await movePieceByUci(uci);
 }
 
 function humanMove(move) {
@@ -74,8 +80,7 @@ function humanMove(move) {
       : move;
   const result = rules.move(m);
   if (!result) return false;
-  const piece = findBySquare(result.from);
-  if (piece) movePiece(piece.id, result.to, true);
+  movePieceByUci(result.from + result.to + (result.promotion || ''));
   searchToken++;
   maybeAIMove();
   return true;
