@@ -81,16 +81,25 @@ export default function CalendarView({ vacancies }: Props) {
         {days.map((d) => {
           const iso = isoDate(d.date);
           const allEvents = (eventsByDate[iso] || []) as any[];
-          const events = showFilled
-            ? allEvents
-            : allEvents.filter(
-                (e) => (e as any).status !== "Filled" && (e as any).status !== "Awarded",
-              );
-          const open = events.filter((e) => (e as any).status === "Open").length;
-          const pending = events.filter((e) => (e as any).status === "Pending").length;
-          const filled = allEvents.filter(
-            (e) => (e as any).status === "Filled" || (e as any).status === "Awarded",
-          ).length;
+
+          const { open, pending, filled, visible } = React.useMemo(
+            () =>
+              allEvents.reduce(
+                (acc, e) => {
+                  const status =
+                    (e as any).status === "Awarded" ? "Filled" : (e as any).status;
+                  if (status === "Open") acc.open++;
+                  else if (status === "Pending") acc.pending++;
+                  else if (status === "Filled") acc.filled++;
+                  if (status !== "Filled") acc.visible.push(e);
+                  return acc;
+                },
+                { open: 0, pending: 0, filled: 0, visible: [] as any[] },
+              ),
+            [allEvents],
+          );
+
+          const events = showFilled ? allEvents : visible;
           return (
             <div
               key={iso}
