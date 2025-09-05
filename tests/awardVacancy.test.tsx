@@ -70,6 +70,7 @@ describe("award vacancy UI", () => {
     fireEvent.click(cb1);
     fireEvent.click(cb2);
 
+    await waitFor(() => screen.getByText("Bulk Award"));
     fireEvent.click(screen.getByText("Bulk Award"));
 
     fireEvent.change(screen.getByLabelText("Employee"), {
@@ -134,7 +135,7 @@ describe("award vacancy UI", () => {
       .find((r) => within(r).queryByText("Allow class override"))!;
     const input = within(row).getByPlaceholderText(/Type name or ID/);
     fireEvent.change(input, { target: { value: "Bob" } });
-    const option = await screen.findByText(/Bob B/);
+    const option = (await screen.findAllByText(/Bob B/))[0];
     fireEvent.click(option);
 
     fireEvent.click(within(row).getByLabelText("Allow class override"));
