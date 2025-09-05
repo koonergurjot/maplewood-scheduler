@@ -1,0 +1,1 @@
+# UI Auto Debug Bundle\nUpload these files to your repo to enable auto scanning and auto fixing with PRs.
