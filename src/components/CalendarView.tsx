@@ -34,12 +34,12 @@ export default function CalendarView({ vacancies }: Props) {
   const todayIso = isoDate(today);
   const todaysEvents = eventsByDate[todayIso] || [];
   const visibleToday = todaysEvents.filter(
-    (e: any) => (e as any).status !== "Filled" && (e as any).status !== "Awarded",
+    (e: any) => (e as any).status !== "Filled",
   );
   const openToday = visibleToday.filter((e: any) => (e as any).status === "Open").length;
-  const pendingToday = visibleToday.filter((e: any) => (e as any).status === "Pending").length;
+  const awardedToday = visibleToday.filter((e: any) => (e as any).status === "Awarded").length;
   const filledToday = todaysEvents.filter(
-    (e: any) => (e as any).status === "Filled" || (e as any).status === "Awarded",
+    (e: any) => (e as any).status === "Filled",
   ).length;
 
   const weekdayShort = new Intl.DateTimeFormat(undefined, { weekday: "short" });
@@ -49,7 +49,7 @@ export default function CalendarView({ vacancies }: Props) {
       <div className="calendar-mini-toolbar" role="toolbar">
         <div className="counts" aria-live="polite">
           <div className="count"><span className="badge badge-open">{openToday}</span> Open today</div>
-          <div className="count"><span className="badge badge-pending">{pendingToday}</span> Pending today</div>
+          <div className="count"><span className="badge badge-awarded">{awardedToday}</span> Awarded today</div>
           <div className="count"><span className="badge badge-filled">{filledToday}</span> Filled today</div>
         </div>
         <div className="actions">
@@ -86,19 +86,18 @@ export default function CalendarView({ vacancies }: Props) {
               [eventsByDate, iso],
             );
 
-            const { open, pending, filled, visible } = React.useMemo(
+            const { open, awarded, filled, visible } = React.useMemo(
               () =>
                 allEvents.reduce(
                   (acc, e: Vacancy) => {
-                    const status =
-                      (e as any).status === "Awarded" ? "Filled" : (e as any).status;
+                    const status = (e as any).status || "Open";
                     if (status === "Open") acc.open++;
-                    else if (status === "Pending") acc.pending++;
+                    else if (status === "Awarded") acc.awarded++;
                     else if (status === "Filled") acc.filled++;
                     if (status !== "Filled") acc.visible.push(e);
                     return acc;
                   },
-                  { open: 0, pending: 0, filled: 0, visible: [] as Vacancy[] },
+                  { open: 0, awarded: 0, filled: 0, visible: [] as Vacancy[] },
                 ),
               [allEvents],
             );
@@ -115,14 +114,13 @@ export default function CalendarView({ vacancies }: Props) {
                 <div>{d.date.getDate()}</div>
                 <div style={{ display: "flex", gap: 6 }}>
                   {open ? <span className="badge badge-open" title="Open">{open}</span> : null}
-                  {pending ? <span className="badge badge-pending" title="Pending">{pending}</span> : null}
+                  {awarded ? <span className="badge badge-awarded" title="Awarded">{awarded}</span> : null}
                   {filled ? <span className="badge badge-filled" title="Filled">{filled}</span> : null}
                 </div>
               </div>
               <div className="events">
                 {events.slice(0, 4).map((e: Vacancy, idx: number) => {
-                  const status =
-                    (e as any).status === "Awarded" ? "Filled" : (e as any).status || "Open";
+                  const status = (e as any).status || "Open";
                   return (
                     <div
                       key={idx}
