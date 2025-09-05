@@ -470,17 +470,21 @@ export default function App() {
     setVacations((prev) => [vac, ...prev]);
 
     // explode the range into daily vacancies
-    const allDays = dateRangeInclusive(v.startDate!, v.endDate!);
-    const chosenDays =
-      coverage?.selectedDates?.length ? coverage.selectedDates : allDays;
-    const isBundle = awardAsBlock && chosenDays.length >= 2;
-    const bid = isBundle ? crypto.randomUUID() : undefined;
-    if (bid) console.debug("[bundle] created", bid, { days: chosenDays.length });
+    const days =
+      coverage?.selectedDates?.length
+        ? coverage.selectedDates
+        : dateRangeInclusive(v.startDate!, v.endDate!);
+    const isMulti = days.length >= 2;
+    const singleAward = isMulti && awardAsBlock;
+    const bid = singleAward ? crypto.randomUUID() : undefined;
+    if (bid) console.debug("[bundle] created", bid, { days: days.length });
     const nowISO = new Date().toISOString();
-    const vxs: Vacancy[] = chosenDays.map((d) => ({
-      id: `VAC-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+    const vxs: Vacancy[] = days.map((d) => ({
+      id: crypto.randomUUID(),
       vacationId: vac.id,
-      ...(bid ? { bundleId: bid, bundleMode: "one-person" } : {}),
+      ...(singleAward
+        ? { bundleId: bid, bundleMode: "one-person" as const }
+        : {}),
       reason: "Vacation Backfill",
       classification: vac.classification,
       wing: coverage?.perDayWing?.[d] ?? v.wing!,
@@ -497,7 +501,7 @@ export default function App() {
       offeringRoundMinutes: 120,
       offeringAutoProgress: true,
       offeringStep: "Casuals",
-      status: "Open",
+      status: "Open" as const,
     }));
     setVacancies((prev) => [...vxs, ...prev]);
     setCoverage(null);
