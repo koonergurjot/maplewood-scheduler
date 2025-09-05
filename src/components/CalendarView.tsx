@@ -23,7 +23,7 @@ export default function CalendarView({ vacancies }: Props) {
 
   // Group events by ISO yyyy-mm-dd
   const eventsByDate = React.useMemo(() => {
-    const map: Record<string, any[]> = {};
+    const map: Record<string, Vacancy[]> = {};
     const grouped = groupVacanciesByDate(vacancies ?? []);
     for (const [d, arr] of grouped.entries()) {
       map[d] = arr;
@@ -79,25 +79,29 @@ export default function CalendarView({ vacancies }: Props) {
 
       <div className={"calendar-grid" + (showHeatmap ? " heatmap" : "") }>
         {days.map((d) => {
-          const iso = isoDate(d.date);
-          const allEvents = (eventsByDate[iso] || []) as any[];
+            const iso = isoDate(d.date);
+            const allEvents = React.useMemo<Vacancy[]>(
+              () => eventsByDate[iso] || [],
+              // eslint-disable-next-line react-hooks/exhaustive-deps
+              [eventsByDate, iso],
+            );
 
-          const { open, pending, filled, visible } = React.useMemo(
-            () =>
-              allEvents.reduce(
-                (acc, e) => {
-                  const status =
-                    (e as any).status === "Awarded" ? "Filled" : (e as any).status;
-                  if (status === "Open") acc.open++;
-                  else if (status === "Pending") acc.pending++;
-                  else if (status === "Filled") acc.filled++;
-                  if (status !== "Filled") acc.visible.push(e);
-                  return acc;
-                },
-                { open: 0, pending: 0, filled: 0, visible: [] as any[] },
-              ),
-            [allEvents],
-          );
+            const { open, pending, filled, visible } = React.useMemo(
+              () =>
+                allEvents.reduce(
+                  (acc, e: Vacancy) => {
+                    const status =
+                      (e as any).status === "Awarded" ? "Filled" : (e as any).status;
+                    if (status === "Open") acc.open++;
+                    else if (status === "Pending") acc.pending++;
+                    else if (status === "Filled") acc.filled++;
+                    if (status !== "Filled") acc.visible.push(e);
+                    return acc;
+                  },
+                  { open: 0, pending: 0, filled: 0, visible: [] as Vacancy[] },
+                ),
+              [allEvents],
+            );
 
           const events = showFilled ? allEvents : visible;
           return (
@@ -116,7 +120,7 @@ export default function CalendarView({ vacancies }: Props) {
                 </div>
               </div>
               <div className="events">
-                {events.slice(0, 4).map((e, idx) => {
+                {events.slice(0, 4).map((e: Vacancy, idx: number) => {
                   const status =
                     (e as any).status === "Awarded" ? "Filled" : (e as any).status || "Open";
                   return (
