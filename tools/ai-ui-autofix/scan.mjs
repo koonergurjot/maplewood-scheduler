@@ -6,9 +6,9 @@ import AxeBuilder from '@axe-core/playwright';
 import fs from 'fs';
 import path from 'path';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
-// Add/edit routes here if needed:
-const ROUTES = ['/', '/vacancies', '/vacancies/new', '/schedule', '/admin/settings'];
+const BASE_URL = process.env.BASE_URL || 'http://localhost:4173';
+// Match your actual routes in src/main.tsx:
+const ROUTES = ['/', '/dashboard', '/analytics', '/audit-log'];
 const WIDTHS = [360, 768, 1280];
 
 const outDir = path.resolve('tools/ai-ui-autofix');
@@ -17,10 +17,6 @@ await fs.promises.mkdir(outDir, { recursive: true });
 
 function pushIssue(arr, route, width, type, details){
   arr.push({ route, width, type, details });
-}
-
-function bboxOverlap(a, b){
-  return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
 }
 
 const browser = await chromium.launch();
@@ -37,23 +33,17 @@ for (const w of WIDTHS) {
 
       await page.goto(url, { waitUntil: 'domcontentloaded' });
 
-      // A11y quick check
       let axeViolations = [];
       try {
         const axe = await new AxeBuilder({ page }).analyze();
         axeViolations = axe.violations.map(v => ({ id: v.id, impact: v.impact, help: v.help }));
       } catch {}
 
-      // Evaluate layout heuristics in the page context
       const data = await page.evaluate(() => {
         const vw = window.innerWidth;
-        const vh = window.innerHeight;
         const docScrollW = document.documentElement.scrollWidth;
-
-        // Horizontal overflow
         const overflowX = docScrollW > vw;
 
-        // Sticky/fixed headers & first content overlap
         const fixedLike = Array.from(document.querySelectorAll('*'))
           .filter(el => ['fixed','sticky'].includes(getComputedStyle(el).position));
         const header = fixedLike.find(el => el.matches('header, .header, .section-h, .nav'));
@@ -63,10 +53,9 @@ for (const w of WIDTHS) {
         if (header && firstContent) {
           const hb = header.getBoundingClientRect();
           const cb = firstContent.getBoundingClientRect();
-          headerOverlap = hb.bottom > cb.top + 2; // crude
+          headerOverlap = hb.bottom > cb.top + 2;
         }
 
-        // Off-screen elements (left<0 or right>vw)
         const offscreen = [];
         for (const el of Array.from(document.body.querySelectorAll('*'))) {
           const cs = getComputedStyle(el);
@@ -79,7 +68,6 @@ for (const w of WIDTHS) {
           }
         }
 
-        // Modal checks
         const modal = document.querySelector('.modal');
         const hasOverlay = document.querySelector('.modal-overlay');
         let bodyScrollLocked = true;
@@ -88,7 +76,6 @@ for (const w of WIDTHS) {
         }
         const modalHasRole = modal ? (modal.getAttribute('role') === 'dialog' && modal.getAttribute('aria-modal') === 'true') : null;
 
-        // Menu/overlay z-index conflicts: detect any .menu under a header box
         const menus = Array.from(document.querySelectorAll('.menu'));
         let menuCovered = false;
         if (header && menus.length) {
@@ -105,30 +92,17 @@ for (const w of WIDTHS) {
         return { vw, overflowX, headerOverlap, offscreen, modalOpen: !!modal, hasOverlay: !!hasOverlay, bodyScrollLocked, modalHasRole, menuCovered };
       });
 
-      if (messages.length) {
-        pushIssue(issues, r, w, 'console-error', { messages });
-      }
-      if (data.overflowX) {
-        pushIssue(issues, r, w, 'overflow-x', { hint: 'Content wider than viewport' });
-      }
-      if (data.headerOverlap) {
-        pushIssue(issues, r, w, 'header-overlap', { hint: 'Sticky/fixed header overlaps first content' });
-      }
-      if (data.offscreen.length) {
-        pushIssue(issues, r, w, 'offscreen', { sample: data.offscreen.slice(0,5) });
-      }
-      if (data.menuCovered) {
-        pushIssue(issues, r, w, 'z-index-menu', { hint: 'Menu appears under header; raise z-index' });
-      }
+      if (messages.length) pushIssue(issues, r, w, 'console-error', { messages });
+      if (data.overflowX) pushIssue(issues, r, w, 'overflow-x', {});
+      if (data.headerOverlap) pushIssue(issues, r, w, 'header-overlap', {});
+      if (data.offscreen.length) pushIssue(issues, r, w, 'offscreen', { sample: data.offscreen.slice(0,5) });
+      if (data.menuCovered) pushIssue(issues, r, w, 'z-index-menu', {});
       if (data.modalOpen) {
-        if (!data.bodyScrollLocked) pushIssue(issues, r, w, 'modal-scroll', { hint: 'Background scroll not locked' });
-        if (data.modalHasRole === false) pushIssue(issues, r, w, 'modal-aria', { hint: 'Missing role=dialog and aria-modal=true' });
-        if (!data.hasOverlay) pushIssue(issues, r, w, 'modal-overlay', { hint: 'No overlay element found' });
+        if (!data.bodyScrollLocked) pushIssue(issues, r, w, 'modal-scroll', {});
+        if (data.modalHasRole === false) pushIssue(issues, r, w, 'modal-aria', {});
+        if (!data.hasOverlay) pushIssue(issues, r, w, 'modal-overlay', {});
       }
-
-      if (axeViolations.length) {
-        pushIssue(issues, r, w, 'a11y', { violations: axeViolations.slice(0, 10) });
-      }
+      if (axeViolations.length) pushIssue(issues, r, w, 'a11y', { violations: axeViolations.slice(0, 10) });
     } catch (err) {
       pushIssue(issues, r, w, 'navigation-failed', { error: String(err) });
     }
