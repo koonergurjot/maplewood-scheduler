@@ -4,13 +4,16 @@ import type { Vacancy, VacancyRange } from "../types";
  * Expand a VacancyRange into individual Vacancy objects that the
  * application already understands.
  */
-export function expandRangeToVacancies(range: VacancyRange): Vacancy[] {
+export function expandRangeToVacancies(
+  range: VacancyRange,
+  awardAsBlock = true,
+): Vacancy[] {
   const nowISO = new Date().toISOString();
   const sortedDays = [...range.workingDays].sort();
   const coverageDates =
     range.startDate === range.endDate ? undefined : sortedDays;
   const days = sortedDays.length;
-  const bundleId = days > 1 ? crypto.randomUUID() : undefined;
+  const bundleId = awardAsBlock && days > 1 ? crypto.randomUUID() : undefined;
   if (bundleId) console.debug("[bundle] created", bundleId, { days });
 
   return sortedDays.map<Vacancy>((d) => ({
