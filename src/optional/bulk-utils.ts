@@ -1,3 +1,4 @@
+import { ensureBundleId } from "../lib/bundles";
 
 export type Bid = { employeeId: string; rank?: number; note?: string };
 export type Vacancy = {
@@ -8,23 +9,16 @@ export type Vacancy = {
   status?: "Open" | "Awarded" | "Filled";
 };
 
-export function ensureBundleId(v: Vacancy, genId: () => string): string {
-  if (v.bundleId) return v.bundleId;
-  v.bundleId = genId();
-  return v.bundleId;
-}
-
 /** Attach a set of vacancy ids into the target vacancy's bundle (create if missing). */
 export function attachVacanciesToTargetBundle(
   all: Vacancy[],
   targetVacancyId: string,
-  attachIds: string[],
-  genId: () => string
+  attachIds: string[]
 ): Vacancy[] {
   const byId = new Map(all.map(v => [v.id, v]));
   const target = byId.get(targetVacancyId);
   if (!target) return all;
-  const bid = ensureBundleId(target, genId);
+  const bid = ensureBundleId(target);
   for (const id of attachIds) {
     if (id === targetVacancyId) continue;
     const v = byId.get(id);
