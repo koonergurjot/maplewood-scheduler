@@ -54,7 +54,6 @@ export default function BundleRow({
 
   const wingText = primary.wing ?? "Wing";
   const coverText = coveredName ? ` • Covering ${coveredName}` : "";
-  const title = `${items.length} days • ${wingText} • ${primary.classification}${coverText}`;
   const dateList = sorted.map((v) => formatDateLong(v.shiftDate)).join(", ");
 
   const rec = recommendations[primary.id];
@@ -85,7 +84,15 @@ export default function BundleRow({
           ariaLabel="Select bundle"
         />
         <CellDetails
-          title={<div style={{ fontWeight: 600 }}>{title}</div>}
+          title={
+            <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="pill">{items.length} days</span>
+              <span>
+                {wingText} • {primary.classification}
+                {coverText}
+              </span>
+            </div>
+          }
           subtitle={
             <div
               style={{

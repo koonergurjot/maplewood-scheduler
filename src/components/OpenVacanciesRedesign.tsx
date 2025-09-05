@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import type { Vacancy, Employee, Settings, Vacation } from "../types";
 import type { Recommendation } from "../recommend";
 import BundleRow from "./BundleRow";
@@ -66,6 +66,8 @@ export default function OpenVacanciesRedesign(props: Props) {
     return list;
   }, [vacancies, filters]);
 
+  const [groupByBundle, setGroupByBundle] = useState(false);
+
   const byDate = useMemo(() => {
     const m = new Map<string, Vacancy[]>();
     for (const v of filtered) {
@@ -91,6 +93,16 @@ export default function OpenVacanciesRedesign(props: Props) {
 
   return (
     <div>
+      <div style={{ marginBottom: 8 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <input
+            type="checkbox"
+            checked={groupByBundle}
+            onChange={(e) => setGroupByBundle(e.target.checked)}
+          />
+          Group by bundle
+        </label>
+      </div>
       <table className="vacancies">
         <thead>
           <tr>
@@ -103,39 +115,46 @@ export default function OpenVacanciesRedesign(props: Props) {
         <tbody>
           {byDate.map(([date, items]) => {
             const groups = new Map<string, Vacancy[]>();
-            items.forEach((v) => {
-              if (v.bundleId) {
-                const a = groups.get(v.bundleId) || [];
-                a.push(v);
-                groups.set(v.bundleId, a);
-              }
-            });
+            if (groupByBundle) {
+              items.forEach((v) => {
+                if (v.bundleId) {
+                  const a = groups.get(v.bundleId) || [];
+                  a.push(v);
+                  groups.set(v.bundleId, a);
+                }
+              });
+            }
             const rendered: React.ReactNode[] = [];
-            for (const [key, arr] of groups) {
-              if (arr.length < 2) continue;
-              const coveredName = vacNameById[arr[0].vacationId ?? ""];
-              rendered.push(
-                <BundleRow
-                  key={`bundle-${key}-${date}`}
-                  groupId={key}
-                  items={arr}
-                  employees={employees}
-                  settings={settings}
-                  recommendations={recommendations}
-                  selectedIds={props.selectedIds}
-                  onToggleSelectMany={props.onToggleSelectMany}
-                  onDeleteMany={props.onDeleteMany}
-                  onSplitBundle={(ids) => console.warn("split bundle", ids)}
-                  onEditCoverage={props.onEditCoverage}
-                  onAwardBundle={(eid) => props.awardBundle?.(key, eid)}
-                  dueNextId={props.dueNextId}
-                  coveredName={coveredName}
-                />,
-              );
+            if (groupByBundle) {
+              for (const [key, arr] of groups) {
+                if (arr.length < 2) continue;
+                const coveredName = vacNameById[arr[0].vacationId ?? ""];
+                rendered.push(
+                  <BundleRow
+                    key={`bundle-${key}-${date}`}
+                    groupId={key}
+                    items={arr}
+                    employees={employees}
+                    settings={settings}
+                    recommendations={recommendations}
+                    selectedIds={props.selectedIds}
+                    onToggleSelectMany={props.onToggleSelectMany}
+                    onDeleteMany={props.onDeleteMany}
+                    onSplitBundle={(ids) => console.warn("split bundle", ids)}
+                    onEditCoverage={props.onEditCoverage}
+                    onAwardBundle={(eid) => props.awardBundle?.(key, eid)}
+                    dueNextId={props.dueNextId}
+                    coveredName={coveredName}
+                  />,
+                );
+              }
             }
             for (const v of items) {
-              const size = v.bundleId ? groups.get(v.bundleId)?.length || 0 : 0;
-              if (size >= 2) continue;
+              const size =
+                groupByBundle && v.bundleId
+                  ? groups.get(v.bundleId)?.length || 0
+                  : 0;
+              if (groupByBundle && size >= 2) continue;
               const rec = recommendations[v.id];
               const recId = rec?.id;
               const recName = recId
