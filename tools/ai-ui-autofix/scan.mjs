@@ -1,21 +1,26 @@
 /* tools/ai-ui-autofix/scan.mjs
-   Text-only UI scanner. No screenshots. Outputs JSON report.
+   Text-only UI scanner for Playwright + axe-core.
+   No screenshots. Outputs JSON report at tools/ai-ui-autofix/report.json
 */
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import fs from 'fs';
 import path from 'path';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:4173';
-// Match your actual routes in src/main.tsx:
+// In CI we set BASE_URL via the workflow env; locally you can override too.
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
+
+// Adjust these to match your app routes
 const ROUTES = ['/', '/dashboard', '/analytics', '/audit-log'];
+
+// Viewport widths to check (mobile, tablet, desktop)
 const WIDTHS = [360, 768, 1280];
 
 const outDir = path.resolve('tools/ai-ui-autofix');
 const outPath = path.join(outDir, 'report.json');
 await fs.promises.mkdir(outDir, { recursive: true });
 
-function pushIssue(arr, route, width, type, details){
+function pushIssue(arr, route, width, type, details) {
   arr.push({ route, width, type, details });
 }
 
@@ -23,22 +28,28 @@ const browser = await chromium.launch();
 const page = await browser.newPage();
 
 const issues = [];
+
 for (const w of WIDTHS) {
   await page.setViewportSize({ width: w, height: 900 });
+
   for (const r of ROUTES) {
     const url = new URL(r, BASE_URL).toString();
+
     try {
       const messages = [];
       page.on('console', (m) => { if (m.type() === 'error') messages.push(m.text()); });
 
-      await page.goto(url, { waitUntil: 'domcontentloaded' });
+      // Try to navigate
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
+      // Run axe-core a11y analysis
       let axeViolations = [];
       try {
         const axe = await new AxeBuilder({ page }).analyze();
         axeViolations = axe.violations.map(v => ({ id: v.id, impact: v.impact, help: v.help }));
       } catch {}
 
+      // Heuristics for common UI problems
       const data = await page.evaluate(() => {
         const vw = window.innerWidth;
         const docScrollW = document.documentElement.scrollWidth;
@@ -63,7 +74,7 @@ for (const w of WIDTHS) {
           const b = el.getBoundingClientRect();
           if (!Number.isFinite(b.left) || !Number.isFinite(b.right)) continue;
           if (b.left < -4 || b.right > vw + 4) {
-            offscreen.push({ tag: el.tagName.toLowerCase(), class: el.className?.toString().slice(0,60) || '' });
+            offscreen.push({ tag: el.tagName.toLowerCase(), class: (el.className || '').toString().slice(0, 60) });
             if (offscreen.length > 15) break;
           }
         }
@@ -89,13 +100,23 @@ for (const w of WIDTHS) {
           }
         }
 
-        return { vw, overflowX, headerOverlap, offscreen, modalOpen: !!modal, hasOverlay: !!hasOverlay, bodyScrollLocked, modalHasRole, menuCovered };
+        return {
+          vw,
+          overflowX,
+          headerOverlap,
+          offscreen,
+          modalOpen: !!modal,
+          hasOverlay: !!hasOverlay,
+          bodyScrollLocked,
+          modalHasRole,
+          menuCovered,
+        };
       });
 
       if (messages.length) pushIssue(issues, r, w, 'console-error', { messages });
       if (data.overflowX) pushIssue(issues, r, w, 'overflow-x', {});
       if (data.headerOverlap) pushIssue(issues, r, w, 'header-overlap', {});
-      if (data.offscreen.length) pushIssue(issues, r, w, 'offscreen', { sample: data.offscreen.slice(0,5) });
+      if (data.offscreen.length) pushIssue(issues, r, w, 'offscreen', { sample: data.offscreen.slice(0, 5) });
       if (data.menuCovered) pushIssue(issues, r, w, 'z-index-menu', {});
       if (data.modalOpen) {
         if (!data.bodyScrollLocked) pushIssue(issues, r, w, 'modal-scroll', {});
@@ -103,6 +124,7 @@ for (const w of WIDTHS) {
         if (!data.hasOverlay) pushIssue(issues, r, w, 'modal-overlay', {});
       }
       if (axeViolations.length) pushIssue(issues, r, w, 'a11y', { violations: axeViolations.slice(0, 10) });
+
     } catch (err) {
       pushIssue(issues, r, w, 'navigation-failed', { error: String(err) });
     }
@@ -117,7 +139,7 @@ const report = {
   widths: WIDTHS,
   issuesTotal: issues.length,
   generatedAt: new Date().toISOString(),
-  issues
+  issues,
 };
 
 await fs.promises.writeFile(outPath, JSON.stringify(report, null, 2), 'utf-8');
