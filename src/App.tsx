@@ -75,6 +75,7 @@ export type Vacancy = {
   id: string;
   vacationId?: string;
   bundleId?: string;
+  bundleMode?: "one-person" | "per-day";
   reason: string; // e.g. Vacation Backfill
   classification: Classification;
   wing?: string;
