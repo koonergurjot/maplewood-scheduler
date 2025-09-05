@@ -86,14 +86,14 @@ describe("award vacancy UI", () => {
     await waitFor(() => {
       const stored = JSON.parse(localStorage.getItem(LS_KEY)!);
       const v1 = stored.vacancies.find((v: any) => v.id === "v1");
-      if (v1?.status !== "Filled") throw new Error("not yet");
+      if (v1?.status !== "Awarded") throw new Error("not yet");
     });
 
     const stored = JSON.parse(localStorage.getItem(LS_KEY)!);
     const v1 = stored.vacancies.find((v: any) => v.id === "v1");
     const v2 = stored.vacancies.find((v: any) => v.id === "v2");
-    expect(v1.status).toBe("Filled");
-    expect(v2.status).toBe("Filled");
+    expect(v1.status).toBe("Awarded");
+    expect(v2.status).toBe("Awarded");
     expect(v1.awardedTo).toBe("e1");
     expect(v2.awardedTo).toBe("e1");
     expect(v1.awardReason).toBe(reason);

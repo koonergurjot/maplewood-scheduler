@@ -95,7 +95,7 @@ export const applyAwardVacancy = (
     v.id === vacId
       ? {
           ...v,
-          status: "Filled",
+          status: "Awarded",
           awardedTo: empId,
           awardedAt: new Date().toISOString(),
           awardReason: payload.reason,
@@ -111,6 +111,26 @@ export const applyAwardVacancies = (
   payload: { empId?: string; reason?: string; overrideUsed?: boolean },
 ): Vacancy[] => {
   return vacIds.reduce((prev, id) => applyAwardVacancy(prev, id, payload), vacs);
+};
+
+export const applyAwardBundle = (
+  vacs: Vacancy[],
+  bundleId: string,
+  payload: { empId?: string; reason?: string; overrideUsed?: boolean },
+): Vacancy[] => {
+  const empId = payload.empId === "EMPTY" ? undefined : payload.empId;
+  return vacs.map<Vacancy>((v) =>
+    v.bundleId === bundleId
+      ? {
+          ...v,
+          status: "Awarded",
+          awardedTo: empId,
+          awardedAt: new Date().toISOString(),
+          awardReason: payload.reason,
+          overrideUsed: !!payload.overrideUsed,
+        }
+      : v,
+  );
 };
 
 export const archiveBidsForVacancy = (

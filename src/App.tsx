@@ -226,7 +226,7 @@ export const applyAwardVacancy = (
     v.id === vacId
       ? {
           ...v,
-          status: "Filled",
+          status: "Awarded",
           awardedTo: empId,
           awardedAt: new Date().toISOString(),
           awardReason: payload.reason,
@@ -570,6 +570,27 @@ export default function App() {
     if (toAdd.length) setBids((prev) => [...prev, ...toAdd]);
   };
 
+  const applyAwardBundle = (
+    bundleId: string,
+    employeeId: string,
+    reason?: string,
+  ) => {
+    const empId = employeeId === "EMPTY" ? undefined : employeeId;
+    setVacancies((prev) =>
+      prev.map((v) =>
+        v.bundleId === bundleId
+          ? {
+              ...v,
+              status: "Awarded",
+              awardedTo: empId,
+              awardedAt: new Date().toISOString(),
+              awardReason: reason,
+            }
+          : v,
+      ),
+    );
+  };
+
   const awardBundle = (bundleId: string, employeeId: string) => {
     const kids = vacancies.filter(
       (v) => v.bundleId === bundleId && v.status === "Open",
@@ -598,16 +619,9 @@ export default function App() {
         `Employee already assigned on ${conflictDays.join(", ")}.`,
       );
     }
-
     ensureBundleBids(kids, employeeId);
-
-    for (const v of kids) {
-      awardVacancy(v.id, {
-        empId: employeeId,
-        reason: "Bundle award",
-        skipConflictCheck: true,
-      });
-    }
+    applyAwardBundle(bundleId, employeeId, "Bundle award");
+    archiveBids(kids.map((v) => v.id));
   };
 
   const awardVacancy = (
@@ -620,21 +634,43 @@ export default function App() {
     },
   ) => {
     const target = vacancies.find((v) => v.id === vacId);
-    if (payload.empId && payload.empId !== "EMPTY" && target && !payload.skipConflictCheck) {
-      const conflict = vacancies.some(
-        (v) =>
-          v.id !== vacId &&
-          v.shiftDate === target.shiftDate &&
-          (v.status === "Filled" || v.status === "Awarded") &&
-          v.awardedTo === payload.empId,
-      );
-      if (
-        conflict &&
-        !window.confirm(
-          `Employee already assigned on ${formatDateLong(target.shiftDate)}. Continue?`,
+    if (payload.empId && payload.empId !== "EMPTY" && target) {
+      if (target.bundleMode === "one-person" && target.bundleId) {
+        const kids = vacancies.filter(
+          (v) => v.bundleId === target.bundleId && v.status === "Open",
+        );
+        const emp = employeesById[payload.empId];
+        const name = emp
+          ? `${emp.firstName} ${emp.lastName}`.trim()
+          : payload.empId;
+        const days = kids.length;
+        if (
+          !window.confirm(
+            `Award all days in this bundle to ${name}? (${days} days)`,
+          )
         )
-      ) {
+          return;
+        ensureBundleBids(kids, payload.empId);
+        applyAwardBundle(target.bundleId, payload.empId, payload.reason);
+        archiveBids(kids.map((v) => v.id));
         return;
+      }
+      if (!payload.skipConflictCheck) {
+        const conflict = vacancies.some(
+          (v) =>
+            v.id !== vacId &&
+            v.shiftDate === target.shiftDate &&
+            (v.status === "Filled" || v.status === "Awarded") &&
+            v.awardedTo === payload.empId,
+        );
+        if (
+          conflict &&
+          !window.confirm(
+            `Employee already assigned on ${formatDateLong(target.shiftDate)}. Continue?`,
+          )
+        ) {
+          return;
+        }
       }
     }
     setVacancies((prev) => applyAwardVacancy(prev, vacId, payload));

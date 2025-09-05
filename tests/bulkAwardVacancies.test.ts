@@ -17,8 +17,8 @@ describe("applyAwardVacancies", () => {
     };
     const vac2: Vacancy = { ...vac1, id: "v2" };
     const updated = applyAwardVacancies([vac1, vac2], ["v1", "v2"], { empId: "e1" });
-    expect(updated[0].status).toBe("Filled");
-    expect(updated[1].status).toBe("Filled");
+    expect(updated[0].status).toBe("Awarded");
+    expect(updated[1].status).toBe("Awarded");
     expect(updated[0].awardedTo).toBe("e1");
     expect(updated[1].awardedTo).toBe("e1");
     expect(updated[0].awardReason).toBeUndefined();
