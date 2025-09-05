@@ -947,7 +947,7 @@ export default function App() {
 
           
           <CoverageRangesPanel />
-          <div className="grid grid2">
+          <div className="grid">
             <div className="card">
               <div className="card-h">
                 Add Vacation (auto-creates daily vacancies)
