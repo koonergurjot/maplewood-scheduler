@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import App from "../src/App";
@@ -53,9 +53,9 @@ describe("bundle award", () => {
             id: "v2",
             reason: "Test",
             classification: "RN",
-            shiftDate: "2024-01-02",
-            shiftStart: "08:00",
-            shiftEnd: "16:00",
+            shiftDate: "2024-01-01",
+            shiftStart: "16:00",
+            shiftEnd: "23:00",
             knownAt: "2024-01-01T00:00:00.000Z",
             offeringTier: "CASUALS",
             offeringStep: "Casuals",
@@ -67,10 +67,6 @@ describe("bundle award", () => {
       }),
     );
 
-    const confirmMock = vi
-      .spyOn(window, "confirm")
-      .mockImplementation(() => true);
-
     render(
       <MemoryRouter>
         <App />
@@ -79,18 +75,11 @@ describe("bundle award", () => {
 
     fireEvent.click(screen.getAllByLabelText("Group by bundle")[0]);
 
-    const row = screen
-      .getAllByRole("row")
-      .find((r) => within(r).queryByText("Allow class override"))!;
-    const input = within(row).getByPlaceholderText(/Type name or ID/);
-    fireEvent.change(input, { target: { value: "Alice" } });
-    const option = await screen.findByText(/Alice A/);
-    fireEvent.click(option);
-    fireEvent.click(within(row).getByText("Award"));
+    const awardBtn = await screen.findByText("Award Bundle");
+    fireEvent.click(awardBtn);
 
-    expect(confirmMock).toHaveBeenCalledWith(
-      "Award all days in this bundle to Alice A? (2 days)",
-    );
+    const pick = await screen.findByRole("button", { name: /Alice A/ });
+    fireEvent.click(pick);
 
     await waitFor(() => {
       const stored = JSON.parse(localStorage.getItem(LS_KEY)!);

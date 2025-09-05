@@ -27,6 +27,7 @@ import type { VacancyRange } from "./types";
 export { OVERRIDE_REASONS } from "./types";
 import { expandRangeToVacancies } from "./lib/expandRange";
 import { bundleContiguousVacanciesByRef } from "./lib/bundles";
+import Toast from "./components/ui/Toast";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -297,9 +298,14 @@ export default function App() {
   const [archivedBids, setArchivedBids] = useState<Record<string, Bid[]>>(
     persisted?.archivedBids ?? {},
   );
-  const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
-  const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
-  const [showRangeForm, setShowRangeForm] = useState(false);
+const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
+const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
+const [bundleUndo, setBundleUndo] = useState<{
+  snapshot: Vacancy[];
+  message: string;
+  timeout: number;
+} | null>(null);
+const [showRangeForm, setShowRangeForm] = useState(false);
   const persistedSettings = persisted?.settings ?? {};
   const storedOrder: string[] = persistedSettings.tabOrder || [];
   const mergedOrder = [
@@ -623,9 +629,28 @@ export default function App() {
         `Employee already assigned on ${conflictDays.join(", ")}.`,
       );
     }
+    const snapshot = kids.map((k) => ({ ...k }));
     ensureBundleBids(kids, employeeId);
     applyAwardBundle(bundleId, employeeId, "Bundle award");
     archiveBids(kids.map((v) => v.id));
+
+    const emp = employeesById[employeeId];
+    const name = emp ? `${emp.firstName} ${emp.lastName}`.trim() : employeeId;
+    if (bundleUndo?.timeout) clearTimeout(bundleUndo.timeout);
+    const timeout = window.setTimeout(() => setBundleUndo(null), 10000);
+    setBundleUndo({
+      snapshot,
+      message: `Awarded bundle (${kids.length} days) to ${name}.`,
+      timeout,
+    });
+  };
+
+  const undoBundleAward = () => {
+    if (!bundleUndo) return;
+    clearTimeout(bundleUndo.timeout);
+    const map = new Map(bundleUndo.snapshot.map((v) => [v.id, v]));
+    setVacancies((prev) => prev.map((v) => map.get(v.id) || v));
+    setBundleUndo(null);
   };
 
   const awardVacancy = (
@@ -654,9 +679,7 @@ export default function App() {
           )
         )
           return;
-        ensureBundleBids(kids, payload.empId);
-        applyAwardBundle(target.bundleId, payload.empId, payload.reason);
-        archiveBids(kids.map((v) => v.id));
+        awardBundle(target.bundleId, payload.empId);
         return;
       }
       if (!payload.skipConflictCheck) {
@@ -1164,8 +1187,7 @@ export default function App() {
                         onChange={(e) => setAwardAsBlock(e.target.checked)}
                       />
                       <span>
-                        Award this whole vacancy (all {dayCount} days) to one
-                        person
+                        Award the entire block to one person ({dayCount} days)
                       </span>
                     </label>
                   )}
@@ -1603,6 +1625,12 @@ export default function App() {
             setSelectedVacancyIds([]);
             setBulkAwardOpen(false);
           }}
+        />
+        <Toast
+          open={!!bundleUndo}
+          message={bundleUndo?.message || ""}
+          actionLabel="Undo (10s)"
+          onAction={undoBundleAward}
         />
       </div>
     </div>

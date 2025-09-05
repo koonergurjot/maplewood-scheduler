@@ -49,6 +49,8 @@ export default function VacancyRow({
   const [overrideClass, setOverrideClass] = useState<boolean>(false);
   const [reason, setReason] = useState<string>("");
 
+  const isBundleChild = v.bundleMode === "one-person" && !!v.bundleId;
+
   const chosen = employees.find((e) => e.id === choice);
   const classMismatch = chosen && chosen.classification !== v.classification;
   const needReason = (!!recId && choice && choice !== recId) || (classMismatch && overrideClass);
@@ -127,48 +129,16 @@ export default function VacancyRow({
       />
       <CellCountdown source={v} settings={settings} />
       <CellActions>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <SelectEmployee
-            allowEmpty
-            employees={employees}
-            value={choice}
-            onChange={setChoice}
-          />
-          <div style={{ whiteSpace: "nowrap" }}>
-            <input
-              id={`override-toggle-${v.id}`}
-              className="toggle-input"
-              type="checkbox"
-              checked={overrideClass}
-              onChange={(e) => setOverrideClass(e.target.checked)}
-            />
-            <label htmlFor={`override-toggle-${v.id}`} className="toggle-box">
-              <span className="subtitle">Allow class override</span>
-            </label>
-          </div>
-          {needReason || overrideClass || (recId && choice && choice !== recId) ? (
-            <select value={reason} onChange={(e) => setReason(e.target.value)}>
-              <option value="">Select reason…</option>
-              {OVERRIDE_REASONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span className="subtitle">—</span>
-          )}
+        {isBundleChild ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             <button className="btn btn-sm" onClick={resetKnownAt}>
               Reset timer
             </button>
-            <button
-              className="btn btn-sm"
-              onClick={handleAward}
-              disabled={!choice}
-            >
-              Award
-            </button>
+            {v.bundleId && (
+              <a href={`#bundle-${v.bundleId}`} className="btn btn-sm">
+                Award at bundle level
+              </a>
+            )}
             <button
               className="btn btn-sm"
               aria-label="Delete vacancy"
@@ -184,7 +154,66 @@ export default function VacancyRow({
               )}
             </button>
           </div>
-        </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <SelectEmployee
+              allowEmpty
+              employees={employees}
+              value={choice}
+              onChange={setChoice}
+            />
+            <div style={{ whiteSpace: "nowrap" }}>
+              <input
+                id={`override-toggle-${v.id}`}
+                className="toggle-input"
+                type="checkbox"
+                checked={overrideClass}
+                onChange={(e) => setOverrideClass(e.target.checked)}
+              />
+              <label htmlFor={`override-toggle-${v.id}`} className="toggle-box">
+                <span className="subtitle">Allow class override</span>
+              </label>
+            </div>
+            {needReason || overrideClass || (recId && choice && choice !== recId) ? (
+              <select value={reason} onChange={(e) => setReason(e.target.value)}>
+                <option value="">Select reason…</option>
+                {OVERRIDE_REASONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="subtitle">—</span>
+            )}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              <button className="btn btn-sm" onClick={resetKnownAt}>
+                Reset timer
+              </button>
+              <button
+                className="btn btn-sm"
+                onClick={handleAward}
+                disabled={!choice}
+              >
+                Award
+              </button>
+              <button
+                className="btn btn-sm"
+                aria-label="Delete vacancy"
+                title="Delete vacancy"
+                data-testid={`vacancy-delete-${v.id}`}
+                tabIndex={0}
+                onClick={() => onDelete(v.id)}
+              >
+                {TrashIcon ? (
+                  <TrashIcon style={{ width: 16, height: 16 }} aria-hidden="true" />
+                ) : (
+                  "Delete"
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </CellActions>
     </tr>
   );
