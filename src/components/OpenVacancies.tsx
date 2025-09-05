@@ -41,6 +41,17 @@ export default function OpenVacancies({
     (v) => v.status !== "Filled" && v.status !== "Awarded",
   );
 
+  const grouped = useMemo(() => {
+    const m = new Map<string, Vacancy[]>();
+    for (const v of openVacancies) {
+      const key = v.bundleId || v.id;
+      const arr = m.get(key) || [];
+      arr.push(v);
+      m.set(key, arr);
+    }
+    return Array.from(m.values());
+  }, [openVacancies]);
+
   const allChecked =
     openVacancies.length > 0 && selected.length === openVacancies.length;
 
@@ -50,6 +61,15 @@ export default function OpenVacancies({
 
   const confirmDelete = (ids: string[]) => {
     setPending(ids);
+  };
+
+  const toggleGroup = (ids: string[]) => {
+    setSelected((prev) => {
+      const allSelected = ids.every((id) => prev.includes(id));
+      return allSelected
+        ? prev.filter((id) => !ids.includes(id))
+        : [...prev, ...ids.filter((id) => !prev.includes(id))];
+    });
   };
 
   const handleConfirm = () => {
@@ -119,69 +139,87 @@ export default function OpenVacancies({
           </tr>
         </thead>
         <tbody>
-          {openVacancies.map((v) => (
-            <tr key={v.id}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={selected.includes(v.id)}
-                  onChange={() => toggleSelect(v.id)}
-                  aria-label={`Select vacancy ${v.id}`}
-                />
-              </td>
-              <td>{v.classification}</td>
-              <td>{vacNameById[v.vacationId ?? ""] || "—"}</td>
-              <td>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <span>
-                    {v.startDate && v.endDate && v.startDate !== v.endDate
-                      ? `${v.startDate}–${v.endDate}`
-                      : v.shiftDate}
-                  </span>
-                  <CoverageChip
-                    startDate={v.startDate}
-                    endDate={v.endDate}
-                    coverageDates={v.coverageDates}
+          {grouped.map((group) => {
+            const primary = group[0];
+            const ids = group.map((v) => v.id);
+            const checked = ids.every((id) => selected.includes(id));
+            const sameTime = group.every(
+              (v) => v.shiftStart === primary.shiftStart && v.shiftEnd === primary.shiftEnd,
+            );
+            return (
+              <tr key={primary.bundleId || primary.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() =>
+                      group.length === 1
+                        ? toggleSelect(primary.id)
+                        : toggleGroup(ids)
+                    }
+                    aria-label={
+                      group.length === 1
+                        ? `Select vacancy ${primary.id}`
+                        : `Select bundle ${primary.bundleId}`
+                    }
                   />
-                </div>
-              </td>
-              <td>
-                {v.shiftStart}–{v.shiftEnd}
-              </td>
-              <td style={{ textAlign: "right" }}>
-                {!readOnly && (
-                  <button
-                    className="btn btn-sm"
-                    title="Delete vacancy"
-                    aria-label="Delete vacancy"
-                    data-testid={`vacancy-delete-${v.id}`}
-                    tabIndex={0}
-                    onClick={() => confirmDelete([v.id])}
+                </td>
+                <td>{primary.classification}</td>
+                <td>{vacNameById[primary.vacationId ?? ""] || "—"}</td>
+                <td>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      flexWrap: "wrap",
+                    }}
                   >
-                    {TrashIcon ? (
-                      <>
-                        <TrashIcon
-                          style={{ width: 16, height: 16 }}
-                          aria-hidden="true"
-                        />
-                        <span className="sr-only">Delete vacancy</span>
-                      </>
-                    ) : (
-                      "Delete"
-                    )}
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-          {openVacancies.length === 0 && (
+                    <span>
+                      {primary.startDate && primary.endDate && primary.startDate !== primary.endDate
+                        ? `${primary.startDate}–${primary.endDate}`
+                        : primary.shiftDate}
+                    </span>
+                    <CoverageChip
+                      startDate={primary.startDate}
+                      endDate={primary.endDate}
+                      coverageDates={primary.coverageDates}
+                    />
+                  </div>
+                </td>
+                <td>
+                  {sameTime
+                    ? `${primary.shiftStart}–${primary.shiftEnd}`
+                    : "Varies"}
+                </td>
+                <td style={{ textAlign: "right" }}>
+                  {!readOnly && (
+                    <button
+                      className="btn btn-sm"
+                      title="Delete vacancy"
+                      aria-label="Delete vacancy"
+                      data-testid={`vacancy-delete-${primary.id}`}
+                      tabIndex={0}
+                      onClick={() => confirmDelete(ids)}
+                    >
+                      {TrashIcon ? (
+                        <>
+                          <TrashIcon
+                            style={{ width: 16, height: 16 }}
+                            aria-hidden="true"
+                          />
+                          <span className="sr-only">Delete vacancy</span>
+                        </>
+                      ) : (
+                        "Delete"
+                      )}
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+          {grouped.length === 0 && (
             <tr>
               <td colSpan={6} style={{ textAlign: "center" }}>
                 No vacancies

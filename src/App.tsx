@@ -24,6 +24,7 @@ import VacancyRow from "./components/VacancyRow";
 import OpenVacanciesRedesign from "./components/OpenVacanciesRedesign";
 import { appConfig } from "./config";
 import type { VacancyRange } from "./types";
+export { OVERRIDE_REASONS } from "./types";
 import { expandRangeToVacancies } from "./lib/expandRange";
 
 /**
@@ -1179,34 +1180,56 @@ export default function App() {
               <div className="card-h">Open Vacancies</div>
               <div className="card-c">
                 {appConfig.features.vacancyListRedesign ? (
-                  <OpenVacanciesRedesign
-                    vacancies={vacancies}
-                    employees={employees}
-                    vacations={vacations}
-                    settings={settings}
-                    selectedIds={selectedVacancyIds}
-                    dueNextId={dueNextId}
-                    onToggleSelect={(id) =>
-                      setSelectedVacancyIds((ids) =>
-                        ids.includes(id)
-                          ? ids.filter((x) => x !== id)
-                          : [...ids, id],
-                      )
-                    }
-                    onToggleSelectMany={toggleMany}
-                    onDelete={deleteVacancy}
-                    onDeleteMany={stageDeleteMany}
-                    awardVacancy={awardVacancy}
-                    awardBundle={awardBundle}
-                    resetKnownAt={resetKnownAt}
-                    recommendations={recommendations}
-                  />
+                  <>
+                    {selectedVacancyIds.length > 0 && (
+                      <div
+                        style={{
+                          marginBottom: 8,
+                          display: "flex",
+                          gap: 8,
+                          alignItems: "center",
+                        }}
+                      >
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => setBulkAwardOpen(true)}
+                        >
+                          Bulk Award
+                        </button>
+                        <span className="badge">
+                          {selectedVacancyIds.length} selected
+                        </span>
+                      </div>
+                    )}
+                    <OpenVacanciesRedesign
+                      vacancies={vacancies}
+                      employees={employees}
+                      vacations={vacations}
+                      settings={settings}
+                      selectedIds={selectedVacancyIds}
+                      dueNextId={dueNextId}
+                      onToggleSelect={(id) =>
+                        setSelectedVacancyIds((ids) =>
+                          ids.includes(id)
+                            ? ids.filter((x) => x !== id)
+                            : [...ids, id],
+                        )
+                      }
+                      onToggleSelectMany={toggleMany}
+                      onDelete={deleteVacancy}
+                      onDeleteMany={stageDeleteMany}
+                      awardVacancy={awardVacancy}
+                      awardBundle={awardBundle}
+                      resetKnownAt={resetKnownAt}
+                      recommendations={recommendations}
+                    />
+                  </>
                 ) : (
                   <>
-                <div
-                  style={{
-                    marginBottom: 8,
-                    display: "flex",
+                    <div
+                      style={{
+                        marginBottom: 8,
+                        display: "flex",
                     gap: 8,
                     alignItems: "center",
                   }}
