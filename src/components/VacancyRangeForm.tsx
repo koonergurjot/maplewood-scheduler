@@ -7,7 +7,7 @@ import { formatDateLong } from "../lib/dates";
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSave: (range: VacancyRange) => void;
+  onSave: (range: VacancyRange, awardAsBlock: boolean) => void;
   defaultClassification?: Classification;
   defaultWing?: string;
   existingVacancies?: Vacancy[];
@@ -35,6 +35,7 @@ export default function VacancyRangeForm({
   const [perDayTimes, setPerDayTimes] = useState<Record<string, { start: string; end: string }>>({});
   const [perDayWings, setPerDayWings] = useState<Record<string, string>>({});
   const [showCoverageModal, setShowCoverageModal] = useState(false);
+  const [awardAsBlock, setAwardAsBlock] = useState(true);
 
   const allDays = useMemo(() => {
     if (!startDate || !endDate) return [];
@@ -55,6 +56,12 @@ export default function VacancyRangeForm({
       setPerDayWings({});
     }
   }, [allDays]);
+
+  const dayCount = workingDays.length;
+
+  React.useEffect(() => {
+    if (dayCount >= 2) setAwardAsBlock(true);
+  }, [dayCount]);
 
   function save() {
     if (!startDate || !endDate || workingDays.length === 0) return;
@@ -99,7 +106,7 @@ export default function VacancyRangeForm({
       offeringStep: "Casuals",
       status: "Open",
     };
-    onSave(range);
+    onSave(range, awardAsBlock);
     onClose();
   }
 
@@ -169,6 +176,19 @@ export default function VacancyRangeForm({
               )}
             </div>
           </div>
+        )}
+
+        {dayCount >= 2 && (
+          <label className="mt-4 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={awardAsBlock}
+              onChange={(e) => setAwardAsBlock(e.target.checked)}
+            />
+            <span>
+              Award this whole vacancy (all {dayCount} days) to one person
+            </span>
+          </label>
         )}
 
         <div className="mt-4 flex justify-end gap-2">

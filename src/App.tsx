@@ -425,6 +425,19 @@ export default function App() {
     perDayTimes?: Record<string, { start: string; end: string }>;
     perDayWing?: Record<string, string>;
   } | null>(null);
+  const [awardAsBlock, setAwardAsBlock] = useState(true);
+
+  const dayCount = useMemo(() => {
+    if (!newVacay.startDate || !newVacay.endDate) return 0;
+    const allDays = dateRangeInclusive(newVacay.startDate, newVacay.endDate);
+    const chosen =
+      coverage?.selectedDates?.length ? coverage.selectedDates : allDays;
+    return chosen.length;
+  }, [newVacay.startDate, newVacay.endDate, coverage]);
+
+  useEffect(() => {
+    if (dayCount >= 2) setAwardAsBlock(true);
+  }, [dayCount]);
 
   // Actions
   const addVacationAndGenerate = (
@@ -460,7 +473,7 @@ export default function App() {
     const allDays = dateRangeInclusive(v.startDate!, v.endDate!);
     const chosenDays =
       coverage?.selectedDates?.length ? coverage.selectedDates : allDays;
-    const isBundle = chosenDays.length >= 2;
+    const isBundle = awardAsBlock && chosenDays.length >= 2;
     const bid = isBundle ? crypto.randomUUID() : undefined;
     if (bid) console.debug("[bundle] created", bid, { days: chosenDays.length });
     const nowISO = new Date().toISOString();
@@ -498,8 +511,8 @@ export default function App() {
     setMultiDay(false);
   };
 
-  const handleSaveRange = (range: VacancyRange) => {
-    const vxs = expandRangeToVacancies(range);
+  const handleSaveRange = (range: VacancyRange, awardAsBlock: boolean) => {
+    const vxs = expandRangeToVacancies(range, awardAsBlock);
     setVacancies((prev) => [...vxs, ...prev]);
   };
 
@@ -1095,6 +1108,22 @@ export default function App() {
                     >
                       Edit coverage days
                     </button>
+                  )}
+                  {dayCount >= 2 && (
+                    <label
+                      style={{ gridColumn: "1 / -1" }}
+                      className="flex items-center gap-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={awardAsBlock}
+                        onChange={(e) => setAwardAsBlock(e.target.checked)}
+                      />
+                      <span>
+                        Award this whole vacancy (all {dayCount} days) to one
+                        person
+                      </span>
+                    </label>
                   )}
                   <div>
                     <label>Shift</label>

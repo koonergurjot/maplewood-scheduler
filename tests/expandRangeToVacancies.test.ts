@@ -73,5 +73,25 @@ describe("expandRangeToVacancies", () => {
     expect(vxs).toHaveLength(1);
     expect(vxs[0].coverageDates).toBeUndefined();
   });
+
+  it("does not bundle vacancies when awardAsBlock is false", () => {
+    const range: VacancyRange = {
+      id: "r3",
+      reason: "Backfill",
+      classification: "RCA",
+      startDate: "2025-01-10",
+      endDate: "2025-01-11",
+      knownAt: "2025-01-01T00:00:00Z",
+      workingDays: ["2025-01-10", "2025-01-11"],
+      shiftStart: "06:30",
+      shiftEnd: "14:30",
+      offeringStep: "Casuals",
+      status: "Open",
+    };
+
+    const vxs = expandRangeToVacancies(range, false);
+    expect(vxs).toHaveLength(2);
+    expect(vxs.every((v) => v.bundleId === undefined)).toBe(true);
+  });
 });
 
