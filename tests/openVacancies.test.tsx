@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import OpenVacancies from "../src/components/OpenVacancies";
 import useVacancies from "../src/state/useVacancies";
 
@@ -15,6 +15,7 @@ function setupLocalStorage(vacancies: any[] = [], auditLog: any[] = []) {
   beforeEach(() => {
     localStorage.clear();
   });
+  afterEach(cleanup);
 
   it("renders delete buttons with tooltip", () => {
     const vacancies = [
@@ -185,7 +186,7 @@ function setupLocalStorage(vacancies: any[] = [], auditLog: any[] = []) {
       }
 
       const { container } = render(<Wrapper />);
-
+      fireEvent.click(screen.getAllByLabelText("Group by bundle")[0]);
       const buttons = container.querySelectorAll('[data-testid^="vacancy-delete-"]');
       expect(buttons.length).toBe(1);
     });

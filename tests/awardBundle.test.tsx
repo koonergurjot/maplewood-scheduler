@@ -77,6 +77,8 @@ describe("bundle award", () => {
       </MemoryRouter>,
     );
 
+    fireEvent.click(screen.getAllByLabelText("Group by bundle")[0]);
+
     const row = screen
       .getAllByRole("row")
       .find((r) => within(r).queryByText("Allow class override"))!;

@@ -41,7 +41,11 @@ export default function OpenVacancies({
     (v) => v.status !== "Filled" && v.status !== "Awarded",
   );
 
+  const [groupByBundle, setGroupByBundle] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
   const grouped = useMemo(() => {
+    if (!groupByBundle) return openVacancies.map((v) => [v]);
     const m = new Map<string, Vacancy[]>();
     for (const v of openVacancies) {
       const key = v.bundleId || v.id;
@@ -50,7 +54,7 @@ export default function OpenVacancies({
       m.set(key, arr);
     }
     return Array.from(m.values());
-  }, [openVacancies]);
+  }, [openVacancies, groupByBundle]);
 
   const allChecked =
     openVacancies.length > 0 && selected.length === openVacancies.length;
@@ -87,6 +91,16 @@ export default function OpenVacancies({
 
   return (
     <div>
+      <div style={{ marginBottom: 8 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <input
+            type="checkbox"
+            checked={groupByBundle}
+            onChange={(e) => setGroupByBundle(e.target.checked)}
+          />
+          Group by bundle
+        </label>
+      </div>
       {!readOnly && selected.length > 0 && (
         <div
           style={{
@@ -146,22 +160,124 @@ export default function OpenVacancies({
             const sameTime = group.every(
               (v) => v.shiftStart === primary.shiftStart && v.shiftEnd === primary.shiftEnd,
             );
+            if (groupByBundle && group.length > 1 && primary.bundleId) {
+              const isOpen = expanded[primary.bundleId] || false;
+              return (
+                <>
+                  <tr key={primary.bundleId}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleGroup(ids)}
+                        aria-label={`Select bundle ${primary.bundleId}`}
+                      />
+                    </td>
+                    <td>{primary.classification}</td>
+                    <td>{vacNameById[primary.vacationId ?? ""] || "—"}</td>
+                    <td>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <span>
+                          {primary.startDate && primary.endDate && primary.startDate !== primary.endDate
+                            ? `${primary.startDate}–${primary.endDate}`
+                            : primary.shiftDate}
+                        </span>
+                        <span className="pill">{group.length} days</span>
+                        <CoverageChip
+                          startDate={primary.startDate}
+                          endDate={primary.endDate}
+                          coverageDates={primary.coverageDates}
+                        />
+                      </div>
+                    </td>
+                    <td>
+                      {sameTime
+                        ? `${primary.shiftStart}–${primary.shiftEnd}`
+                        : "Varies"}
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      {!readOnly && (
+                        <>
+                          <button
+                            className="btn btn-sm"
+                            onClick={() =>
+                              setExpanded((prev) => ({
+                                ...prev,
+                                [primary.bundleId!]: !isOpen,
+                              }))
+                            }
+                          >
+                            {isOpen ? "Hide" : "Expand"}
+                          </button>
+                          <button
+                            className="btn btn-sm"
+                            title="Delete vacancy"
+                            aria-label="Delete vacancy"
+                            data-testid={`vacancy-delete-${primary.id}`}
+                            tabIndex={0}
+                            onClick={() => confirmDelete(ids)}
+                          >
+                            {TrashIcon ? (
+                              <>
+                                <TrashIcon
+                                  style={{ width: 16, height: 16 }}
+                                  aria-hidden="true"
+                                />
+                                <span className="sr-only">Delete vacancy</span>
+                              </>
+                            ) : (
+                              "Delete"
+                            )}
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                  {isOpen && (
+                    <tr key={`${primary.bundleId}-exp`}>
+                      <td />
+                      <td colSpan={4}>
+                        <div className="bundle-expand">
+                          {group.map((v, i) => (
+                            <div
+                              key={v.id}
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                padding: "4px 0",
+                                borderTop:
+                                  i === 0 ? undefined : "1px solid var(--stroke)",
+                              }}
+                            >
+                              <div style={{ minWidth: 160 }}>{v.shiftDate}</div>
+                              <div style={{ minWidth: 100 }}>
+                                {v.shiftStart}–{v.shiftEnd}
+                              </div>
+                              <div style={{ minWidth: 100 }}>{v.wing ?? "-"}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              );
+            }
             return (
-              <tr key={primary.bundleId || primary.id}>
+              <tr key={primary.id}>
                 <td>
                   <input
                     type="checkbox"
                     checked={checked}
-                    onChange={() =>
-                      group.length === 1
-                        ? toggleSelect(primary.id)
-                        : toggleGroup(ids)
-                    }
-                    aria-label={
-                      group.length === 1
-                        ? `Select vacancy ${primary.id}`
-                        : `Select bundle ${primary.bundleId}`
-                    }
+                    onChange={() => toggleSelect(primary.id)}
+                    aria-label={`Select vacancy ${primary.id}`}
                   />
                 </td>
                 <td>{primary.classification}</td>
