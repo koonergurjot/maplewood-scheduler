@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Employee } from "./App";
+import type { Employee, Vacation } from "./App";
 import CalendarView from "./components/CalendarView";
 import OpenVacancies from "./components/OpenVacancies";
 import useVacancies from "./state/useVacancies";
@@ -26,11 +26,12 @@ const loadState = () => {
 
 type State = {
   employees: Employee[];
+  vacations: Vacation[];
 };
 
 export default function Dashboard() {
-  const data: State = loadState() || { employees: [] };
-  const { employees } = data;
+  const data: State = loadState() || { employees: [], vacations: [] };
+  const { employees, vacations } = data;
   const { vacancies, stageDelete, undoDelete, staged } = useVacancies();
 
   const [view, setView] = useState<"list" | "calendar">("list");
@@ -112,6 +113,7 @@ export default function Dashboard() {
               <h2>Open Shifts</h2>
               <OpenVacancies
                 vacancies={vacancies}
+                vacations={vacations}
                 stageDelete={stageDelete}
                 undoDelete={undoDelete}
                 staged={staged}

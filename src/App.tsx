@@ -1182,6 +1182,7 @@ export default function App() {
                   <OpenVacanciesRedesign
                     vacancies={vacancies}
                     employees={employees}
+                    vacations={vacations}
                     settings={settings}
                     selectedIds={selectedVacancyIds}
                     dueNextId={dueNextId}

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { Vacancy } from "../types";
+import { useState, useMemo } from "react";
+import type { Vacancy, Vacation } from "../types";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import Toast from "./ui/Toast";
 import { TrashIcon } from "./ui/Icon";
@@ -7,6 +7,7 @@ import CoverageChip from "./ui/CoverageChip";
 
 interface Props {
   vacancies: Vacancy[];
+  vacations?: Vacation[];
   stageDelete: (ids: string[]) => void;
   undoDelete: () => void;
   staged: Vacancy[] | null;
@@ -15,6 +16,7 @@ interface Props {
 
 export default function OpenVacancies({
   vacancies,
+  vacations = [],
   stageDelete,
   undoDelete,
   staged,
@@ -22,6 +24,12 @@ export default function OpenVacancies({
 }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, setPending] = useState<string[] | null>(null);
+
+  const vacNameById = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const v of vacations) m[v.id] = v.employeeName;
+    return m;
+  }, [vacations]);
 
   const toggleSelect = (id: string) => {
     setSelected((ids) =>
@@ -104,6 +112,7 @@ export default function OpenVacancies({
               />
             </th>
             <th>Role</th>
+            <th>Covering</th>
             <th>Date</th>
             <th>Time</th>
             <th style={{ textAlign: "right", minWidth: 60 }}>Actions</th>
@@ -121,6 +130,7 @@ export default function OpenVacancies({
                 />
               </td>
               <td>{v.classification}</td>
+              <td>{vacNameById[v.vacationId ?? ""] || "—"}</td>
               <td>
                 <div
                   style={{
@@ -173,7 +183,7 @@ export default function OpenVacancies({
           ))}
           {openVacancies.length === 0 && (
             <tr>
-              <td colSpan={5} style={{ textAlign: "center" }}>
+              <td colSpan={6} style={{ textAlign: "center" }}>
                 No vacancies
               </td>
             </tr>

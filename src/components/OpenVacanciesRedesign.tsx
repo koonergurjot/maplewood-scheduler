@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import type { Vacancy, Employee, Settings } from "../types";
+import type { Vacancy, Employee, Settings, Vacation } from "../types";
 import type { Recommendation } from "../recommend";
 import BundleRow from "./BundleRow";
 import VacancyRow from "./VacancyRow";
@@ -8,6 +8,7 @@ import { combineDateTime } from "../lib/dates";
 type Props = {
   vacancies: Vacancy[];
   employees: Employee[];
+  vacations: Vacation[];
   settings: Settings;
   selectedIds: string[];
   dueNextId: string | null;
@@ -30,7 +31,7 @@ type Props = {
 };
 
 export default function OpenVacanciesRedesign(props: Props) {
-  const { vacancies, filters, settings, employees, recommendations } = props;
+  const { vacancies, vacations, filters, settings, employees, recommendations } = props;
   const employeesById = useMemo(() => {
     const map: Record<string, Employee> = {};
     employees.forEach((e) => {
@@ -38,6 +39,13 @@ export default function OpenVacanciesRedesign(props: Props) {
     });
     return map;
   }, [employees]);
+  const vacNameById = useMemo(() => {
+    const map: Record<string, string> = {};
+    vacations.forEach((v) => {
+      map[v.id] = v.employeeName;
+    });
+    return map;
+  }, [vacations]);
   const filtered = useMemo(() => {
     let list = vacancies.filter(
       (v) => v.status !== "Filled" && v.status !== "Awarded",
@@ -105,6 +113,7 @@ export default function OpenVacanciesRedesign(props: Props) {
             const rendered: React.ReactNode[] = [];
             for (const [key, arr] of groups) {
               if (arr.length < 2) continue;
+              const coveredName = vacNameById[arr[0].vacationId ?? ""];
               rendered.push(
                 <BundleRow
                   key={`bundle-${key}-${date}`}
@@ -120,6 +129,7 @@ export default function OpenVacanciesRedesign(props: Props) {
                   onEditCoverage={props.onEditCoverage}
                   onAwardBundle={(eid) => props.awardBundle?.(key, eid)}
                   dueNextId={props.dueNextId}
+                  coveredName={coveredName}
                 />,
               );
             }
@@ -134,6 +144,7 @@ export default function OpenVacanciesRedesign(props: Props) {
                   }`.trim()
                 : "—";
               const recWhy = rec?.why ?? [];
+              const coveredName = vacNameById[v.vacationId ?? ""];
               rendered.push(
                 <VacancyRow
                   key={v.id}
@@ -148,6 +159,7 @@ export default function OpenVacanciesRedesign(props: Props) {
                   resetKnownAt={() => props.resetKnownAt(v.id)}
                   onDelete={props.onDelete}
                   isDueNext={props.dueNextId === v.id}
+                  coveredName={coveredName}
                   settings={settings}
                 />,
               );
