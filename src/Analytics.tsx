@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Bar, Line } from "react-chartjs-2";
 import { authFetch, setToken } from "./utils/api";
 import {
@@ -38,13 +38,13 @@ export default function Analytics() {
 
   const controllerRef = useRef<AbortController | null>(null);
 
-  const promptForToken = () => {
+  const promptForToken = useCallback(() => {
     const token = window.prompt("Enter API token");
     if (token) setToken(token);
     return token;
-  };
+  }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -82,7 +82,7 @@ export default function Analytics() {
         }
       }
     }
-  };
+  }, [promptForToken]);
 
   const handleExport = async (format: string) => {
     try {
@@ -113,7 +113,7 @@ export default function Analytics() {
   useEffect(() => {
     loadData();
     return () => controllerRef.current?.abort();
-  }, []);
+  }, [loadData]);
 
   if (loading) {
     return (
