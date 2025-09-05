@@ -10,7 +10,7 @@ module.exports = {
     "plugin:react-hooks/recommended",
     "prettier"
   ],
-  ignorePatterns: ["vite.config.ts", "vitest.config.ts", "scripts/**", "dist/**"],
+  ignorePatterns: ["vite.config.ts", "vitest.config.ts", "scripts/**", "dist/**", "games/**"],
   settings: { react: { version: "detect" } },
   rules: {
     "react/react-in-jsx-scope": "off",
