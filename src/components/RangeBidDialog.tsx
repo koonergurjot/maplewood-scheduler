@@ -45,10 +45,15 @@ export default function RangeBidDialog({ open, onClose, range, employees, onSubm
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, onClose);
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" onClick={onClose}>
       <BodyLock />
-       onClick={onClose}>>
-      <div role="dialog" aria-modal="true" className="modal" ref={dialogRef} onClick={(e) => e.stopPropagation()}">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="modal"
+        ref={dialogRef}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">Enter Bid for Multi‑day Vacancy</h2>
           <button onClick={onClose} className="px-2 py-1 rounded-md border">Close</button>
@@ -57,9 +62,17 @@ export default function RangeBidDialog({ open, onClose, range, employees, onSubm
         <div className="space-y-3">
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">Bidder</span>
-            <select value={employeeId} onChange={e=>setEmployeeId(e.target.value)} className="border rounded-md px-2 py-1">
+            <select
+              value={employeeId}
+              onChange={e => setEmployeeId(e.target.value)}
+              className="border rounded-md px-2 py-1"
+            >
               <option value="">Select employee…</option>
-              {empOpts.map(e => <option key={e.id} value={e.id}>{e.seniorityRank}. {e.lastName}, {e.firstName} — {e.classification}</option>)}
+              {empOpts.map(e => (
+                <option key={e.id} value={e.id}>
+                  {e.seniorityRank}. {e.lastName}, {e.firstName} — {e.classification}
+                </option>
+              ))}
             </select>
           </label>
 
