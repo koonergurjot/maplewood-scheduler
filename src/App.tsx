@@ -23,7 +23,7 @@ import CoverageDaysModal from "./components/CoverageDaysModal";
 import VacancyRow from "./components/VacancyRow";
 import OpenVacanciesRedesign from "./components/OpenVacanciesRedesign";
 import { appConfig } from "./config";
-import type { VacancyRange } from "./types";
+import type { VacancyRange, VacancyStatus, BundleMode } from "./types";
 export { OVERRIDE_REASONS } from "./types";
 import { expandRangeToVacancies } from "./lib/expandRange";
 import { bundleContiguousVacanciesByRef } from "./lib/bundles";
@@ -76,10 +76,13 @@ export type Vacancy = {
   id: string;
   vacationId?: string;
   bundleId?: string;
-  bundleMode?: "one-person" | "per-day";
+  bundleMode?: BundleMode;
   reason: string; // e.g. Vacation Backfill
   classification: Classification;
   wing?: string;
+  date: string; // ISO date
+  start?: string; // HH:mm
+  end?: string; // HH:mm
   shiftDate: string; // ISO date
   shiftStart: string; // HH:mm
   shiftEnd: string; // HH:mm
@@ -89,7 +92,7 @@ export type Vacancy = {
   offeringRoundMinutes?: number;
   offeringAutoProgress?: boolean;
   offeringStep: "Casuals" | "OT-Full-Time" | "OT-Casuals";
-  status: "Open" | "Pending Award" | "Awarded" | "Filled";
+  status: VacancyStatus | "Pending Award";
   awardedTo?: string; // employeeId
   awardedAt?: string; // ISO datetime
   awardReason?: string; // audit note when overriding recommendation or class
@@ -498,6 +501,13 @@ const [showRangeForm, setShowRangeForm] = useState(false);
       reason: "Vacation Backfill",
       classification: vac.classification,
       wing: coverage?.perDayWing?.[d] ?? v.wing!,
+      date: d,
+      start:
+        coverage?.perDayTimes?.[d]?.start ??
+        (v.shiftStart ?? defaultShift.start),
+      end:
+        coverage?.perDayTimes?.[d]?.end ??
+        (v.shiftEnd ?? defaultShift.end),
       shiftDate: d,
       shiftStart:
         coverage?.perDayTimes?.[d]?.start ??

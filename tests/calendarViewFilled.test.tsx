@@ -9,6 +9,9 @@ test("filled shifts hidden by default and toggle shows them", () => {
   const base: Omit<Vacancy, "id" | "status"> = {
     reason: "Test",
     classification: "RN",
+    date: todayIso,
+    start: "08:00",
+    end: "16:00",
     shiftDate: todayIso,
     shiftStart: "08:00",
     shiftEnd: "16:00",
@@ -18,14 +21,14 @@ test("filled shifts hidden by default and toggle shows them", () => {
   } as const;
   const vacancies: Vacancy[] = [
     { ...base, id: "v1", status: "Open" },
-    { ...base, id: "v2", status: "Pending" as any },
+    { ...base, id: "v2", status: "Awarded" },
     { ...base, id: "v3", status: "Filled" },
   ];
 
   const { container } = render(<CalendarView vacancies={vacancies} />);
   const toolbar = container.querySelector(".calendar-mini-toolbar")!;
   expect(toolbar.querySelector(".badge-open")?.textContent).toBe("1");
-  expect(toolbar.querySelector(".badge-pending")?.textContent).toBe("1");
+  expect(toolbar.querySelector(".badge-awarded")?.textContent).toBe("1");
   expect(toolbar.querySelector(".badge-filled")?.textContent).toBe("1");
   expect(container.querySelector('.event-pill[data-status="Filled"]')).toBeNull();
 

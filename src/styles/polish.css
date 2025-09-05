@@ -215,7 +215,6 @@
   border: 1px solid var(--stroke);
 }
 .badge-open { background: #fee2e2; color: #7f1d1d; }
-.badge-pending { background: #fef3c7; color: #7c2d12; }
 .badge-awarded { background: #dcfce7; color: #14532d; }
 .badge-filled { background: #e0e7ff; color: #1e3a8a; }
 
@@ -236,7 +235,6 @@
   gap: 8px;
 }
 .event-pill[data-status="Open"] { outline: 2px solid #fca5a5; }
-.event-pill[data-status="Pending"] { outline: 2px solid #fcd34d; }
 .event-pill[data-status="Awarded"] { outline: 2px solid #86efac; }
 .event-pill[data-status="Filled"] { outline: 2px solid #a5b4fc; }
 

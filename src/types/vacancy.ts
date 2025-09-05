@@ -6,7 +6,7 @@ import type { Vacancy as BaseVacancy } from "../types";
  */
 export interface CalendarVacancy extends BaseVacancy {
   /** ISO datetime representing the start of the shift */
-  start: string;
+  startIso: string;
   /** ISO datetime representing the end of the shift */
-  end: string;
+  endIso: string;
 }

@@ -10,6 +10,9 @@ describe("BundleRow", () => {
   const baseVacancy = {
     reason: "Vacation",
     classification: "RN",
+    date: "2024-01-01",
+    start: "08:00",
+    end: "16:00",
     shiftStart: "08:00",
     shiftEnd: "16:00",
     knownAt: "2024-01-01T00:00:00.000Z",
@@ -30,8 +33,8 @@ describe("BundleRow", () => {
 
   it("shows a Multiple wings tag with tooltip listing wings", () => {
     const items: Vacancy[] = [
-      { ...baseVacancy, id: "v1", wing: "A", shiftDate: "2024-01-01" },
-      { ...baseVacancy, id: "v2", wing: "B", shiftDate: "2024-01-02" },
+      { ...baseVacancy, id: "v1", wing: "A", shiftDate: "2024-01-01", date: "2024-01-01" },
+      { ...baseVacancy, id: "v2", wing: "B", shiftDate: "2024-01-02", date: "2024-01-02" },
     ];
 
     render(
@@ -60,8 +63,8 @@ describe("BundleRow", () => {
 
   it("adds a divider between expanded child items", () => {
     const items: Vacancy[] = [
-      { ...baseVacancy, id: "v1", wing: "A", shiftDate: "2024-01-01" },
-      { ...baseVacancy, id: "v2", wing: "B", shiftDate: "2024-01-02" },
+      { ...baseVacancy, id: "v1", wing: "A", shiftDate: "2024-01-01", date: "2024-01-01" },
+      { ...baseVacancy, id: "v2", wing: "B", shiftDate: "2024-01-02", date: "2024-01-02" },
     ];
 
     const { container } = render(

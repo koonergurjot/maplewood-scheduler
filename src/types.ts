@@ -27,12 +27,19 @@ export type Vacation = {
   archivedAt?: string;
 };
 
+export type VacancyStatus = "Open" | "Awarded" | "Filled";
+
+export type BundleMode = "one-person" | "split" | "per-day";
+
 export type Vacancy = {
   id: string;
   vacationId?: string;
   vacancyRef?: string;
   bundleId?: string; // identifier linking multi-day vacancy children
-  bundleMode?: "one-person" | "per-day";
+  bundleMode?: BundleMode;
+  date: string; // ISO date YYYY-MM-DD
+  start?: string; // HH:mm
+  end?: string; // HH:mm
   reason: string;
   classification: Classification;
   wing?: string;
@@ -45,7 +52,7 @@ export type Vacancy = {
   offeringRoundMinutes?: number;
   offeringAutoProgress?: boolean;
   offeringStep: "Casuals" | "OT-Full-Time" | "OT-Casuals";
-  status: "Open" | "Pending Award" | "Awarded" | "Filled";
+  status: VacancyStatus | "Pending Award";
   awardedTo?: string;
   awardedAt?: string;
   awardReason?: string;
@@ -141,7 +148,7 @@ export type VacancyRange = {
   groupId?: string;
 
   offeringStep: "Casuals" | "OT-Full-Time" | "OT-Casuals";
-  status: "Open" | "Pending Award" | "Awarded" | "Filled";
+  status: VacancyStatus | "Pending Award";
   awardedTo?: string;
   awardedAt?: string;
 };
