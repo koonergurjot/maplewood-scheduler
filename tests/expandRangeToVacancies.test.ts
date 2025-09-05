@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { expandRangeToVacancies } from "../src/lib/expandRange";
+import { applyAwardBundle } from "../src/lib/vacancy";
 import type { VacancyRange } from "../src/types";
 
 describe("expandRangeToVacancies", () => {
@@ -92,6 +93,31 @@ describe("expandRangeToVacancies", () => {
     const vxs = expandRangeToVacancies(range, false);
     expect(vxs).toHaveLength(2);
     expect(vxs.every((v) => v.bundleId === undefined)).toBe(true);
+  });
+
+  it("bundles and awards block vacancies together", () => {
+    const range: VacancyRange = {
+      id: "r4",
+      reason: "Test",
+      classification: "RCA",
+      startDate: "2025-01-01",
+      endDate: "2025-01-03",
+      knownAt: "2025-01-01T00:00:00Z",
+      workingDays: ["2025-01-01", "2025-01-02", "2025-01-03"],
+      shiftStart: "06:30",
+      shiftEnd: "14:30",
+      offeringStep: "Casuals",
+      status: "Open",
+    };
+
+    const vxs = expandRangeToVacancies(range, true);
+    expect(vxs).toHaveLength(3);
+    const bid = vxs[0].bundleId;
+    expect(bid).toBeDefined();
+    expect(vxs.every((v) => v.bundleId === bid && v.bundleMode === "one-person")).toBe(true);
+
+    const awarded = applyAwardBundle(vxs, bid!, { empId: "e1" });
+    expect(awarded.every((v) => v.status === "Awarded" && v.awardedTo === "e1")).toBe(true);
   });
 });
 
