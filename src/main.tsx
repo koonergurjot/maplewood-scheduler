@@ -6,6 +6,7 @@ import Analytics from "./Analytics";
 import Dashboard from "./Dashboard";
 import AuditLog from "./AuditLog";
 import "./styles/responsive.css";
+import "./styles/ui-sanity.css";
 import "./styles/color-map.css";
 import "./styles/vacancies-redesign.css";
 

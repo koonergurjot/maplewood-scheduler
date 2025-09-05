@@ -1,3 +1,6 @@
+import BodyLock from "./BodyLock";
+import { useRef } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import React, { useMemo, useState } from "react";
 import type { Employee, Classification } from "../types";
 
@@ -10,6 +13,8 @@ type Props = {
 };
 
 export default function EmployeePickerModal({ open, employees, classification, onClose, onSelect }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, onClose);
   const [query, setQuery] = useState("");
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -23,7 +28,8 @@ export default function EmployeePickerModal({ open, employees, classification, o
   if (!open) return null;
   return (
     <div className="modal-overlay">
-      <div className="modal">
+      <BodyLock />>
+      <div role="dialog" aria-modal="true" className="modal" ref={dialogRef}>
         <div className="modal-h">Select employee</div>
         <input
           autoFocus

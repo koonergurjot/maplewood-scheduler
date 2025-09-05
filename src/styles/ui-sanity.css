@@ -1,0 +1,21 @@
+/* Generic UI sanity rules to reduce overflow/clipping and improve readability */
+:root{
+  --stickyOffset: 56px;
+}
+
+/* responsive container helpers */
+.container{ max-width:min(100%, 1600px); margin-inline:auto; padding-inline: 12px; }
+
+/* text utilities */
+.truncate{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.wrap-anywhere{ overflow-wrap:anywhere; word-break:break-word; }
+
+/* media defaults */
+img, svg, canvas, video{ max-width:100%; height:auto; }
+
+/* tables */
+.table-responsive{ width:100%; overflow:auto; }
+.table-responsive > table{ width:max(640px, 100%); border-collapse:collapse; }
+
+/* stickies */
+.sticky-top{ position:sticky; top: var(--stickyOffset); z-index: 40; background: var(--bg2, #fff); }

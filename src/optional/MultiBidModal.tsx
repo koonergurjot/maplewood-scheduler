@@ -1,5 +1,7 @@
+import BodyLock from "./BodyLock";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
-import React, { useMemo, useState } from "react";
+import React, { useRef,  useMemo, useState } from "react";
 
 export type Employee = { id: string; name: string; email?: string };
 export type VacancyLite = { id: string; date: string; start?: string; end?: string; bundleId?: string };
@@ -84,8 +86,10 @@ export default function MultiBidModal({
   }, [applyToBundles, selectedVacancyIds, allVacancies]);
 
   return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl p-4">
+    <div className="modal-overlay">
+      <BodyLock />
+       onClick={onClose}>>
+      <div role="dialog" aria-modal="true" className="modal" ref={dialogRef} onClick={(e) => e.stopPropagation()}">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">Bulk Bid</h2>
           <button onClick={onClose} className="px-2 py-1 rounded-md border">Close</button>

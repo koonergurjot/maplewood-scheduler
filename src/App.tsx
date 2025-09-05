@@ -794,6 +794,7 @@ export default function App() {
         [data-theme="light"]{ --bg1:#f0fdf4; --bg2:#ffffff; --card:#ffffff; --cardAlt:#f6fdf9; --stroke:#d1fae5; --text:#064e3b; --muted:#3f7f65; --brand:#047857; --accent:#10b981; --ok:#15803d; --warn:#b45309; --bad:#b91c1c; --chipBg:#dcfce7; --chipText:#064e3b; }
 
         *{box-sizing:border-box}
+        .wrap-anywhere{ overflow-wrap:anywhere; word-break:break-word; }
         body,html,#root{height:100%;margin:0;-webkit-text-size-adjust:100%}
         .container{max-width:min(100%,1600px); margin:0 auto; padding:0 18px}
         .nav{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:14px}
@@ -810,6 +811,8 @@ export default function App() {
         .tab.active{border-color:var(--brand);background:var(--brand);color:#fff;box-shadow:0 0 0 2px var(--brand) inset}
         .grid{display:grid;gap:12px}
         .grid2{grid-template-columns:1fr}
+        @media (min-width: 768px){ .grid2{ grid-template-columns:1fr 1fr; } }
+        @media (min-width: 1280px){ .grid2{ grid-template-columns:1fr 1fr 1fr; } }
         .card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--baseRadius);overflow:visible;box-shadow:0 4px 6px rgba(0,0,0,.06);transition:box-shadow .2s,transform .2s}
         .card:hover{box-shadow:0 8px 12px rgba(0,0,0,.1);transform:translateY(-2px)}
         .card-h{padding:10px 14px;border-bottom:1px solid var(--stroke);font-weight:800;display:flex;align-items:center;justify-content:space-between}
@@ -827,7 +830,7 @@ export default function App() {
         .pill{background:var(--chipBg); color:var(--chipText); border:1px solid var(--stroke); padding:4px 8px;border-radius:999px;font-size:12px; font-weight:600}
         .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
         .dropdown{position:relative}
-        .menu{position:absolute;z-index:30;top:100%;left:0;right:0;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;max-height:240px;overflow:auto}
+        .menu{position:absolute;z-index:1000;top:100%;left:0;right:0;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;max-height:240px;overflow:auto}
         .item{padding:8px 10px;cursor:pointer} .item:hover{background:rgba(4,120,87,.12)}
 
         /* Calendar */
