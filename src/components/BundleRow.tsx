@@ -75,6 +75,7 @@ export default function BundleRow({
   return (
     <>
       <tr
+        id={`bundle-${groupId}`}
         data-bundle-id={groupId}
         className={`${isDueNext ? "due-next " : ""}${allSelected ? "selected" : ""}`.trim()}
       >

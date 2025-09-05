@@ -186,7 +186,7 @@ export default function VacancyRangeForm({
               onChange={(e) => setAwardAsBlock(e.target.checked)}
             />
             <span>
-              Award this whole vacancy (all {dayCount} days) to one person
+              Award the entire block to one person ({dayCount} days)
             </span>
           </label>
         )}
