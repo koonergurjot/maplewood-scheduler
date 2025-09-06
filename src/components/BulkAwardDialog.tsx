@@ -43,7 +43,7 @@ export default function BulkAwardDialog({ open, employees, vacancies, onConfirm,
   };
 
   return (
-    <div role="alertdialog" aria-modal="true" className="modal">
+    <div role="alertdialog" aria-modal="true" role="dialog" aria-modal="true" className="modal">
       <h3>Bulk Award Vacancies</h3>
       <label>
         Employee

@@ -1,0 +1,49 @@
+{
+  "baseUrl": "http://127.0.0.1:5173",
+  "routes": [
+    "/",
+    "/dashboard",
+    "/analytics",
+    "/audit-log"
+  ],
+  "widths": [
+    360,
+    768,
+    1280
+  ],
+  "issuesTotal": 2,
+  "generatedAt": "2025-09-06T13:31:49.352Z",
+  "issues": [
+    {
+      "route": "/analytics",
+      "width": 360,
+      "type": "overflow-x",
+      "details": {}
+    },
+    {
+      "route": "/analytics",
+      "width": 360,
+      "type": "offscreen",
+      "details": {
+        "sample": [
+          {
+            "tag": "div",
+            "class": ""
+          },
+          {
+            "tag": "canvas",
+            "class": ""
+          },
+          {
+            "tag": "div",
+            "class": ""
+          },
+          {
+            "tag": "canvas",
+            "class": ""
+          }
+        ]
+      }
+    }
+  ]
+}

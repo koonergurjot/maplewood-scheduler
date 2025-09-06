@@ -79,7 +79,7 @@ export default function OfferingControls({ vacancy, round }: Props) {
         />
       </label>
       {pendingTier && (
-        <div role="alertdialog" aria-modal="true" className="modal">
+        <div role="alertdialog" aria-modal="true" role="dialog" aria-modal="true" className="modal">
           <p>Confirm Last Resort RN</p>
           <p>
             This tier is intended only when all other options are exhausted.
