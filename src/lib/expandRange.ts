@@ -27,7 +27,7 @@ export function expandRangeToVacancies(
       : {}),
     reason: range.reason,
     classification: range.classification,
-    wing: range.wing,
+    wing: range.perDayWings?.[d] ?? range.wing,
     date: d,
     start: range.perDayTimes?.[d]?.start ?? range.shiftStart ?? "06:30",
     end: range.perDayTimes?.[d]?.end ?? range.shiftEnd ?? "14:30",
