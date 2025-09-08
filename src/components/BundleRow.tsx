@@ -54,6 +54,11 @@ export default function BundleRow({
 
   const wingText = primary.wing ?? "Wing";
   const coverText = coveredName ? ` • Covering ${coveredName}` : "";
+  const first = sorted[0]?.shiftDate;
+  const last = sorted[sorted.length - 1]?.shiftDate;
+  const rangeLabel = first && last && first !== last
+    ? `${formatDateLong(first)} – ${formatDateLong(last)}`
+    : formatDateLong(first || primary.shiftDate);
   const dateList = sorted.map((v) => formatDateLong(v.shiftDate)).join(", ");
 
   const rec = recommendations[primary.id];
@@ -104,6 +109,7 @@ export default function BundleRow({
                 flexWrap: "wrap",
               }}
             >
+              <span className="subtitle">{rangeLabel}</span>
               <span
                 className="subtitle"
                 style={{
@@ -111,6 +117,7 @@ export default function BundleRow({
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                 }}
+                title={dateList}
               >
                 {dateList}
               </span>
@@ -146,6 +153,7 @@ export default function BundleRow({
         />
         <CellCountdown source={primary} settings={settings} />
         <CellActions>
+          <div className="btn-row">
           <button className="btn btn-sm" onClick={() => setOpen((o) => !o)}>
             {open ? "Hide" : "Expand"}
           </button>
@@ -169,6 +177,7 @@ export default function BundleRow({
           >
             Delete
           </button>
+          </div>
         </CellActions>
       </tr>
 

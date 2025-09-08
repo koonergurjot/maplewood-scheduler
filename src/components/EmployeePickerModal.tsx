@@ -2,6 +2,7 @@ import BodyLock from "./BodyLock";
 import { useRef } from "react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import React, { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Employee, Classification } from "../types";
 
 type Props = {
@@ -26,7 +27,7 @@ export default function EmployeePickerModal({ open, employees, classification, o
   }, [employees, query, classification]);
 
   if (!open) return null;
-  return (
+  return createPortal(
     <div className="modal-overlay">
       <BodyLock />
       <div role="dialog" aria-modal="true" className="modal" ref={dialogRef}>
@@ -49,6 +50,7 @@ export default function EmployeePickerModal({ open, employees, classification, o
           <button className="btn" onClick={onClose}>Cancel</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
