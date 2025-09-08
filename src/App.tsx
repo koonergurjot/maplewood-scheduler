@@ -471,6 +471,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     ref.current?.showPicker();
   };
 
+  const [vacationFormKey, setVacationFormKey] = useState(0);
   const [multiDay, setMultiDay] = useState(false);
   const [coverageOpen, setCoverageOpen] = useState(false);
   const [coverage, setCoverage] = useState<{
@@ -1122,6 +1123,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
                   <div>
                     <label>Employee</label>
                     <EmployeeCombo
+                      key={vacationFormKey}
                       employees={employees}
                       includeVacant
                       onSelect={(id) => {
@@ -1343,12 +1345,26 @@ const [showRangeForm, setShowRangeForm] = useState(false);
                       }
                     />
                   </div>
-                  <div style={{ gridColumn: "1 / -1" }}>
+                  <div style={{ gridColumn: "1 / -1", display: "flex", gap: 8 }}>
                     <button
                       className="btn"
                       onClick={() => addVacationAndGenerate(newVacay)}
                     >
                       Add & Generate
+                    </button>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => {
+                        setNewVacay({
+                          wing: WINGS[0],
+                          shiftStart: defaultShift.start,
+                          shiftEnd: defaultShift.end,
+                          shiftPreset: defaultShift.label,
+                        });
+                        setVacationFormKey(prev => prev + 1);
+                      }}
+                    >
+                      Clear Form
                     </button>
                   </div>
                 </div>
@@ -2136,6 +2152,7 @@ export function BidsPage({
   const [newBid, setNewBid] = useState<
     Partial<Bid & { bidDate: string; bidTime: string }>
   >({});
+  const [bidFormKey, setBidFormKey] = useState(0);
   const bidDateRef = useRef<HTMLInputElement>(null);
 
   const vacWithCoveredName = (v: Vacancy) => {
@@ -2257,6 +2274,7 @@ export function BidsPage({
             <div>
               <label>Employee</label>
               <EmployeeCombo
+                key={bidFormKey}
                 employees={employees}
                 onSelect={(id) => {
                   const e = employeesById[id];
@@ -2306,7 +2324,7 @@ export function BidsPage({
                 }
               />
             </div>
-            <div style={{ gridColumn: "1 / -1" }}>
+            <div style={{ gridColumn: "1 / -1", display: "flex", gap: 8 }}>
               <button
                 className="btn"
                 onClick={() => {
@@ -2348,9 +2366,19 @@ export function BidsPage({
                     return arr;
                   });
                   setNewBid({});
+                  setBidFormKey(prev => prev + 1);
                 }}
               >
                 Add Bid
+              </button>
+              <button
+                className="btn btn-sm"
+                onClick={() => {
+                  setNewBid({});
+                  setBidFormKey(prev => prev + 1);
+                }}
+              >
+                Clear Form
               </button>
             </div>
           </div>
