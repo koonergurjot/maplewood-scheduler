@@ -2029,6 +2029,13 @@ export function BidsPage({
   employees: Employee[];
   employeesById: Record<string, Employee>;
 }) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterEmployee, setFilterEmployee] = useState("");
+  const [filterClass, setFilterClass] = useState<Classification | "">("");
+  const [filterStatus, setFilterStatus] = useState<Status | "">("");
+  const [filterWing, setFilterWing] = useState<string>("");
+  const [filterStart, setFilterStart] = useState<string>("");
+  const [filterEnd, setFilterEnd] = useState<string>("");
   const [newBid, setNewBid] = useState<
     Partial<Bid & { bidDate: string; bidTime: string }>
   >({});
@@ -2096,6 +2103,17 @@ export function BidsPage({
   const activeBids = bids.filter((b) => {
     const v = vacancies.find((x) => x.id === b.vacancyId);
     return !v || v.status !== "Awarded";
+  });
+  const filteredActiveBids = activeBids.filter((b) => {
+    const v = vacancies.find((x) => x.id === b.vacancyId);
+    if (filterEmployee && !matchText(filterEmployee, b.bidderName || ""))
+      return false;
+    if (filterClass && b.bidderClassification !== filterClass) return false;
+    if (filterStatus && b.bidderStatus !== filterStatus) return false;
+    if (filterWing && v && v.wing !== filterWing) return false;
+    if (filterStart && v && v.shiftDate < filterStart) return false;
+    if (filterEnd && v && v.shiftDate > filterEnd) return false;
+    return true;
   });
   const awardedVacancies = vacancies.filter((v) => v.status === "Awarded");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -2243,6 +2261,89 @@ export function BidsPage({
       <div className="card">
         <div className="card-h">Active Bids</div>
         <div className="card-c">
+          <div
+            style={{
+              marginBottom: 8,
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <button
+              className="btn btn-sm"
+              onClick={() => setFiltersOpen((o) => !o)}
+            >
+              {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
+            </button>
+          </div>
+          {filtersOpen && (
+            <div className="toolbar" style={{ marginBottom: 8 }}>
+              <input
+                placeholder="Employee name…"
+                value={filterEmployee}
+                onChange={(e) => setFilterEmployee(e.target.value)}
+              />
+              <select
+                value={filterClass}
+                onChange={(e) =>
+                  setFilterClass(e.target.value as Classification | "")
+                }
+              >
+                <option value="">All Classes</option>
+                {(["RCA", "LPN", "RN"] as const).map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as Status | "")}
+              >
+                <option value="">All Statuses</option>
+                {(["FT", "PT", "Casual"] as const).map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterWing}
+                onChange={(e) => setFilterWing(e.target.value)}
+              >
+                <option value="">All Wings</option>
+                {WINGS.map((w) => (
+                  <option key={w} value={w}>
+                    {w}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="date"
+                value={filterStart}
+                onChange={(e) => setFilterStart(e.target.value)}
+              />
+              <input
+                type="date"
+                value={filterEnd}
+                onChange={(e) => setFilterEnd(e.target.value)}
+              />
+              <button
+                className="btn"
+                onClick={() => {
+                  setFilterEmployee("");
+                  setFilterClass("");
+                  setFilterStatus("");
+                  setFilterWing("");
+                  setFilterStart("");
+                  setFilterEnd("");
+                }}
+              >
+                Clear
+              </button>
+            </div>
+          )}
           <table className="responsive-table">
             <thead>
               <tr>
@@ -2255,7 +2356,7 @@ export function BidsPage({
               </tr>
             </thead>
             <tbody>
-              {activeBids.map((b, i) => {
+              {filteredActiveBids.map((b, i) => {
                 const v = vacancies.find((x) => x.id === b.vacancyId);
                 return (
                   <tr key={i}>
