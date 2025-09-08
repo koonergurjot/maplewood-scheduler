@@ -72,7 +72,13 @@
     display: flex;
     justify-content: space-between;
     padding: 6px 0;
+    gap: 8px;
+    align-items: center;
   }
+
+  /* Keep countdown and actions from overlapping when legacy table collapses */
+  .cell-countdown { order: 2; }
+  .cell-actions { order: 3; flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
 
   .form-row {
     flex-direction: column;
