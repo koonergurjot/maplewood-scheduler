@@ -1,0 +1,13 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import App from "./App";
+import Analytics from "./Analytics";
+import Dashboard from "./Dashboard";
+import AuditLog from "./AuditLog";
+import "./styles/responsive.css";
+import "./styles/ui-sanity.css";
+import "./styles/color-map.css";
+import "./styles/vacancies-redesign.css";
+ReactDOM.createRoot(document.getElementById("root")).render(_jsx(React.StrictMode, { children: _jsx(BrowserRouter, { children: _jsxs(Routes, { children: [_jsx(Route, { path: "/", element: _jsx(App, {}) }), _jsx(Route, { path: "/analytics", element: _jsx(Analytics, {}) }), _jsx(Route, { path: "/dashboard", element: _jsx(Dashboard, {}) }), _jsx(Route, { path: "/audit-log", element: _jsx(AuditLog, {}) })] }) }) }));
