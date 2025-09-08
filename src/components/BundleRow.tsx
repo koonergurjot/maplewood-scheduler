@@ -95,8 +95,8 @@ export default function BundleRow({
               <span className="pill">{items.length} days</span>
               <span className="pill" title="First day">{formatDateLong(primary.shiftDate)}</span>
               <span>
-                {wingText} • {primary.classification}
-                {coverText}
+                {primary.classification}
+                {open ? ` • ${wingText}${coverText}` : ""}
               </span>
             </div>
           }
@@ -110,17 +110,6 @@ export default function BundleRow({
               }}
             >
               <span className="subtitle">{rangeLabel}</span>
-              <span
-                className="subtitle"
-                style={{
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-                title={dateList}
-              >
-                {dateList}
-              </span>
             </div>
           }
           rightTag={
