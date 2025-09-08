@@ -86,8 +86,9 @@ export default function BundleRow({
         />
         <CellDetails
           title={
-            <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <span className="pill">{items.length} days</span>
+              <span className="pill" title="First day">{formatDateLong(primary.shiftDate)}</span>
               <span>
                 {wingText} • {primary.classification}
                 {coverText}
@@ -159,7 +160,7 @@ export default function BundleRow({
           <button className="btn btn-sm" onClick={() => setPickOpen(true)}>
             Award Bundle
           </button>
-          <button className="btn btn-sm" onClick={() => onSplitBundle(childIds)}>
+          <button className="btn btn-sm" onClick={() => { if (window.confirm(`Split this bundle into ${childIds.length} individual shifts?`)) onSplitBundle(childIds); }}>
             Split
           </button>
           <button
