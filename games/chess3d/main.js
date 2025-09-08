@@ -12,6 +12,7 @@ import { mountMoveList } from './ui/moveList.js';
 import { getMode, getDifficulty } from './ui/modeBar.js';
 import { initEngine, requestBestMove, cancel } from './ai/ai.js';
 import { Chess } from 'https://cdn.jsdelivr.net/npm/chess.js@1.0.0/+esm';
+import { gameStatus } from './rules.js';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -43,13 +44,19 @@ const game = new Chess();
 createBoard(scene);
 await createPieces(scene, THREE, { squareToPosition });
 await placeInitialPosition();
-document.querySelector('#status')?.textContent = 'Pieces ready';
 
 await initEngine();
 mountHud({ onModeChange });
 // Mount the move list UI with the current game instance
 mountMoveList(game);
 let searchToken = 0;
+
+updateStatus();
+
+function updateStatus() {
+  const el = document.querySelector('#status');
+  if (el) el.textContent = gameStatus(game);
+}
 
 function onModeChange() {
   cancel();
@@ -58,7 +65,7 @@ function onModeChange() {
 }
 
 function gameOver() {
-  return (game.game_over && game.game_over()) || (game.isGameOver && game.isGameOver());
+  return game.isGameOver();
 }
 
 async function maybeAIMove() {
@@ -76,6 +83,7 @@ async function maybeAIMove() {
   if (!game.move(move)) return;
   await movePieceByUci(uci);
   mountMoveList(game);
+  updateStatus();
 }
 
 function humanMove(move) {
@@ -87,6 +95,7 @@ function humanMove(move) {
   if (!result) return false;
   movePieceByUci(result.from + result.to + (result.promotion || ''));
   mountMoveList(game);
+  updateStatus();
   searchToken++;
   maybeAIMove();
   return true;
