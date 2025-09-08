@@ -41,7 +41,7 @@ export default function OpenVacancies({
     (v) => v.status !== "Filled" && v.status !== "Awarded",
   );
 
-  const [groupByBundle, setGroupByBundle] = useState(false);
+  const [groupByBundle, setGroupByBundle] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const grouped = useMemo(() => {
@@ -96,7 +96,7 @@ export default function OpenVacancies({
           <input
             type="checkbox"
             checked={groupByBundle}
-            onChange={(e) => setGroupByBundle(e.target.checked)}
+            onChange={() => setGroupByBundle(true)}
           />
           Group by bundle
         </label>
