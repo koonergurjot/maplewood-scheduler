@@ -487,7 +487,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
         ? coverage.selectedDates
         : dateRangeInclusive(v.startDate!, v.endDate!);
     const isMulti = days.length >= 2;
-    const singleAward = isMulti && awardAsBlock;
+    const singleAward = isMulti; // always bundle multi-day vacancies as one-person blocks
     const bid = singleAward ? crypto.randomUUID() : undefined;
     if (bid) console.debug("[bundle] created", bid, { days: days.length });
     const nowISO = new Date().toISOString();
@@ -622,6 +622,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
       return;
     }
 
+    // Use first day of the bundle for response timing and conflict prompts
     const conflictDays = kids
       .filter((v) =>
         vacancies.some(
@@ -868,7 +869,11 @@ const [showRangeForm, setShowRangeForm] = useState(false);
 
   const splitBundle = (ids: string[]) => {
     setVacancies((prev) =>
-      prev.map((v) => (ids.includes(v.id) ? { ...v, bundleId: undefined } : v)),
+      prev.map((v) =>
+        ids.includes(v.id)
+          ? { ...v, bundleId: undefined, bundleMode: undefined }
+          : v,
+      ),
     );
   };
 
@@ -1327,6 +1332,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
                       onDeleteMany={stageDeleteMany}
                       awardVacancy={awardVacancy}
                       awardBundle={awardBundle}
+                      onSplitBundle={splitBundle}
                       resetKnownAt={resetKnownAt}
                       recommendations={recommendations}
                     />

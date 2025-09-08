@@ -19,6 +19,7 @@ type Props = {
   awardVacancy: (id: string, payload: any) => void;
   awardBundle?: (bundleId: string, employeeId: string) => void;
   onEditCoverage?: (bundleId: string) => void;
+  onSplitBundle?: (ids: string[]) => void;
   resetKnownAt: (id: string) => void;
   filters?: {
     search?: string;
@@ -66,7 +67,7 @@ export default function OpenVacanciesRedesign(props: Props) {
     return list;
   }, [vacancies, filters]);
 
-  const [groupByBundle, setGroupByBundle] = useState(false);
+  const [groupByBundle, setGroupByBundle] = useState(true);
 
   const byDate = useMemo(() => {
     const m = new Map<string, Vacancy[]>();
@@ -98,7 +99,7 @@ export default function OpenVacanciesRedesign(props: Props) {
           <input
             type="checkbox"
             checked={groupByBundle}
-            onChange={(e) => setGroupByBundle(e.target.checked)}
+            onChange={() => setGroupByBundle(true)}
           />
           Group by bundle
         </label>
@@ -140,7 +141,7 @@ export default function OpenVacanciesRedesign(props: Props) {
                     selectedIds={props.selectedIds}
                     onToggleSelectMany={props.onToggleSelectMany}
                     onDeleteMany={props.onDeleteMany}
-                    onSplitBundle={(ids) => console.warn("split bundle", ids)}
+                    onSplitBundle={(ids) => props.onSplitBundle?.(ids)}
                     onEditCoverage={props.onEditCoverage}
                     onAwardBundle={(eid) => props.awardBundle?.(key, eid)}
                     dueNextId={props.dueNextId}
