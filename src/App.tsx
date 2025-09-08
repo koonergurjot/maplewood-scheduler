@@ -457,15 +457,16 @@ const [showRangeForm, setShowRangeForm] = useState(false);
       Vacation & { shiftStart: string; shiftEnd: string; shiftPreset: string }
     >,
   ) => {
-    if (
-      !v.employeeId ||
-      !v.employeeName ||
-      !v.classification ||
-      !v.startDate ||
-      !v.endDate ||
-      !v.wing
-    ) {
-      alert("Employee, wing, start & end are required.");
+    // Validate required fields and guide the user with specifics
+    const missing: string[] = [];
+    if (!v.employeeId || !v.employeeName) missing.push("Employee");
+    if (!v.wing) missing.push("Wing");
+    if (!v.shiftStart || !v.shiftEnd) missing.push("Shift start/end");
+    if (!v.startDate) missing.push("Start date");
+    if (!v.endDate) missing.push("End date");
+    if (!v.classification) missing.push("Classification");
+    if (missing.length) {
+      alert(`Missing: ${missing.join(", ")}`);
       return;
     }
     const vac: Vacation = {
@@ -525,12 +526,20 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     setVacancies((prev) => [...vxs, ...prev]);
     setCoverage(null);
 
-    setNewVacay({
-      wing: WINGS[0],
-      shiftStart: defaultShift.start,
-      shiftEnd: defaultShift.end,
-      shiftPreset: defaultShift.label,
-    });
+    setNewVacay((prev) => ({
+      // Preserve employee and classification so you can quickly add another for the same person
+      employeeId: prev.employeeId,
+      employeeName: prev.employeeName,
+      classification: prev.classification,
+      // Keep wing and shift selections; clear dates and notes
+      wing: prev.wing ?? WINGS[0],
+      shiftStart: prev.shiftStart ?? defaultShift.start,
+      shiftEnd: prev.shiftEnd ?? defaultShift.end,
+      shiftPreset: prev.shiftPreset ?? defaultShift.label,
+      startDate: "",
+      endDate: "",
+      notes: "",
+    }));
     setMultiDay(false);
   };
 
