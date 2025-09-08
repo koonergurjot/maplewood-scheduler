@@ -965,12 +965,15 @@ const [showRangeForm, setShowRangeForm] = useState(false);
         .card-h{padding:10px 14px;border-bottom:1px solid var(--stroke);font-weight:800;display:flex;align-items:center;justify-content:space-between}
         .card-c{padding:14px}
         table{width:100%;border-collapse:separate; border-spacing:0}
-        th,td{padding:10px;border-bottom:1px solid var(--stroke);text-align:left;vertical-align:middle}
+        th,td{padding:12px;border-bottom:1px solid var(--stroke);text-align:left;vertical-align:middle;line-height:1.35}
         th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
         .vacancies{table-layout:auto;width:100%}
         .vacancies th:nth-child(1){width:40px}
         .vacancies th:nth-child(3){width:140px}
         .vacancies th:nth-child(4){width:1%}
+        .vacancies tbody tr.section-h td{background:var(--cardAlt); font-weight:800}
+        .vacancies tbody tr:not(.section-h):hover{background:rgba(14,165,233,.06)}
+        .vacancies tbody tr:not(.section-h):nth-child(even){background:rgba(148,163,184,.06)}
         input:not([type="checkbox"]),select,textarea{width:100%;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;padding:10px;color:var(--text);-webkit-appearance:none;appearance:none}
         input[type="checkbox"]{accent-color:var(--brand)}
         input::placeholder{color:#cbd5e1}
@@ -985,6 +988,15 @@ const [showRangeForm, setShowRangeForm] = useState(false);
         .item{padding:8px 10px;cursor:pointer} .item:hover{background:rgba(4,120,87,.12)}
         .btn-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
         .truncate{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+        /* Row cell layout helpers */
+        .cell-details__wrap{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+        .cell-details__left{flex:1;min-width:0}
+        .cell-details__title{font-weight:700;overflow:hidden;text-overflow:ellipsis}
+        .cell-details__subtitle{opacity:.9}
+        .cell-details__tag{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;min-width:180px}
+        .cell-countdown{white-space:nowrap}
+        .cell-actions{min-width:260px}
 
         /* Calendar */
         .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px}
