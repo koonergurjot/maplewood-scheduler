@@ -1,4 +1,6 @@
-import type { Vacancy } from "../types";
+import type { Vacancy, VacancyRange } from "../types";
+import { expandRangeToVacancies } from "./expandRange";
+import { applyAwardBundle } from "./vacancy";
 
 export function ensureBundleId<T extends { bundleId?: string }>(v: T): string {
   if (!v.bundleId) v.bundleId = crypto.randomUUID();
@@ -50,4 +52,25 @@ export function bundleContiguousVacanciesByRef(vacs: Vacancy[]): Vacancy[] {
   }
 
   return vacs;
+}
+
+/** Expand a multi-day range into individual vacancies.
+ * Automatically assigns a single bundleId when the range spans two or more days.
+ */
+export function createVacanciesFromRange(range: VacancyRange): Vacancy[] {
+  return expandRangeToVacancies(range, true);
+}
+
+/** Award every vacancy within a bundle to the given employee. */
+export function awardBundle(
+  vacs: Vacancy[],
+  bundleId: string,
+  employeeId: string,
+): Vacancy[] {
+  return applyAwardBundle(vacs, bundleId, { empId: employeeId });
+}
+
+/** Remove all vacancies belonging to the given bundle. */
+export function deleteBundle(vacs: Vacancy[], bundleId: string): Vacancy[] {
+  return vacs.filter((v) => v.bundleId !== bundleId);
 }
