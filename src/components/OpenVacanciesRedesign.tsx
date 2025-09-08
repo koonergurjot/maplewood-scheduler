@@ -69,9 +69,38 @@ export default function OpenVacanciesRedesign(props: Props) {
 
   const [groupByBundle, setGroupByBundle] = useState(true);
 
+  // Cross-day bundle groups so multi-day vacancies render as ONE row
+  const bundleGroups = useMemo(() => {
+    if (!groupByBundle) return [] as Array<[string, Vacancy[]]>;
+    const m = new Map<string, Vacancy[]>();
+    for (const v of filtered) {
+      if (!v.bundleId) continue;
+      const a = m.get(v.bundleId) || [];
+      a.push(v);
+      m.set(v.bundleId, a);
+    }
+    const out = Array.from(m.entries()).filter(([, arr]) => arr.length >= 2);
+    out.sort(([, a], [, b]) =>
+      Math.min(
+        ...a.map((x) => combineDateTime(x.shiftDate, x.shiftStart).getTime()),
+      ) -
+      Math.min(
+        ...b.map((x) => combineDateTime(x.shiftDate, x.shiftStart).getTime()),
+      ),
+    );
+    return out;
+  }, [filtered, groupByBundle]);
+
+  const bundledChildIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const [, arr] of bundleGroups) arr.forEach((v) => set.add(v.id));
+    return set;
+  }, [bundleGroups]);
+
   const byDate = useMemo(() => {
     const m = new Map<string, Vacancy[]>();
     for (const v of filtered) {
+      if (groupByBundle && bundledChildIds.has(v.id)) continue; // skip children already shown in bundles
       const key = v.shiftDate;
       if (!m.has(key)) m.set(key, []);
       m.get(key)!.push(v);
@@ -83,7 +112,7 @@ export default function OpenVacanciesRedesign(props: Props) {
           combineDateTime(b.shiftDate, b.shiftStart).getTime(),
       );
     return Array.from(m.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [filtered]);
+  }, [filtered, groupByBundle, bundledChildIds]);
 
   const fmtDate = (iso: string) =>
     new Date(iso + "T00:00:00").toLocaleDateString(undefined, {
@@ -114,48 +143,36 @@ export default function OpenVacanciesRedesign(props: Props) {
           </tr>
         </thead>
         <tbody>
+          {groupByBundle && bundleGroups.length > 0 && (
+            <tr className="section-h">
+              <td colSpan={4}>Bundled Vacancies</td>
+            </tr>
+          )}
+          {groupByBundle &&
+            bundleGroups.map(([key, arr]) => {
+              const coveredName = vacNameById[arr[0].vacationId ?? ""];
+              return (
+                <BundleRow
+                  key={`bundle-${key}`}
+                  groupId={key}
+                  items={arr}
+                  employees={employees}
+                  settings={settings}
+                  recommendations={recommendations}
+                  selectedIds={props.selectedIds}
+                  onToggleSelectMany={props.onToggleSelectMany}
+                  onDeleteMany={props.onDeleteMany}
+                  onSplitBundle={(ids) => props.onSplitBundle?.(ids)}
+                  onEditCoverage={props.onEditCoverage}
+                  onAwardBundle={(eid) => props.awardBundle?.(key, eid)}
+                  dueNextId={props.dueNextId}
+                  coveredName={coveredName}
+                />
+              );
+            })}
           {byDate.map(([date, items]) => {
-            const groups = new Map<string, Vacancy[]>();
-            if (groupByBundle) {
-              items.forEach((v) => {
-                if (v.bundleId) {
-                  const a = groups.get(v.bundleId) || [];
-                  a.push(v);
-                  groups.set(v.bundleId, a);
-                }
-              });
-            }
             const rendered: React.ReactNode[] = [];
-            if (groupByBundle) {
-              for (const [key, arr] of groups) {
-                if (arr.length < 2) continue;
-                const coveredName = vacNameById[arr[0].vacationId ?? ""];
-                rendered.push(
-                  <BundleRow
-                    key={`bundle-${key}-${date}`}
-                    groupId={key}
-                    items={arr}
-                    employees={employees}
-                    settings={settings}
-                    recommendations={recommendations}
-                    selectedIds={props.selectedIds}
-                    onToggleSelectMany={props.onToggleSelectMany}
-                    onDeleteMany={props.onDeleteMany}
-                    onSplitBundle={(ids) => props.onSplitBundle?.(ids)}
-                    onEditCoverage={props.onEditCoverage}
-                    onAwardBundle={(eid) => props.awardBundle?.(key, eid)}
-                    dueNextId={props.dueNextId}
-                    coveredName={coveredName}
-                  />,
-                );
-              }
-            }
             for (const v of items) {
-              const size =
-                groupByBundle && v.bundleId
-                  ? groups.get(v.bundleId)?.length || 0
-                  : 0;
-              if (groupByBundle && size >= 2) continue;
               const rec = recommendations[v.id];
               const recId = rec?.id;
               const recName = recId
