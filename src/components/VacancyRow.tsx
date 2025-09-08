@@ -48,6 +48,7 @@ export default function VacancyRow({
   const [choice, setChoice] = useState<string>("");
   const [overrideClass, setOverrideClass] = useState<boolean>(false);
   const [reason, setReason] = useState<string>("");
+  const [awardOpen, setAwardOpen] = useState<boolean>(false);
 
   const isBundleChild = v.bundleMode === "one-person" && !!v.bundleId;
 
@@ -156,46 +157,53 @@ export default function VacancyRow({
           </div>
         ) : (
           <div className="action-grid">
-            <SelectEmployee
-              allowEmpty
-              employees={employees}
-              value={choice}
-              onChange={setChoice}
-            />
-            <div style={{ whiteSpace: "nowrap" }}>
-              <input
-                id={`override-toggle-${v.id}`}
-                className="toggle-input"
-                type="checkbox"
-                checked={overrideClass}
-                onChange={(e) => setOverrideClass(e.target.checked)}
-              />
-              <label htmlFor={`override-toggle-${v.id}`} className="toggle-box">
-                <span className="subtitle">Allow class override</span>
-              </label>
-            </div>
-            {needReason || overrideClass || (recId && choice && choice !== recId) ? (
-              <select value={reason} onChange={(e) => setReason(e.target.value)}>
-                <option value="">Select reason…</option>
-                {OVERRIDE_REASONS.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span className="subtitle">—</span>
-            )}
+            <button className="btn btn-sm" onClick={() => setAwardOpen((o) => !o)}>
+              {awardOpen ? "Hide Award" : "Award"}
+            </button>
             <button className="btn btn-sm" onClick={resetKnownAt}>
               Reset timer
             </button>
-            <button
-              className="btn btn-sm"
-              onClick={handleAward}
-              disabled={!choice}
-            >
-              Award
-            </button>
+            {awardOpen && (
+              <>
+                <SelectEmployee
+                  allowEmpty
+                  employees={employees}
+                  value={choice}
+                  onChange={setChoice}
+                />
+                <div style={{ whiteSpace: "nowrap" }}>
+                  <input
+                    id={`override-toggle-${v.id}`}
+                    className="toggle-input"
+                    type="checkbox"
+                    checked={overrideClass}
+                    onChange={(e) => setOverrideClass(e.target.checked)}
+                  />
+                  <label htmlFor={`override-toggle-${v.id}`} className="toggle-box">
+                    <span className="subtitle">Allow class override</span>
+                  </label>
+                </div>
+                {needReason || overrideClass || (recId && choice && choice !== recId) ? (
+                  <select value={reason} onChange={(e) => setReason(e.target.value)}>
+                    <option value="">Select reason…</option>
+                    {OVERRIDE_REASONS.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="subtitle">—</span>
+                )}
+                <button
+                  className="btn btn-sm"
+                  onClick={handleAward}
+                  disabled={!choice}
+                >
+                  Confirm Award
+                </button>
+              </>
+            )}
             <button
               className="btn btn-sm"
               aria-label="Delete vacancy"

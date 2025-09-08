@@ -76,6 +76,7 @@ export default function BundleRow({
 
   const [open, setOpen] = React.useState(false);
   const [pickOpen, setPickOpen] = React.useState(false);
+  const [awardOpen, setAwardOpen] = React.useState(false);
 
   return (
     <>
@@ -142,7 +143,10 @@ export default function BundleRow({
         <CellCountdown source={primary} settings={settings} />
         <CellActions>
           <div className="action-grid">
-          <InlineEmployeePicker employees={employees} value="" onChange={(id)=> onAwardBundle?.(id)} />
+          <button className="btn btn-sm" onClick={()=> setAwardOpen((o)=> !o)}>{awardOpen?"Hide Award":"Award"}</button>
+          {awardOpen && (
+            <InlineEmployeePicker employees={employees} value="" onChange={(id)=> onAwardBundle?.(id)} />
+          )}
           <button className="btn btn-sm" onClick={() => setOpen((o) => !o)}>
             {open ? "Hide" : "Expand"}
           </button>
