@@ -29,6 +29,7 @@ import { createVacanciesFromRange, bundleContiguousVacanciesByRef } from "./lib/
 import Toast from "./components/ui/Toast";
 import Button from "./components/ui/Button";
 import FilterBar from "./components/ui/FilterBar";
+import Modal from "./components/ui/Modal";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -310,6 +311,44 @@ const [bundleUndo, setBundleUndo] = useState<{
   timeout: number;
 } | null>(null);
 const [showRangeForm, setShowRangeForm] = useState(false);
+  // Modal system (confirm/prompt/alert)
+  const [confirmState, setConfirmState] = useState<
+    | { open: true; title: string; body: string; resolve: (ok: boolean) => void }
+    | null
+  >(null);
+  const [promptState, setPromptState] = useState<
+    | {
+        open: true;
+        title: string;
+        body: string;
+        placeholder?: string;
+        value: string;
+        resolve: (val: string | null) => void;
+      }
+    | null
+  >(null);
+  const [alertState, setAlertState] = useState<
+    | { open: true; title: string; body: string; resolve: () => void }
+    | null
+  >(null);
+
+  const showConfirm = (body: string, title = "Confirm"): Promise<boolean> =>
+    new Promise((resolve) => setConfirmState({ open: true, title, body, resolve }));
+  const showPrompt = (
+    body: string,
+    title = "Enter value",
+    placeholder = "",
+  ): Promise<string | null> =>
+    new Promise((resolve) =>
+      setPromptState({ open: true, title, body, placeholder, value: "", resolve }),
+    );
+  const showAlert = (body: string, title = "Notice"): Promise<void> =>
+    new Promise((resolve) => setAlertState({ open: true, title, body, resolve }));
+
+  // expose helpers for non-App children that cannot receive props easily
+  (window as any).appShowConfirm = showConfirm;
+  (window as any).appShowPrompt = showPrompt;
+  (window as any).appShowAlert = showAlert;
   const persistedSettings = persisted?.settings ?? {};
   const storedOrder: string[] = persistedSettings.tabOrder || [];
   const mergedOrder = [
@@ -468,7 +507,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     if (!v.endDate) missing.push("End date");
     if (!v.classification) missing.push("Classification");
     if (missing.length) {
-      alert(`Missing: ${missing.join(", ")}`);
+      showAlert(`Missing: ${missing.join(", ")}`);
       return;
     }
     const vac: Vacation = {
@@ -621,7 +660,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     );
   };
 
-  const awardBundle = (bundleId: string, employeeId: string) => {
+  const awardBundle = async (bundleId: string, employeeId: string) => {
     const kids = vacancies.filter(
       (v) => v.bundleId === bundleId && v.status === "Open",
     );
@@ -629,7 +668,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
 
     const cls = kids[0].classification;
     if (!kids.every((v) => v.classification === cls)) {
-      alert("Bundle has mixed classifications; fix before awarding.");
+      await showAlert("Bundle has mixed classifications; fix before awarding.");
       return;
     }
 
@@ -647,10 +686,10 @@ const [showRangeForm, setShowRangeForm] = useState(false);
       .map((v) => formatDateLong(v.shiftDate));
     let reason: string | undefined;
     if (conflictDays.length) {
-      const msg =
-        `Employee already assigned on:\n${conflictDays.join("\n")}\nOverride and award bundle?`;
-      if (!window.confirm(msg)) return;
-      const rc = window.prompt("Enter reason code for override")?.trim();
+      const msg = `Employee already assigned on:\n${conflictDays.join("\n")}\nOverride and award bundle?`;
+      const ok = await showConfirm(msg, "Override required");
+      if (!ok) return;
+      const rc = await showPrompt("Enter reason code for override", "Reason code");
       if (!rc) return;
       reason = rc;
     }
@@ -678,7 +717,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     setBundleUndo(null);
   };
 
-  const awardVacancy = (
+  const awardVacancy = async (
     vacId: string,
     payload: {
       empId?: string;
@@ -698,12 +737,11 @@ const [showRangeForm, setShowRangeForm] = useState(false);
           ? `${emp.firstName} ${emp.lastName}`.trim()
           : payload.empId;
         const days = kids.length;
-        if (
-          !window.confirm(
-            `Award all days in this bundle to ${name}? (${days} days)`,
-          )
-        )
-          return;
+        const ok = await showConfirm(
+          `Award all days in this bundle to ${name}? (${days} days)`,
+          "Award bundle",
+        );
+        if (!ok) return;
         awardBundle(target.bundleId, payload.empId);
         return;
       }
@@ -715,13 +753,12 @@ const [showRangeForm, setShowRangeForm] = useState(false);
             (v.status === "Filled" || v.status === "Awarded") &&
             v.awardedTo === payload.empId,
         );
-        if (
-          conflict &&
-          !window.confirm(
+        if (conflict) {
+          const ok = await showConfirm(
             `Employee already assigned on ${formatDateLong(target.shiftDate)}. Continue?`,
-          )
-        ) {
-          return;
+            "Potential conflict",
+          );
+          if (!ok) return;
         }
       }
     }
@@ -1025,17 +1062,16 @@ const [showRangeForm, setShowRangeForm] = useState(false);
             >
               Export
             </button>
-            <button
-              className="btn"
-              onClick={() => {
-                if (confirm("Reset ALL data?")) {
-                  localStorage.removeItem(LS_KEY);
-                  location.reload();
-                }
+            <Button
+              onClick={async () => {
+                const ok = await showConfirm("Reset ALL data?", "Reset");
+                if (!ok) return;
+                localStorage.removeItem(LS_KEY);
+                location.reload();
               }}
             >
               Reset
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -1631,6 +1667,56 @@ const [showRangeForm, setShowRangeForm] = useState(false);
             existingVacancies={vacancies}
           />
         )}
+        {/* App-level modals */}
+        <Modal
+          open={!!confirmState}
+          title={confirmState?.title || "Confirm"}
+          onClose={() => {
+            confirmState?.resolve(false);
+            setConfirmState(null);
+          }}
+        >
+          <div className="wrap-anywhere">{confirmState?.body}</div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
+            <Button onClick={() => { confirmState?.resolve(false); setConfirmState(null); }}>Cancel</Button>
+            <Button variant="primary" onClick={() => { confirmState?.resolve(true); setConfirmState(null); }}>Confirm</Button>
+          </div>
+        </Modal>
+        <Modal
+          open={!!promptState}
+          title={promptState?.title || "Input"}
+          onClose={() => {
+            promptState?.resolve(null);
+            setPromptState(null);
+          }}
+        >
+          <div style={{ display: "grid", gap: 8 }}>
+            <div className="wrap-anywhere">{promptState?.body}</div>
+            <input
+              autoFocus
+              placeholder={promptState?.placeholder || ""}
+              value={promptState?.value || ""}
+              onChange={(e) => setPromptState((s) => (s ? { ...s, value: e.target.value } : s))}
+            />
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <Button onClick={() => { promptState?.resolve(null); setPromptState(null); }}>Cancel</Button>
+              <Button variant="primary" onClick={() => { promptState?.resolve(promptState?.value || ""); setPromptState(null); }}>OK</Button>
+            </div>
+          </div>
+        </Modal>
+        <Modal
+          open={!!alertState}
+          title={alertState?.title || "Notice"}
+          onClose={() => {
+            alertState?.resolve();
+            setAlertState(null);
+          }}
+        >
+          <div className="wrap-anywhere">{alertState?.body}</div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
+            <Button variant="primary" onClick={() => { alertState?.resolve(); setAlertState(null); }}>OK</Button>
+          </div>
+        </Modal>
         <BulkAwardDialog
           open={bulkAwardOpen}
           employees={employees}
@@ -1682,7 +1768,7 @@ function EmployeesPage({
                 rows = parseCSV(text);
               } catch (err) {
                 console.error(err);
-                alert("Failed to parse CSV");
+                await showAlert("Failed to parse CSV");
                 return;
               }
               const out: Employee[] = rows.map((r: any, i: number) => ({
@@ -2204,8 +2290,10 @@ export function BidsPage({
               <button
                 className="btn"
                 onClick={() => {
-                  if (!newBid.vacancyId || !newBid.bidderEmployeeId)
-                    return alert("Vacancy and employee required");
+                  if (!newBid.vacancyId || !newBid.bidderEmployeeId) {
+                    showAlert("Vacancy and employee required");
+                    return;
+                  }
                   const ts =
                     newBid.bidDate && newBid.bidTime
                       ? new Date(

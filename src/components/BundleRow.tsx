@@ -157,7 +157,7 @@ export default function BundleRow({
           <button className="btn btn-sm" onClick={() => setPickOpen(true)}>
             Award Bundle
           </button>
-          <button className="btn btn-sm" onClick={() => { if (window.confirm(`Split this bundle into ${childIds.length} individual shifts?`)) onSplitBundle(childIds); }}>
+          <button className="btn btn-sm" onClick={async () => { if (await (window as any).appShowConfirm?.(`Split this bundle into ${childIds.length} individual shifts?`, "Split bundle")) onSplitBundle(childIds); }}>
             Split
           </button>
           <button
