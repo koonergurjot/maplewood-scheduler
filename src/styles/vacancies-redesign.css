@@ -18,7 +18,7 @@ td.cell-countdown { width:140px; padding:10px 12px; }
 .countdown.cd-green { color:#266a2e; }
 
 td.cell-actions { width:1%; text-align:right; padding:10px 12px; }
-.btn-row { display:inline-flex; gap:6px; flex-wrap: wrap; justify-content: flex-end; }
+.btn-row { display:grid; grid-template-columns: repeat(2, max-content); gap:6px; justify-content: end; }
 .badge { display:inline-block; padding:2px 6px; font-size:11px; border-radius:999px; background:#eef2f7; color:#334155; }
 .badge-wing { background:#eefaf3; color:#206341; }
 .badge-class { background:#eef2ff; color:#42389d; }
