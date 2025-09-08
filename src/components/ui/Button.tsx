@@ -1,0 +1,43 @@
+import React from "react";
+
+type ButtonVariant = "primary" | "secondary" | "destructive" | "ghost";
+type ButtonSize = "sm" | "md" | "lg";
+
+export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+};
+
+const variantToStyle: Record<ButtonVariant, React.CSSProperties> = {
+  primary: { background: "var(--brand)", color: "#fff", borderColor: "var(--brand)" },
+  secondary: { background: "var(--cardAlt)", color: "var(--text)", borderColor: "var(--stroke)" },
+  destructive: { background: "var(--bad)", color: "#fff", borderColor: "var(--bad)" },
+  ghost: { background: "transparent", color: "var(--text)", borderColor: "var(--stroke)" },
+};
+
+const sizeToPadding: Record<ButtonSize, string> = {
+  sm: "4px 8px",
+  md: "9px 12px",
+  lg: "12px 16px",
+};
+
+export function Button({ variant = "secondary", size = "md", style, className, ...rest }: ButtonProps) {
+  return (
+    <button
+      className={`btn${size === "sm" ? " btn-sm" : ""}${className ? ` ${className}` : ""}`}
+      style={{
+        border: "1px solid",
+        borderRadius: 12,
+        padding: sizeToPadding[size],
+        fontWeight: 700,
+        transition: "background .2s,transform .2s,box-shadow .2s",
+        ...variantToStyle[variant],
+        ...style,
+      }}
+      {...rest}
+    />
+  );
+}
+
+export default Button;
+

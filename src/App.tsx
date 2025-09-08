@@ -27,6 +27,8 @@ import type { VacancyRange, VacancyStatus, BundleMode } from "./types";
 export { OVERRIDE_REASONS } from "./types";
 import { createVacanciesFromRange, bundleContiguousVacanciesByRef } from "./lib/bundles";
 import Toast from "./components/ui/Toast";
+import Button from "./components/ui/Button";
+import FilterBar from "./components/ui/FilterBar";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -1369,12 +1371,9 @@ const [showRangeForm, setShowRangeForm] = useState(false);
                     />
                     All
                   </label>
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => setFiltersOpen((o) => !o)}
-                  >
+                  <Button size="sm" onClick={() => setFiltersOpen((o) => !o)}>
                     {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
-                  </button>
+                  </Button>
                   {appConfig.features.coverageDayPicker && (
                     <button
                       className="btn btn-sm"
@@ -1398,75 +1397,67 @@ const [showRangeForm, setShowRangeForm] = useState(false);
                   )}
                 </div>
                 {filtersOpen && (
-                  <div className="toolbar" style={{ marginBottom: 8 }}>
-                    <select
-                      value={filterWing}
-                      onChange={(e) => setFilterWing(e.target.value)}
-                    >
-                      <option value="">All Wings</option>
-                      {WINGS.map((w) => (
-                        <option key={w} value={w}>
-                          {w}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={filterClass}
-                      onChange={(e) =>
-                        setFilterClass(e.target.value as Classification | "")
-                      }
-                    >
-                      <option value="">All Classes</option>
-                      {["RCA", "LPN", "RN"].map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={filterShift}
-                      onChange={(e) => setFilterShift(e.target.value)}
-                    >
-                      <option value="">All Shifts</option>
-                      {SHIFT_PRESETS.map((s) => (
-                        <option key={s.label} value={s.label}>
-                          {s.label}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={filterCountdown}
-                      onChange={(e) => setFilterCountdown(e.target.value)}
-                    >
-                      <option value="">All Countdowns</option>
-                      <option value="green">Green</option>
-                      <option value="yellow">Yellow</option>
-                      <option value="red">Red</option>
-                    </select>
-                    <input
-                      type="date"
-                      value={filterStart}
-                      onChange={(e) => setFilterStart(e.target.value)}
-                    />
-                    <input
-                      type="date"
-                      value={filterEnd}
-                      onChange={(e) => setFilterEnd(e.target.value)}
-                    />
-                    <button
-                      className="btn"
-                      onClick={() => {
-                        setFilterWing("");
-                        setFilterClass("");
-                        setFilterShift("");
-                        setFilterCountdown("");
-                        setFilterStart("");
-                        setFilterEnd("");
-                      }}
-                    >
-                      Clear
-                    </button>
-                  </div>
+                  <FilterBar
+                    style={{ marginBottom: 8 }}
+                    items={[
+                      {
+                        type: "select",
+                        key: "wing",
+                        options: [{ value: "", label: "All Wings" }, ...WINGS.map((w) => ({ value: w, label: w }))],
+                      },
+                      {
+                        type: "select",
+                        key: "class",
+                        options: [
+                          { value: "", label: "All Classes" },
+                          { value: "RCA", label: "RCA" },
+                          { value: "LPN", label: "LPN" },
+                          { value: "RN", label: "RN" },
+                        ],
+                      },
+                      {
+                        type: "select",
+                        key: "shift",
+                        options: [{ value: "", label: "All Shifts" }, ...SHIFT_PRESETS.map((s) => ({ value: s.label, label: s.label }))],
+                      },
+                      {
+                        type: "select",
+                        key: "countdown",
+                        options: [
+                          { value: "", label: "All Countdowns" },
+                          { value: "green", label: "Green" },
+                          { value: "yellow", label: "Yellow" },
+                          { value: "red", label: "Red" },
+                        ],
+                      },
+                      { type: "date", key: "start" },
+                      { type: "date", key: "end" },
+                    ]}
+                    values={{
+                      wing: filterWing,
+                      class: filterClass,
+                      shift: filterShift,
+                      countdown: filterCountdown,
+                      start: filterStart,
+                      end: filterEnd,
+                    }}
+                    onChange={(key, value) => {
+                      if (key === "wing") setFilterWing(value);
+                      else if (key === "class") setFilterClass(value as Classification | "");
+                      else if (key === "shift") setFilterShift(value);
+                      else if (key === "countdown") setFilterCountdown(value);
+                      else if (key === "start") setFilterStart(value);
+                      else if (key === "end") setFilterEnd(value);
+                    }}
+                    onClear={() => {
+                      setFilterWing("");
+                      setFilterClass("");
+                      setFilterShift("");
+                      setFilterCountdown("");
+                      setFilterStart("");
+                      setFilterEnd("");
+                    }}
+                  />
                 )}
                 <table className="vac-table responsive-table">
                   <thead>
@@ -2261,88 +2252,69 @@ export function BidsPage({
       <div className="card">
         <div className="card-h">Active Bids</div>
         <div className="card-c">
-          <div
-            style={{
-              marginBottom: 8,
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              className="btn btn-sm"
-              onClick={() => setFiltersOpen((o) => !o)}
-            >
+          <div style={{ marginBottom: 8 }}>
+            <Button size="sm" onClick={() => setFiltersOpen((o) => !o)}>
               {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
-            </button>
+            </Button>
           </div>
           {filtersOpen && (
-            <div className="toolbar" style={{ marginBottom: 8 }}>
-              <input
-                placeholder="Employee name…"
-                value={filterEmployee}
-                onChange={(e) => setFilterEmployee(e.target.value)}
-              />
-              <select
-                value={filterClass}
-                onChange={(e) =>
-                  setFilterClass(e.target.value as Classification | "")
-                }
-              >
-                <option value="">All Classes</option>
-                {(["RCA", "LPN", "RN"] as const).map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as Status | "")}
-              >
-                <option value="">All Statuses</option>
-                {(["FT", "PT", "Casual"] as const).map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filterWing}
-                onChange={(e) => setFilterWing(e.target.value)}
-              >
-                <option value="">All Wings</option>
-                {WINGS.map((w) => (
-                  <option key={w} value={w}>
-                    {w}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="date"
-                value={filterStart}
-                onChange={(e) => setFilterStart(e.target.value)}
-              />
-              <input
-                type="date"
-                value={filterEnd}
-                onChange={(e) => setFilterEnd(e.target.value)}
-              />
-              <button
-                className="btn"
-                onClick={() => {
-                  setFilterEmployee("");
-                  setFilterClass("");
-                  setFilterStatus("");
-                  setFilterWing("");
-                  setFilterStart("");
-                  setFilterEnd("");
-                }}
-              >
-                Clear
-              </button>
-            </div>
+            <FilterBar
+              style={{ marginBottom: 8 }}
+              items={[
+                { type: "text", key: "employee", placeholder: "Employee name…" },
+                {
+                  type: "select",
+                  key: "class",
+                  options: [
+                    { value: "", label: "All Classes" },
+                    { value: "RCA", label: "RCA" },
+                    { value: "LPN", label: "LPN" },
+                    { value: "RN", label: "RN" },
+                  ],
+                },
+                {
+                  type: "select",
+                  key: "status",
+                  options: [
+                    { value: "", label: "All Statuses" },
+                    { value: "FT", label: "FT" },
+                    { value: "PT", label: "PT" },
+                    { value: "Casual", label: "Casual" },
+                  ],
+                },
+                {
+                  type: "select",
+                  key: "wing",
+                  options: [{ value: "", label: "All Wings" }, ...WINGS.map((w) => ({ value: w, label: w }))],
+                },
+                { type: "date", key: "start" },
+                { type: "date", key: "end" },
+              ]}
+              values={{
+                employee: filterEmployee,
+                class: filterClass,
+                status: filterStatus,
+                wing: filterWing,
+                start: filterStart,
+                end: filterEnd,
+              }}
+              onChange={(key, value) => {
+                if (key === "employee") setFilterEmployee(value);
+                else if (key === "class") setFilterClass(value as Classification | "");
+                else if (key === "status") setFilterStatus(value as Status | "");
+                else if (key === "wing") setFilterWing(value);
+                else if (key === "start") setFilterStart(value);
+                else if (key === "end") setFilterEnd(value);
+              }}
+              onClear={() => {
+                setFilterEmployee("");
+                setFilterClass("");
+                setFilterStatus("");
+                setFilterWing("");
+                setFilterStart("");
+                setFilterEnd("");
+              }}
+            />
           )}
           <table className="responsive-table">
             <thead>
