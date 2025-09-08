@@ -130,7 +130,7 @@ export default function VacancyRow({
       <CellCountdown source={v} settings={settings} />
       <CellActions>
         {isBundleChild ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          <div className="btn-row">
             <button className="btn btn-sm" onClick={resetKnownAt}>
               Reset timer
             </button>
@@ -155,7 +155,7 @@ export default function VacancyRow({
             </button>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="btn-row" style={{ alignItems: "start" }}>
             <SelectEmployee
               allowEmpty
               employees={employees}
@@ -186,32 +186,30 @@ export default function VacancyRow({
             ) : (
               <span className="subtitle">—</span>
             )}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-              <button className="btn btn-sm" onClick={resetKnownAt}>
-                Reset timer
-              </button>
-              <button
-                className="btn btn-sm"
-                onClick={handleAward}
-                disabled={!choice}
-              >
-                Award
-              </button>
-              <button
-                className="btn btn-sm"
-                aria-label="Delete vacancy"
-                title="Delete vacancy"
-                data-testid={`vacancy-delete-${v.id}`}
-                tabIndex={0}
-                onClick={() => onDelete(v.id)}
-              >
-                {TrashIcon ? (
-                  <TrashIcon style={{ width: 16, height: 16 }} aria-hidden="true" />
-                ) : (
-                  "Delete"
-                )}
-              </button>
-            </div>
+            <button className="btn btn-sm" onClick={resetKnownAt}>
+              Reset timer
+            </button>
+            <button
+              className="btn btn-sm"
+              onClick={handleAward}
+              disabled={!choice}
+            >
+              Award
+            </button>
+            <button
+              className="btn btn-sm"
+              aria-label="Delete vacancy"
+              title="Delete vacancy"
+              data-testid={`vacancy-delete-${v.id}`}
+              tabIndex={0}
+              onClick={() => onDelete(v.id)}
+            >
+              {TrashIcon ? (
+                <TrashIcon style={{ width: 16, height: 16 }} aria-hidden="true" />
+              ) : (
+                "Delete"
+              )}
+            </button>
           </div>
         )}
       </CellActions>
