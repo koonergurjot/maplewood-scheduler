@@ -2,7 +2,6 @@ import React from "react";
 import type { Vacancy, Employee, Settings } from "../types";
 import type { Recommendation } from "../recommend";
 import { formatDateLong, combineDateTime } from "../lib/dates";
-import EmployeePickerModal from "./EmployeePickerModal";
 import {
   CellSelect,
   CellDetails,
@@ -75,7 +74,6 @@ export default function BundleRow({
   const multipleWings = distinctWings.length > 1;
 
   const [open, setOpen] = React.useState(false);
-  const [pickOpen, setPickOpen] = React.useState(false);
   const [awardOpen, setAwardOpen] = React.useState(false);
 
   return (
@@ -158,9 +156,6 @@ export default function BundleRow({
               Edit coverage
             </button>
           )}
-          <button className="btn btn-sm" onClick={() => setPickOpen(true)}>
-            Award Bundle
-          </button>
           <button className="btn btn-sm" onClick={async () => { if (await (window as any).appShowConfirm?.(`Split this bundle into ${childIds.length} individual shifts?`, "Split bundle")) onSplitBundle(childIds); }}>
             Split
           </button>
@@ -174,16 +169,6 @@ export default function BundleRow({
         </CellActions>
       </tr>
 
-      <EmployeePickerModal
-        open={pickOpen}
-        employees={employees}
-        classification={primary.classification}
-        onClose={() => setPickOpen(false)}
-        onSelect={(eid) => {
-          setPickOpen(false);
-          onAwardBundle?.(eid);
-        }}
-      />
       {open && (
         <tr>
           <td />
