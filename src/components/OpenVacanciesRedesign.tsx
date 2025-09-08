@@ -66,7 +66,7 @@ export default function OpenVacanciesRedesign(props: Props) {
     return list;
   }, [vacancies, filters]);
 
-  const [groupByBundle, setGroupByBundle] = useState(false);
+  const [groupByBundle, setGroupByBundle] = useState(true);
 
   const byDate = useMemo(() => {
     const m = new Map<string, Vacancy[]>();
@@ -98,7 +98,7 @@ export default function OpenVacanciesRedesign(props: Props) {
           <input
             type="checkbox"
             checked={groupByBundle}
-            onChange={(e) => setGroupByBundle(e.target.checked)}
+            onChange={() => setGroupByBundle(true)}
           />
           Group by bundle
         </label>
