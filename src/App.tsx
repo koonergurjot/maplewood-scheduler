@@ -27,6 +27,9 @@ import type { VacancyRange, VacancyStatus, BundleMode } from "./types";
 export { OVERRIDE_REASONS } from "./types";
 import { createVacanciesFromRange, bundleContiguousVacanciesByRef } from "./lib/bundles";
 import Toast from "./components/ui/Toast";
+import Button from "./components/ui/Button";
+import FilterBar from "./components/ui/FilterBar";
+import Modal from "./components/ui/Modal";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -308,6 +311,44 @@ const [bundleUndo, setBundleUndo] = useState<{
   timeout: number;
 } | null>(null);
 const [showRangeForm, setShowRangeForm] = useState(false);
+  // Modal system (confirm/prompt/alert)
+  const [confirmState, setConfirmState] = useState<
+    | { open: true; title: string; body: string; resolve: (ok: boolean) => void }
+    | null
+  >(null);
+  const [promptState, setPromptState] = useState<
+    | {
+        open: true;
+        title: string;
+        body: string;
+        placeholder?: string;
+        value: string;
+        resolve: (val: string | null) => void;
+      }
+    | null
+  >(null);
+  const [alertState, setAlertState] = useState<
+    | { open: true; title: string; body: string; resolve: () => void }
+    | null
+  >(null);
+
+  const showConfirm = (body: string, title = "Confirm"): Promise<boolean> =>
+    new Promise((resolve) => setConfirmState({ open: true, title, body, resolve }));
+  const showPrompt = (
+    body: string,
+    title = "Enter value",
+    placeholder = "",
+  ): Promise<string | null> =>
+    new Promise((resolve) =>
+      setPromptState({ open: true, title, body, placeholder, value: "", resolve }),
+    );
+  const showAlert = (body: string, title = "Notice"): Promise<void> =>
+    new Promise((resolve) => setAlertState({ open: true, title, body, resolve }));
+
+  // expose helpers for non-App children that cannot receive props easily
+  (window as any).appShowConfirm = showConfirm;
+  (window as any).appShowPrompt = showPrompt;
+  (window as any).appShowAlert = showAlert;
   const persistedSettings = persisted?.settings ?? {};
   const storedOrder: string[] = persistedSettings.tabOrder || [];
   const mergedOrder = [
@@ -466,7 +507,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     if (!v.endDate) missing.push("End date");
     if (!v.classification) missing.push("Classification");
     if (missing.length) {
-      alert(`Missing: ${missing.join(", ")}`);
+      showAlert(`Missing: ${missing.join(", ")}`);
       return;
     }
     const vac: Vacation = {
@@ -619,7 +660,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     );
   };
 
-  const awardBundle = (bundleId: string, employeeId: string) => {
+  const awardBundle = async (bundleId: string, employeeId: string) => {
     const kids = vacancies.filter(
       (v) => v.bundleId === bundleId && v.status === "Open",
     );
@@ -627,7 +668,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
 
     const cls = kids[0].classification;
     if (!kids.every((v) => v.classification === cls)) {
-      alert("Bundle has mixed classifications; fix before awarding.");
+      await showAlert("Bundle has mixed classifications; fix before awarding.");
       return;
     }
 
@@ -645,10 +686,10 @@ const [showRangeForm, setShowRangeForm] = useState(false);
       .map((v) => formatDateLong(v.shiftDate));
     let reason: string | undefined;
     if (conflictDays.length) {
-      const msg =
-        `Employee already assigned on:\n${conflictDays.join("\n")}\nOverride and award bundle?`;
-      if (!window.confirm(msg)) return;
-      const rc = window.prompt("Enter reason code for override")?.trim();
+      const msg = `Employee already assigned on:\n${conflictDays.join("\n")}\nOverride and award bundle?`;
+      const ok = await showConfirm(msg, "Override required");
+      if (!ok) return;
+      const rc = await showPrompt("Enter reason code for override", "Reason code");
       if (!rc) return;
       reason = rc;
     }
@@ -676,7 +717,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     setBundleUndo(null);
   };
 
-  const awardVacancy = (
+  const awardVacancy = async (
     vacId: string,
     payload: {
       empId?: string;
@@ -696,12 +737,11 @@ const [showRangeForm, setShowRangeForm] = useState(false);
           ? `${emp.firstName} ${emp.lastName}`.trim()
           : payload.empId;
         const days = kids.length;
-        if (
-          !window.confirm(
-            `Award all days in this bundle to ${name}? (${days} days)`,
-          )
-        )
-          return;
+        const ok = await showConfirm(
+          `Award all days in this bundle to ${name}? (${days} days)`,
+          "Award bundle",
+        );
+        if (!ok) return;
         awardBundle(target.bundleId, payload.empId);
         return;
       }
@@ -713,13 +753,12 @@ const [showRangeForm, setShowRangeForm] = useState(false);
             (v.status === "Filled" || v.status === "Awarded") &&
             v.awardedTo === payload.empId,
         );
-        if (
-          conflict &&
-          !window.confirm(
+        if (conflict) {
+          const ok = await showConfirm(
             `Employee already assigned on ${formatDateLong(target.shiftDate)}. Continue?`,
-          )
-        ) {
-          return;
+            "Potential conflict",
+          );
+          if (!ok) return;
         }
       }
     }
@@ -894,13 +933,14 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     >
       <style>{`
         /* Themes */
-        :root{ --baseRadius:14px; }
+        :root{ --baseRadius:14px; --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --elev-1: 0 2px 4px rgba(0,0,0,.06); --elev-2: 0 6px 12px rgba(0,0,0,.08); --focus-ring: 2px solid var(--brand); }
         .app{min-height:100vh;min-height:100dvh;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);font-family:'Nunito',system-ui,Arial,sans-serif;padding:calc(18px + env(safe-area-inset-top)) 0 calc(18px + env(safe-area-inset-bottom)) 0}
         @supports(-webkit-touch-callout:none){.app{min-height:-webkit-fill-available}}
-        [data-theme="dark"]{ --bg1:#0f172a; --bg2:#1f2937; --card:#1e293b; --cardAlt:#273446; --stroke:#334155; --text:#f1f5f9; --muted:#cbd5e1; --brand:#0d9488; --accent:#34d399; --ok:#16a34a; --warn:#f59e0b; --bad:#ef4444; --chipBg:#334155; --chipText:#f1f5f9; }
-        [data-theme="light"]{ --bg1:#f0fdf4; --bg2:#ffffff; --card:#ffffff; --cardAlt:#f6fdf9; --stroke:#d1fae5; --text:#064e3b; --muted:#3f7f65; --brand:#047857; --accent:#10b981; --ok:#15803d; --warn:#b45309; --bad:#b91c1c; --chipBg:#dcfce7; --chipText:#064e3b; }
+        [data-theme="dark"]{ --bg1:#0b1220; --bg2:#1a2433; --card:#111a29; --cardAlt:#1b2738; --stroke:#2a3a52; --text:#f2f6fb; --muted:#c7d2e0; --brand:#0ea5e9; --accent:#22d3ee; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --chipBg:#24334a; --chipText:#e7eef7; }
+        [data-theme="light"]{ --bg1:#f7fbff; --bg2:#ffffff; --card:#ffffff; --cardAlt:#f7fafc; --stroke:#e5eef7; --text:#0f172a; --muted:#475569; --brand:#0ea5e9; --accent:#06b6d4; --ok:#16a34a; --warn:#b45309; --bad:#b91c1c; --chipBg:#eaf3ff; --chipText:#0f172a; }
 
         *{box-sizing:border-box}
+        :focus-visible{ outline: var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-sm); }
         .wrap-anywhere{ overflow-wrap:anywhere; word-break:break-word; }
         body,html,#root{height:100%;margin:0;-webkit-text-size-adjust:100%}
         .container{max-width:min(100%,1600px); margin:0 auto; padding:0 18px}
@@ -920,8 +960,8 @@ const [showRangeForm, setShowRangeForm] = useState(false);
         .grid2{grid-template-columns:1fr}
         @media (min-width: 768px){ .grid2{ grid-template-columns:1fr 1fr; } }
         @media (min-width: 1280px){ .grid2{ grid-template-columns:1fr 1fr 1fr; } }
-        .card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--baseRadius);overflow:visible;box-shadow:0 4px 6px rgba(0,0,0,.06);transition:box-shadow .2s,transform .2s}
-        .card:hover{box-shadow:0 8px 12px rgba(0,0,0,.1);transform:translateY(-2px)}
+        .card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--baseRadius);overflow:visible;box-shadow:var(--elev-1);transition:box-shadow .2s,transform .2s}
+        .card:hover{box-shadow:var(--elev-2);transform:translateY(-2px)}
         .card-h{padding:10px 14px;border-bottom:1px solid var(--stroke);font-weight:800;display:flex;align-items:center;justify-content:space-between}
         .card-c{padding:14px}
         table{width:100%;border-collapse:separate; border-spacing:0}
@@ -1023,17 +1063,16 @@ const [showRangeForm, setShowRangeForm] = useState(false);
             >
               Export
             </button>
-            <button
-              className="btn"
-              onClick={() => {
-                if (confirm("Reset ALL data?")) {
-                  localStorage.removeItem(LS_KEY);
-                  location.reload();
-                }
+            <Button
+              onClick={async () => {
+                const ok = await showConfirm("Reset ALL data?", "Reset");
+                if (!ok) return;
+                localStorage.removeItem(LS_KEY);
+                location.reload();
               }}
             >
               Reset
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -1369,12 +1408,9 @@ const [showRangeForm, setShowRangeForm] = useState(false);
                     />
                     All
                   </label>
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => setFiltersOpen((o) => !o)}
-                  >
+                  <Button size="sm" onClick={() => setFiltersOpen((o) => !o)}>
                     {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
-                  </button>
+                  </Button>
                   {appConfig.features.coverageDayPicker && (
                     <button
                       className="btn btn-sm"
@@ -1398,75 +1434,67 @@ const [showRangeForm, setShowRangeForm] = useState(false);
                   )}
                 </div>
                 {filtersOpen && (
-                  <div className="toolbar" style={{ marginBottom: 8 }}>
-                    <select
-                      value={filterWing}
-                      onChange={(e) => setFilterWing(e.target.value)}
-                    >
-                      <option value="">All Wings</option>
-                      {WINGS.map((w) => (
-                        <option key={w} value={w}>
-                          {w}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={filterClass}
-                      onChange={(e) =>
-                        setFilterClass(e.target.value as Classification | "")
-                      }
-                    >
-                      <option value="">All Classes</option>
-                      {["RCA", "LPN", "RN"].map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={filterShift}
-                      onChange={(e) => setFilterShift(e.target.value)}
-                    >
-                      <option value="">All Shifts</option>
-                      {SHIFT_PRESETS.map((s) => (
-                        <option key={s.label} value={s.label}>
-                          {s.label}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={filterCountdown}
-                      onChange={(e) => setFilterCountdown(e.target.value)}
-                    >
-                      <option value="">All Countdowns</option>
-                      <option value="green">Green</option>
-                      <option value="yellow">Yellow</option>
-                      <option value="red">Red</option>
-                    </select>
-                    <input
-                      type="date"
-                      value={filterStart}
-                      onChange={(e) => setFilterStart(e.target.value)}
-                    />
-                    <input
-                      type="date"
-                      value={filterEnd}
-                      onChange={(e) => setFilterEnd(e.target.value)}
-                    />
-                    <button
-                      className="btn"
-                      onClick={() => {
-                        setFilterWing("");
-                        setFilterClass("");
-                        setFilterShift("");
-                        setFilterCountdown("");
-                        setFilterStart("");
-                        setFilterEnd("");
-                      }}
-                    >
-                      Clear
-                    </button>
-                  </div>
+                  <FilterBar
+                    style={{ marginBottom: 8 }}
+                    items={[
+                      {
+                        type: "select",
+                        key: "wing",
+                        options: [{ value: "", label: "All Wings" }, ...WINGS.map((w) => ({ value: w, label: w }))],
+                      },
+                      {
+                        type: "select",
+                        key: "class",
+                        options: [
+                          { value: "", label: "All Classes" },
+                          { value: "RCA", label: "RCA" },
+                          { value: "LPN", label: "LPN" },
+                          { value: "RN", label: "RN" },
+                        ],
+                      },
+                      {
+                        type: "select",
+                        key: "shift",
+                        options: [{ value: "", label: "All Shifts" }, ...SHIFT_PRESETS.map((s) => ({ value: s.label, label: s.label }))],
+                      },
+                      {
+                        type: "select",
+                        key: "countdown",
+                        options: [
+                          { value: "", label: "All Countdowns" },
+                          { value: "green", label: "Green" },
+                          { value: "yellow", label: "Yellow" },
+                          { value: "red", label: "Red" },
+                        ],
+                      },
+                      { type: "date", key: "start" },
+                      { type: "date", key: "end" },
+                    ]}
+                    values={{
+                      wing: filterWing,
+                      class: filterClass,
+                      shift: filterShift,
+                      countdown: filterCountdown,
+                      start: filterStart,
+                      end: filterEnd,
+                    }}
+                    onChange={(key, value) => {
+                      if (key === "wing") setFilterWing(value);
+                      else if (key === "class") setFilterClass(value as Classification | "");
+                      else if (key === "shift") setFilterShift(value);
+                      else if (key === "countdown") setFilterCountdown(value);
+                      else if (key === "start") setFilterStart(value);
+                      else if (key === "end") setFilterEnd(value);
+                    }}
+                    onClear={() => {
+                      setFilterWing("");
+                      setFilterClass("");
+                      setFilterShift("");
+                      setFilterCountdown("");
+                      setFilterStart("");
+                      setFilterEnd("");
+                    }}
+                  />
                 )}
                 <table className="vac-table responsive-table">
                   <thead>
@@ -1640,6 +1668,56 @@ const [showRangeForm, setShowRangeForm] = useState(false);
             existingVacancies={vacancies}
           />
         )}
+        {/* App-level modals */}
+        <Modal
+          open={!!confirmState}
+          title={confirmState?.title || "Confirm"}
+          onClose={() => {
+            confirmState?.resolve(false);
+            setConfirmState(null);
+          }}
+        >
+          <div className="wrap-anywhere">{confirmState?.body}</div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
+            <Button onClick={() => { confirmState?.resolve(false); setConfirmState(null); }}>Cancel</Button>
+            <Button variant="primary" onClick={() => { confirmState?.resolve(true); setConfirmState(null); }}>Confirm</Button>
+          </div>
+        </Modal>
+        <Modal
+          open={!!promptState}
+          title={promptState?.title || "Input"}
+          onClose={() => {
+            promptState?.resolve(null);
+            setPromptState(null);
+          }}
+        >
+          <div style={{ display: "grid", gap: 8 }}>
+            <div className="wrap-anywhere">{promptState?.body}</div>
+            <input
+              autoFocus
+              placeholder={promptState?.placeholder || ""}
+              value={promptState?.value || ""}
+              onChange={(e) => setPromptState((s) => (s ? { ...s, value: e.target.value } : s))}
+            />
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <Button onClick={() => { promptState?.resolve(null); setPromptState(null); }}>Cancel</Button>
+              <Button variant="primary" onClick={() => { promptState?.resolve(promptState?.value || ""); setPromptState(null); }}>OK</Button>
+            </div>
+          </div>
+        </Modal>
+        <Modal
+          open={!!alertState}
+          title={alertState?.title || "Notice"}
+          onClose={() => {
+            alertState?.resolve();
+            setAlertState(null);
+          }}
+        >
+          <div className="wrap-anywhere">{alertState?.body}</div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
+            <Button variant="primary" onClick={() => { alertState?.resolve(); setAlertState(null); }}>OK</Button>
+          </div>
+        </Modal>
         <BulkAwardDialog
           open={bulkAwardOpen}
           employees={employees}
@@ -1691,7 +1769,7 @@ function EmployeesPage({
                 rows = parseCSV(text);
               } catch (err) {
                 console.error(err);
-                alert("Failed to parse CSV");
+                await showAlert("Failed to parse CSV");
                 return;
               }
               const out: Employee[] = rows.map((r: any, i: number) => ({
@@ -2213,8 +2291,10 @@ export function BidsPage({
               <button
                 className="btn"
                 onClick={() => {
-                  if (!newBid.vacancyId || !newBid.bidderEmployeeId)
-                    return alert("Vacancy and employee required");
+                  if (!newBid.vacancyId || !newBid.bidderEmployeeId) {
+                    showAlert("Vacancy and employee required");
+                    return;
+                  }
                   const ts =
                     newBid.bidDate && newBid.bidTime
                       ? new Date(
@@ -2261,88 +2341,69 @@ export function BidsPage({
       <div className="card">
         <div className="card-h">Active Bids</div>
         <div className="card-c">
-          <div
-            style={{
-              marginBottom: 8,
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              className="btn btn-sm"
-              onClick={() => setFiltersOpen((o) => !o)}
-            >
+          <div style={{ marginBottom: 8 }}>
+            <Button size="sm" onClick={() => setFiltersOpen((o) => !o)}>
               {filtersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
-            </button>
+            </Button>
           </div>
           {filtersOpen && (
-            <div className="toolbar" style={{ marginBottom: 8 }}>
-              <input
-                placeholder="Employee name…"
-                value={filterEmployee}
-                onChange={(e) => setFilterEmployee(e.target.value)}
-              />
-              <select
-                value={filterClass}
-                onChange={(e) =>
-                  setFilterClass(e.target.value as Classification | "")
-                }
-              >
-                <option value="">All Classes</option>
-                {(["RCA", "LPN", "RN"] as const).map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as Status | "")}
-              >
-                <option value="">All Statuses</option>
-                {(["FT", "PT", "Casual"] as const).map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filterWing}
-                onChange={(e) => setFilterWing(e.target.value)}
-              >
-                <option value="">All Wings</option>
-                {WINGS.map((w) => (
-                  <option key={w} value={w}>
-                    {w}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="date"
-                value={filterStart}
-                onChange={(e) => setFilterStart(e.target.value)}
-              />
-              <input
-                type="date"
-                value={filterEnd}
-                onChange={(e) => setFilterEnd(e.target.value)}
-              />
-              <button
-                className="btn"
-                onClick={() => {
-                  setFilterEmployee("");
-                  setFilterClass("");
-                  setFilterStatus("");
-                  setFilterWing("");
-                  setFilterStart("");
-                  setFilterEnd("");
-                }}
-              >
-                Clear
-              </button>
-            </div>
+            <FilterBar
+              style={{ marginBottom: 8 }}
+              items={[
+                { type: "text", key: "employee", placeholder: "Employee name…" },
+                {
+                  type: "select",
+                  key: "class",
+                  options: [
+                    { value: "", label: "All Classes" },
+                    { value: "RCA", label: "RCA" },
+                    { value: "LPN", label: "LPN" },
+                    { value: "RN", label: "RN" },
+                  ],
+                },
+                {
+                  type: "select",
+                  key: "status",
+                  options: [
+                    { value: "", label: "All Statuses" },
+                    { value: "FT", label: "FT" },
+                    { value: "PT", label: "PT" },
+                    { value: "Casual", label: "Casual" },
+                  ],
+                },
+                {
+                  type: "select",
+                  key: "wing",
+                  options: [{ value: "", label: "All Wings" }, ...WINGS.map((w) => ({ value: w, label: w }))],
+                },
+                { type: "date", key: "start" },
+                { type: "date", key: "end" },
+              ]}
+              values={{
+                employee: filterEmployee,
+                class: filterClass,
+                status: filterStatus,
+                wing: filterWing,
+                start: filterStart,
+                end: filterEnd,
+              }}
+              onChange={(key, value) => {
+                if (key === "employee") setFilterEmployee(value);
+                else if (key === "class") setFilterClass(value as Classification | "");
+                else if (key === "status") setFilterStatus(value as Status | "");
+                else if (key === "wing") setFilterWing(value);
+                else if (key === "start") setFilterStart(value);
+                else if (key === "end") setFilterEnd(value);
+              }}
+              onClear={() => {
+                setFilterEmployee("");
+                setFilterClass("");
+                setFilterStatus("");
+                setFilterWing("");
+                setFilterStart("");
+                setFilterEnd("");
+              }}
+            />
           )}
           <table className="responsive-table">
             <thead>
