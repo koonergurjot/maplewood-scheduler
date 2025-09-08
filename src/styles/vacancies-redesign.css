@@ -6,7 +6,7 @@ table.vacancies tbody tr:hover { background:#f6faff; }
 
 td.cell-select { width:40px; padding:10px 12px; }
 td.cell-details { padding:10px 12px; }
-.cell-details__wrap { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.cell-details__wrap { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap: wrap; }
 .cell-details__title { font-weight:600; font-size:14px; line-height:1.3; }
 .cell-details__subtitle { font-size:12px; opacity:.85; margin-top:2px; }
 .cell-details__tag { white-space:nowrap; font-size:12px; opacity:.85; }
@@ -16,8 +16,8 @@ td.cell-countdown { width:140px; padding:10px 12px; }
 .countdown.cd-yellow { color:#925f00; }
 .countdown.cd-green { color:#266a2e; }
 
-td.cell-actions { width:1%; white-space:nowrap; text-align:right; padding:10px 12px; }
-.btn-row { display:inline-flex; gap:6px; }
+td.cell-actions { width:1%; text-align:right; padding:10px 12px; }
+.btn-row { display:inline-flex; gap:6px; flex-wrap: wrap; justify-content: flex-end; }
 .badge { display:inline-block; padding:2px 6px; font-size:11px; border-radius:999px; background:#eef2f7; color:#334155; }
 .badge-wing { background:#eefaf3; color:#206341; }
 .badge-class { background:#eef2ff; color:#42389d; }
