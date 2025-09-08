@@ -967,6 +967,10 @@ const [showRangeForm, setShowRangeForm] = useState(false);
         table{width:100%;border-collapse:separate; border-spacing:0}
         th,td{padding:10px;border-bottom:1px solid var(--stroke);text-align:left;vertical-align:middle}
         th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+        .vacancies{table-layout:auto;width:100%}
+        .vacancies th:nth-child(1){width:40px}
+        .vacancies th:nth-child(3){width:140px}
+        .vacancies th:nth-child(4){width:1%}
         input:not([type="checkbox"]),select,textarea{width:100%;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;padding:10px;color:var(--text);-webkit-appearance:none;appearance:none}
         input[type="checkbox"]{accent-color:var(--brand)}
         input::placeholder{color:#cbd5e1}
@@ -979,6 +983,8 @@ const [showRangeForm, setShowRangeForm] = useState(false);
         .dropdown{position:relative}
         .menu{position:absolute;z-index:1000;top:100%;left:0;right:0;background:var(--cardAlt);border:1px solid var(--stroke);border-radius:10px;max-height:240px;overflow:auto}
         .item{padding:8px 10px;cursor:pointer} .item:hover{background:rgba(4,120,87,.12)}
+        .btn-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+        .truncate{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
         /* Calendar */
         .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px}

@@ -27,7 +27,7 @@ export function CellCountdown({source,settings}:{source:Vacancy;settings:Setting
   const sinceKnownMin = minutesBetween(new Date(), new Date(source.knownAt));
   const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin));
   let cdClass = "cd-green"; if (msLeft <= 0) cdClass = "cd-red"; else if (pct < 0.25) cdClass = "cd-yellow";
-  return <td className="cell-countdown"><div className={`countdown ${cdClass}`}>{fmtCountdown(msLeft)}</div></td>;
+  return <td className="cell-countdown" style={{whiteSpace:"nowrap"}}><div className={`countdown ${cdClass}`}>{fmtCountdown(msLeft)}</div></td>;
 }
 export function CellActions({children}:{children:React.ReactNode}) {
   return <td className="cell-actions">{children}</td>;

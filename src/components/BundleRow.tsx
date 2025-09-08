@@ -113,19 +113,18 @@ export default function BundleRow({
             </div>
           }
           rightTag={
-            <>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               {recId ? (
                 <span
                   className="pill"
-                  style={{ cursor: "pointer", marginRight: 8 }}
+                  style={{ cursor: "pointer" }}
+                  title={recName}
                   onClick={() => onAwardBundle?.(recId)}
                 >
                   {recName}
                 </span>
               ) : (
-                <span className="subtitle" style={{ marginRight: 8 }}>
-                  —
-                </span>
+                <span className="subtitle">—</span>
               )}
               {multipleWings && (
                 <span className="pill" title={distinctWings.join(", ")}>
@@ -137,7 +136,7 @@ export default function BundleRow({
                   {w}
                 </span>
               ))}
-            </>
+            </div>
           }
         />
         <CellCountdown source={primary} settings={settings} />
