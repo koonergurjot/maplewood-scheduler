@@ -19,6 +19,17 @@ td.cell-countdown { width:140px; padding:10px 12px; }
 
 td.cell-actions { width:1%; text-align:right; padding:10px 12px; }
 .btn-row { display:grid; grid-template-columns: repeat(2, max-content); gap:6px; justify-content: end; }
+
+/* Responsive fixes: stack countdown and actions under details on narrow screens */
+@media (max-width: 900px) {
+  table.vacancies thead { display: none; }
+  table.vacancies, table.vacancies tbody, table.vacancies tr, table.vacancies td { display: block; width: 100%; }
+  table.vacancies tr { margin-bottom: 10px; border-bottom: 1px solid #e9e9e9; padding-bottom: 6px; }
+  td.cell-details { padding-bottom: 4px; }
+  td.cell-countdown { text-align: left; padding-top: 0; padding-bottom: 6px; }
+  td.cell-actions { padding-top: 0; }
+  .btn-row { grid-template-columns: repeat(2, 1fr); justify-content: stretch; }
+}
 .badge { display:inline-block; padding:2px 6px; font-size:11px; border-radius:999px; background:#eef2f7; color:#334155; }
 .badge-wing { background:#eefaf3; color:#206341; }
 .badge-class { background:#eef2ff; color:#42389d; }
