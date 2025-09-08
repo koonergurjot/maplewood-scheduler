@@ -25,8 +25,7 @@ import OpenVacanciesRedesign from "./components/OpenVacanciesRedesign";
 import { appConfig } from "./config";
 import type { VacancyRange, VacancyStatus, BundleMode } from "./types";
 export { OVERRIDE_REASONS } from "./types";
-import { expandRangeToVacancies } from "./lib/expandRange";
-import { bundleContiguousVacanciesByRef } from "./lib/bundles";
+import { createVacanciesFromRange, bundleContiguousVacanciesByRef } from "./lib/bundles";
 import Toast from "./components/ui/Toast";
 
 /**
@@ -535,8 +534,8 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     setMultiDay(false);
   };
 
-  const handleSaveRange = (range: VacancyRange, awardAsBlock: boolean) => {
-    const vxs = expandRangeToVacancies(range, awardAsBlock);
+  const handleSaveRange = (range: VacancyRange, _awardAsBlock: boolean) => {
+    const vxs = createVacanciesFromRange(range);
     setVacancies((prev) => [...vxs, ...prev]);
   };
 
