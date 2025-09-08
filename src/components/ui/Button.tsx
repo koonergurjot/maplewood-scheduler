@@ -21,7 +21,7 @@ const sizeToPadding: Record<ButtonSize, string> = {
   lg: "12px 16px",
 };
 
-export function Button({ variant = "secondary", size = "md", style, className, ...rest }: ButtonProps) {
+export function Button({ variant = "secondary", size = "md", style, className, type = "button", ...rest }: ButtonProps) {
   return (
     <button
       className={`btn${size === "sm" ? " btn-sm" : ""}${className ? ` ${className}` : ""}`}
@@ -34,6 +34,7 @@ export function Button({ variant = "secondary", size = "md", style, className, .
         ...variantToStyle[variant],
         ...style,
       }}
+      type={type as any}
       {...rest}
     />
   );

@@ -940,6 +940,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
         [data-theme="light"]{ --bg1:#f0fdf4; --bg2:#ffffff; --card:#ffffff; --cardAlt:#f6fdf9; --stroke:#d1fae5; --text:#064e3b; --muted:#3f7f65; --brand:#047857; --accent:#10b981; --ok:#15803d; --warn:#b45309; --bad:#b91c1c; --chipBg:#dcfce7; --chipText:#064e3b; }
 
         *{box-sizing:border-box}
+        :focus-visible{ outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 6px; }
         .wrap-anywhere{ overflow-wrap:anywhere; word-break:break-word; }
         body,html,#root{height:100%;margin:0;-webkit-text-size-adjust:100%}
         .container{max-width:min(100%,1600px); margin:0 auto; padding:0 18px}
