@@ -507,7 +507,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     if (!v.endDate) missing.push("End date");
     if (!v.classification) missing.push("Classification");
     if (missing.length) {
-      showAlert(`Missing: ${missing.join(", ")}`);
+      (window as any).appShowAlert?.(`Missing: ${missing.join(", ")}`);
       return;
     }
     const vac: Vacation = {
@@ -668,7 +668,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
 
     const cls = kids[0].classification;
     if (!kids.every((v) => v.classification === cls)) {
-      await showAlert("Bundle has mixed classifications; fix before awarding.");
+      await (window as any).appShowAlert?.("Bundle has mixed classifications; fix before awarding.");
       return;
     }
 
@@ -1769,7 +1769,7 @@ function EmployeesPage({
                 rows = parseCSV(text);
               } catch (err) {
                 console.error(err);
-                await showAlert("Failed to parse CSV");
+                await (window as any).appShowAlert?.("Failed to parse CSV");
                 return;
               }
               const out: Employee[] = rows.map((r: any, i: number) => ({
@@ -2292,7 +2292,7 @@ export function BidsPage({
                 className="btn"
                 onClick={() => {
                   if (!newBid.vacancyId || !newBid.bidderEmployeeId) {
-                    showAlert("Vacancy and employee required");
+                    (window as any).appShowAlert?.("Vacancy and employee required");
                     return;
                   }
                   const ts =
