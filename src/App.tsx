@@ -996,8 +996,8 @@ const [showRangeForm, setShowRangeForm] = useState(false);
         .cell-details__title{font-weight:700;overflow:hidden;text-overflow:ellipsis}
         .cell-details__subtitle{opacity:.9}
         .cell-details__tag{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;min-width:180px}
-        .cell-countdown{white-space:nowrap}
-        .cell-actions{min-width:260px}
+        .cell-countdown{white-space:nowrap;text-align:center;vertical-align:middle}
+        .cell-actions{min-width:260px;text-align:center;vertical-align:middle}
 
         /* Calendar */
         .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px}
