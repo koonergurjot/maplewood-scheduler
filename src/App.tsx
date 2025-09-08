@@ -2044,6 +2044,55 @@ export function BidsPage({
     (v) => v.status !== "Filled" && v.status !== "Awarded",
   );
 
+  // Build options for the Add Bid selector: bundles appear as ONE option
+  const openVacancyOptions = useMemo(() => {
+    const byBundle = new Map<string, typeof openVacancies>();
+    const singles: typeof openVacancies = [];
+    for (const v of openVacancies) {
+      if (v.bundleId) {
+        const arr = byBundle.get(v.bundleId) || [];
+        arr.push(v);
+        byBundle.set(v.bundleId, arr);
+      } else {
+        singles.push(v);
+      }
+    }
+    const options: { id: string; label: string }[] = [];
+    // Bundles (2+ days) as one option
+    for (const arr of byBundle.values()) {
+      arr.sort((a, b) =>
+        combineDateTime(a.shiftDate, a.shiftStart).getTime() -
+        combineDateTime(b.shiftDate, b.shiftStart).getTime(),
+      );
+      if (arr.length >= 2) {
+        const first = arr[0];
+        const last = arr[arr.length - 1];
+        const range = `${formatDateLong(first.shiftDate)} – ${formatDateLong(
+          last.shiftDate,
+        )}`;
+        const days = arr.length;
+        const label = `Block: ${range} • ${first.classification} • ${first.wing ?? ""} (${days} days)`;
+        options.push({ id: first.id, label });
+      } else {
+        // Single-day that happened to have a bundleId
+        const v = arr[0];
+        options.push({ id: v.id, label: displayVacancyLabel(v) });
+      }
+    }
+    // Singles
+    for (const v of singles) options.push({ id: v.id, label: displayVacancyLabel(v) });
+    // Sort by earliest start
+    options.sort((a, b) => {
+      const va = vacancies.find((v) => v.id === a.id)!;
+      const vb = vacancies.find((v) => v.id === b.id)!;
+      return (
+        combineDateTime(va.shiftDate, va.shiftStart).getTime() -
+        combineDateTime(vb.shiftDate, vb.shiftStart).getTime()
+      );
+    });
+    return options;
+  }, [openVacancies, vacancies]);
+
   const activeBids = bids.filter((b) => {
     const v = vacancies.find((x) => x.id === b.vacancyId);
     return !v || v.status !== "Awarded";
@@ -2079,10 +2128,10 @@ export function BidsPage({
                 <option value="" disabled>
                   Pick vacancy
                 </option>
-                {openVacancies.length ? (
-                  openVacancies.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {vacWithCoveredName(v)}
+                {openVacancyOptions.length ? (
+                  openVacancyOptions.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.label}
                     </option>
                   ))
                 ) : (
@@ -2154,10 +2203,8 @@ export function BidsPage({
                           `${newBid.bidDate}T${newBid.bidTime}:00`,
                         ).toISOString()
                       : new Date().toISOString();
-                  const vac = vacancies.find(
-                    (x) => x.id === newBid.vacancyId!,
-                  );
-                  const targetIds = vac?.bundleId
+                  const vac = vacancies.find((x) => x.id === newBid.vacancyId!);
+                  const targetIds = vac && vac.bundleId
                     ? vacancies
                         .filter(
                           (x) =>
