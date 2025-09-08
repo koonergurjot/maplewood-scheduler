@@ -142,6 +142,7 @@ export default function BundleRow({
         <CellCountdown source={primary} settings={settings} />
         <CellActions>
           <div className="action-grid">
+          <InlineEmployeePicker employees={employees} value="" onChange={(id)=> onAwardBundle?.(id)} />
           <button className="btn btn-sm" onClick={() => setOpen((o) => !o)}>
             {open ? "Hide" : "Expand"}
           </button>
@@ -206,6 +207,26 @@ export default function BundleRow({
         </tr>
       )}
     </>
+  );
+}
+
+function InlineEmployeePicker({ employees, value, onChange }:{ employees: Employee[]; value: string; onChange: (id:string)=>void }){
+  const [q, setQ] = React.useState("");
+  const list = React.useMemo(()=> employees.filter(e=> `${e.firstName} ${e.lastName}`.toLowerCase().includes(q.toLowerCase())).slice(0,50), [employees,q]);
+  return (
+    <div className="dropdown">
+      <input placeholder="Type name…" value={q} onChange={(e)=> setQ(e.target.value)} onFocus={()=>{}} />
+      {q && (
+        <div className="menu" style={{ maxHeight: 240, overflow: "auto" }}>
+          {list.map(e=> (
+            <div key={e.id} className="item" onClick={()=>{ onChange(e.id); setQ(""); }}>
+              {e.firstName} {e.lastName}
+            </div>
+          ))}
+          {!list.length && <div className="item" style={{ opacity:.7 }}>No matches</div>}
+        </div>
+      )}
+    </div>
   );
 }
 
