@@ -62,10 +62,12 @@
     width: 100%;
   }
   .responsive-table tr {
-    margin-bottom: 1rem;
+    margin-bottom: 10px;
     border-bottom: 1px solid var(--stroke);
-    padding-bottom: 0.5rem;
+    padding-bottom: 6px;
+    background: #fff;
   }
+  .responsive-table tr:nth-child(odd) { background: #fafafa; }
   .responsive-table td {
     display: flex;
     justify-content: space-between;
