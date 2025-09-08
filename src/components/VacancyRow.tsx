@@ -115,8 +115,8 @@ export default function VacancyRow({
           </div>
         }
         rightTag={
-          <>
-            <span className="subtitle" style={{ marginRight: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span className="subtitle truncate" title={recName}>
               {recName}
             </span>
             {recWhy.map((w, i) => (
@@ -124,7 +124,7 @@ export default function VacancyRow({
                 {w}
               </span>
             ))}
-          </>
+          </div>
         }
       />
       <CellCountdown source={v} settings={settings} />
