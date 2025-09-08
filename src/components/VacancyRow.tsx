@@ -130,7 +130,7 @@ export default function VacancyRow({
       <CellCountdown source={v} settings={settings} />
       <CellActions>
         {isBundleChild ? (
-          <div className="btn-row">
+          <div className="action-grid">
             <button className="btn btn-sm" onClick={resetKnownAt}>
               Reset timer
             </button>
@@ -155,7 +155,7 @@ export default function VacancyRow({
             </button>
           </div>
         ) : (
-          <div className="btn-row" style={{ alignItems: "start" }}>
+          <div className="action-grid">
             <SelectEmployee
               allowEmpty
               employees={employees}

@@ -988,6 +988,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
         .item{padding:8px 10px;cursor:pointer} .item:hover{background:rgba(4,120,87,.12)}
         .btn-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
         .truncate{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .action-grid{display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:8px;align-items:start}
 
         /* Row cell layout helpers */
         .cell-details__wrap{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}

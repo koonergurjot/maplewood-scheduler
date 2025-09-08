@@ -141,7 +141,7 @@ export default function BundleRow({
         />
         <CellCountdown source={primary} settings={settings} />
         <CellActions>
-          <div className="btn-row">
+          <div className="action-grid">
           <button className="btn btn-sm" onClick={() => setOpen((o) => !o)}>
             {open ? "Hide" : "Expand"}
           </button>
