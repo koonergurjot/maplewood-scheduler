@@ -9,6 +9,53 @@ import { parseNumberParam } from "./parseNumberParam.js";
 const app = express();
 app.use(cors());
 
+app.get("/api/search", (req, res) => {
+  const { q, category } = req.query;
+  let start, end;
+  try {
+    start = parseNumberParam("start", req.query.start);
+    end = parseNumberParam("end", req.query.end);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  if (start !== undefined && start < 0) {
+    return res
+      .status(400)
+      .json({ error: "start must be greater than or equal to 0" });
+  }
+  if (end !== undefined && end < 0) {
+    return res
+      .status(400)
+      .json({ error: "end must be greater than or equal to 0" });
+  }
+  if (start !== undefined && end !== undefined && start > end) {
+    return res
+      .status(400)
+      .json({ error: "start must be less than or equal to end" });
+  }
+
+  let results = sampleVacancies;
+
+  if (q) {
+    const qLower = String(q).toLowerCase();
+    results = results.filter((v) =>
+      Object.values(v).some((val) =>
+        String(val).toLowerCase().includes(qLower),
+      ),
+    );
+  }
+
+  if (category) {
+    results = results.filter((v) => v.status === category);
+  }
+
+  const sliceStart = start ?? 0;
+  const sliceEnd = end ?? results.length;
+
+  res.json(results.slice(sliceStart, sliceEnd));
+});
+
 app.get("/api/analytics", requireAuth, (req, res) => {
   let overtimeThreshold;
   try {
