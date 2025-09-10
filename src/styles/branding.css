@@ -1,25 +1,3 @@
-:root {
-  --bg1: #f0fdf4;
-  --bg2: #ffffff;
-  --card: #ffffff;
-  --stroke: #d1fae5;
-  --text: #064e3b;
-  --brand: #047857;
-  --accent: #10b981;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg1: #0f172a;
-    --bg2: #1f2937;
-    --card: #1e293b;
-    --stroke: #334155;
-    --text: #f1f5f9;
-    --brand: #0d9488;
-    --accent: #34d399;
-  }
-}
-
 .dashboard {
   min-height: 100vh;
   background: linear-gradient(180deg, var(--bg1), var(--bg2));
@@ -75,13 +53,13 @@ h2 {
 }
 
 .shift-card.awarded {
-  background: #d1fae5;
+  background: var(--shift-awarded-bg);
   border-left-color: var(--accent);
 }
 
 .shift-card.open {
-  background: #fef9c3;
-  border-left-color: #f59e0b;
+  background: var(--shift-open-bg);
+  border-left-color: var(--shift-open-border);
 }
 
 .employee-list table {
@@ -96,5 +74,5 @@ h2 {
 }
 
 .employee-list tr.recent td {
-  background: #fef9c3;
+  background: var(--employee-recent-bg);
 }

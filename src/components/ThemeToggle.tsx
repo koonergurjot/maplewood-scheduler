@@ -1,18 +1,8 @@
-
 import React from "react";
+import { useTheme } from "../theme";
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = React.useState<"light" | "dark">(() => {
-    if (typeof document !== "undefined") {
-      return (document.documentElement.getAttribute("data-theme") as any) ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light");
-    }
-    return "light";
-  });
-
-  React.useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
-
+  const { theme, setTheme } = useTheme();
   return (
     <label className="theme-toggle" title="Toggle theme">
       <input
