@@ -6,7 +6,7 @@ import { createCsv } from "./analyticsFormats/csv.js";
 import { createPdf } from "./analyticsFormats/pdf.js";
 import { parseNumberParam } from "./parseNumberParam.js";
 
-const app = express();
+export const app = express();
 app.use(cors());
 
 app.get("/api/search", (req, res) => {
@@ -102,7 +102,11 @@ app.get("/api/analytics/export", requireAuth, (req, res) => {
   }
 });
 
-const port = process.env.PORT || 3001;
-app.listen(port, "localhost", () => {
-  console.log(`Analytics server running on port ${port}`);
-});
+if (process.env.NODE_ENV !== "test") {
+  const port = process.env.PORT || 3001;
+  app.listen(port, "localhost", () => {
+    console.log(`Analytics server running on port ${port}`);
+  });
+}
+
+export default app;
