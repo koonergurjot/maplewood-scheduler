@@ -99,6 +99,9 @@ export type Vacancy = {
   awardedAt?: string; // ISO datetime
   awardReason?: string; // audit note when overriding recommendation or class
   overrideUsed?: boolean; // true if class override was toggled
+
+  archived?: boolean;
+  archivedAt?: string; // ISO datetime
 };
 
 export type Bid = {
@@ -591,6 +594,14 @@ const [showRangeForm, setShowRangeForm] = useState(false);
   };
 
   const archiveBids = (vacancyIds: string[]) => {
+    const now = new Date().toISOString();
+    setVacancies((prev) =>
+      prev.map((v) =>
+        vacancyIds.includes(v.id)
+          ? { ...v, archived: true, archivedAt: now }
+          : v,
+      ),
+    );
     setBids((prev) => {
       const remaining: Bid[] = [];
       const archiveMap: Record<string, Bid[]> = {};
@@ -1663,7 +1674,9 @@ const [showRangeForm, setShowRangeForm] = useState(false);
           <EmployeesPage employees={employees} setEmployees={setEmployees} />
         )}
 
-        {tab === "archive" && <ArchivePage vacations={vacations} />}
+        {tab === "archive" && (
+          <ArchivePage vacancies={vacancies} archivedBids={archivedBids} />
+        )}
 
         {tab === "alerts" && (
           <div className="grid">
@@ -1956,40 +1969,68 @@ function EmployeesPage({
   );
 }
 
-function ArchivePage({ vacations }: { vacations: Vacation[] }) {
-  const archived = vacations.filter((v) => v.archived);
+export function ArchivePage({
+  vacancies,
+  archivedBids,
+}: {
+  vacancies: Vacancy[];
+  archivedBids: Record<string, Bid[]>;
+}) {
+  const archived = vacancies.filter((v) => v.archived);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   return (
     <div className="grid">
       <div className="card">
-        <div className="card-h">Archived Vacations (fully covered)</div>
+        <div className="card-h">Archived Vacancies</div>
         <div className="card-c">
           <table className="responsive-table">
-            <thead>
-              <tr>
-                <th>Employee</th>
-                <th>Wing</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Archived</th>
-              </tr>
-            </thead>
             <tbody>
               {archived.map((v) => (
-                <tr key={v.id}>
-                  <td>{v.employeeName}</td>
-                  <td>{v.wing}</td>
-                  <td>{formatDateLong(v.startDate)}</td>
-                  <td>{formatDateLong(v.endDate)}</td>
-                  <td>{new Date(v.archivedAt || "").toLocaleString()}</td>
-                </tr>
+                <Fragment key={v.id}>
+                  <tr
+                    onClick={() =>
+                      setExpanded((prev) => ({ ...prev, [v.id]: !prev[v.id] }))
+                    }
+                    style={{ cursor: "pointer", background: "var(--cardAlt)" }}
+                  >
+                    <td colSpan={5}>{displayVacancyLabel(v)}</td>
+                  </tr>
+                  {expanded[v.id] && (
+                    <Fragment>
+                      <tr>
+                        <th style={{ paddingLeft: 24 }}>Employee</th>
+                        <th>Class</th>
+                        <th>Status</th>
+                        <th>Bid at</th>
+                        <th>Notes</th>
+                      </tr>
+                      {archivedBids[v.id]?.map((b, i) => (
+                        <tr key={i}>
+                          <td style={{ paddingLeft: 24 }}>{b.bidderName}</td>
+                          <td>{b.bidderClassification}</td>
+                          <td>{b.bidderStatus}</td>
+                          <td>{new Date(b.bidTimestamp).toLocaleString()}</td>
+                          <td>{b.notes}</td>
+                        </tr>
+                      ))}
+                      {!(archivedBids[v.id] && archivedBids[v.id].length) && (
+                        <tr>
+                          <td style={{ paddingLeft: 24 }} colSpan={5}>
+                            No bids
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  )}
+                </Fragment>
               ))}
+              {!archived.length && (
+                <tr>
+                  <td>No archived vacancies</td>
+                </tr>
+              )}
             </tbody>
           </table>
-          {!archived.length && (
-            <div className="subtitle" style={{ marginTop: 8 }}>
-              Nothing here yet.
-            </div>
-          )}
         </div>
       </div>
     </div>

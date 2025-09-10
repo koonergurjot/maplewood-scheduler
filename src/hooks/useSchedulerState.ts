@@ -30,7 +30,13 @@ export function useSchedulerState() {
   const [employees, setEmployees] = useState<Employee[]>(persisted?.employees ?? []);
   const [vacations, setVacations] = useState<Vacation[]>(persisted?.vacations ?? []);
   const seededVacancies = bundleContiguousVacanciesByRef(
-    persisted?.vacancies ? [...persisted.vacancies] : [],
+    persisted?.vacancies
+      ? persisted.vacancies.map((v) => ({
+          ...v,
+          archived: v.archived ?? false,
+          archivedAt: v.archivedAt ?? undefined,
+        }))
+      : [],
   );
   const [vacancies, setVacancies] = useState<Vacancy[]>(seededVacancies);
   const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
