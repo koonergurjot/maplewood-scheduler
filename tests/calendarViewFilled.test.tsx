@@ -4,7 +4,7 @@ import { expect, test } from "vitest";
 import CalendarView from "../src/components/CalendarView";
 import type { Vacancy } from "../src/types";
 
-test("filled shifts hidden by default and toggle shows them", () => {
+test("awarded and filled shifts hidden by default and toggle shows them", () => {
   const todayIso = new Date().toISOString().slice(0, 10);
   const base: Omit<Vacancy, "id" | "status"> = {
     reason: "Test",
@@ -30,9 +30,11 @@ test("filled shifts hidden by default and toggle shows them", () => {
   expect(toolbar.querySelector(".badge-open")?.textContent).toBe("1");
   expect(toolbar.querySelector(".badge-awarded")?.textContent).toBe("1");
   expect(toolbar.querySelector(".badge-filled")?.textContent).toBe("1");
+  expect(container.querySelector('.event-pill[data-status="Awarded"]')).toBeNull();
   expect(container.querySelector('.event-pill[data-status="Filled"]')).toBeNull();
 
-  fireEvent.click(screen.getByRole("button", { name: /Show Filled/i }));
+  fireEvent.click(screen.getByRole("button", { name: /Show awarded and filled/i }));
+  expect(container.querySelector('.event-pill[data-status="Awarded"]')).not.toBeNull();
   expect(container.querySelector('.event-pill[data-status="Filled"]')).not.toBeNull();
 });
 
