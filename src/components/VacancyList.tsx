@@ -60,10 +60,10 @@ export default function VacancyList({
     setFilterShift,
     filterCountdown,
     setFilterCountdown,
-    filterStart,
-    setFilterStart,
-    filterEnd,
-    setFilterEnd,
+    start,
+    setStart,
+    end,
+    setEnd,
     filtersOpen,
     setFiltersOpen,
   } = useVacancyFilters();
@@ -87,18 +87,18 @@ export default function VacancyList({
         else if (pct < 0.25) cdClass = "yellow";
         if (filterCountdown !== cdClass) return false;
       }
-      if (filterStart && v.shiftDate < filterStart) return false;
-      if (filterEnd && v.shiftDate > filterEnd) return false;
-      return true;
-    });
-  }, [
+      if (start && v.shiftDate < start) return false;
+      if (end && v.shiftDate > end) return false;
+    return true;
+  });
+}, [
     vacancies,
     filterWing,
     filterClass,
     filterShift,
     filterCountdown,
-    filterStart,
-    filterEnd,
+    start,
+    end,
     now,
     settings,
   ]);
@@ -159,8 +159,8 @@ export default function VacancyList({
               <option value="yellow">Yellow</option>
               <option value="red">Red</option>
             </select>
-            <input type="date" value={filterStart} onChange={(e) => setFilterStart(e.target.value)} />
-            <input type="date" value={filterEnd} onChange={(e) => setFilterEnd(e.target.value)} />
+            <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+            <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
             <button
               className="btn"
               onClick={() => {
@@ -168,8 +168,8 @@ export default function VacancyList({
                 setFilterClass("");
                 setFilterShift("");
                 setFilterCountdown("");
-                setFilterStart("");
-                setFilterEnd("");
+                setStart("");
+                setEnd("");
               }}
             >
               Clear

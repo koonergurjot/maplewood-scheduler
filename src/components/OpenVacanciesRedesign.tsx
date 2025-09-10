@@ -4,6 +4,8 @@ import type { Recommendation } from "../recommend";
 import BundleRow from "./BundleRow";
 import VacancyRow from "./VacancyRow";
 import { combineDateTime } from "../lib/dates";
+import SearchFilterBar from "./SearchFilterBar";
+import { useVacancyFilters } from "../hooks/useVacancyFilters";
 
 type Props = {
   vacancies: Vacancy[];
@@ -34,6 +36,16 @@ type Props = {
 
 export default function OpenVacanciesRedesign(props: Props) {
   const { vacancies, vacations, filters, settings, employees, recommendations } = props;
+  const {
+    search,
+    setSearch,
+    start,
+    setStart,
+    end,
+    setEnd,
+    filterClass,
+    setFilterClass,
+  } = useVacancyFilters();
   const employeesById = useMemo(() => {
     const map: Record<string, Employee> = {};
     employees.forEach((e) => {
@@ -52,21 +64,28 @@ export default function OpenVacanciesRedesign(props: Props) {
     let list = vacancies.filter(
       (v) => v.status !== "Filled" && v.status !== "Awarded",
     );
-    if (filters?.search) {
-      const q = filters.search.toLowerCase();
-      list = list.filter(
-        (v) =>
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter((v) => {
+        const employeeName = vacNameById[v.vacationId ?? ""] || "";
+        return (
           (v.reason || "").toLowerCase().includes(q) ||
-          (v.wing || "").toLowerCase().includes(q),
-      );
+          (v.wing || "").toLowerCase().includes(q) ||
+          (v.classification || "").toLowerCase().includes(q) ||
+          employeeName.toLowerCase().includes(q)
+        );
+      });
     }
+    if (filterClass) list = list.filter((v) => v.classification === filterClass);
+    if (start) list = list.filter((v) => v.shiftDate >= start);
+    if (end) list = list.filter((v) => v.shiftDate <= end);
     if (filters?.wing) list = list.filter((v) => (v.wing || "") === filters!.wing);
     if (filters?.classification)
       list = list.filter((v) => v.classification === filters!.classification);
     if (filters?.bundlesOnly) list = list.filter((v) => v.bundleId);
     if (filters?.singlesOnly) list = list.filter((v) => !v.bundleId);
     return list;
-  }, [vacancies, filters]);
+  }, [vacancies, search, filterClass, start, end, filters, vacNameById]);
 
   const [groupByBundle, setGroupByBundle] = useState(true);
 
@@ -124,6 +143,23 @@ export default function OpenVacanciesRedesign(props: Props) {
 
   return (
     <div>
+      <SearchFilterBar
+        query={search}
+        startDate={start}
+        endDate={end}
+        category={filterClass}
+        categories={["RCA", "LPN", "RN"]}
+        onQueryChange={setSearch}
+        onStartDateChange={setStart}
+        onEndDateChange={setEnd}
+        onCategoryChange={(v) => setFilterClass(v as any)}
+        onClear={() => {
+          setSearch("");
+          setStart("");
+          setEnd("");
+          setFilterClass("");
+        }}
+      />
       <div style={{ marginBottom: 8 }}>
         <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <input
