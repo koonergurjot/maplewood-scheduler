@@ -34,10 +34,12 @@ export default function CalendarView({ vacancies }: Props) {
   const todayIso = isoDate(today);
   const todaysEvents = eventsByDate[todayIso] || [];
   const visibleToday = todaysEvents.filter(
-    (e: any) => (e as any).status !== "Filled",
+    (e: any) => (e as any).status === "Open",
   );
-  const openToday = visibleToday.filter((e: any) => (e as any).status === "Open").length;
-  const awardedToday = visibleToday.filter((e: any) => (e as any).status === "Awarded").length;
+  const openToday = visibleToday.length;
+  const awardedToday = todaysEvents.filter(
+    (e: any) => (e as any).status === "Awarded",
+  ).length;
   const filledToday = todaysEvents.filter(
     (e: any) => (e as any).status === "Filled",
   ).length;
@@ -56,7 +58,7 @@ export default function CalendarView({ vacancies }: Props) {
           <button className="calendar-btn" onClick={() => { setY(today.getFullYear()); setM(today.getMonth()); }} aria-label="Jump to today">Jump to Today</button>
           <button className="calendar-btn" onClick={() => { /* TODO: navigate to new vacancy */ }} aria-label="Create new vacancy">New Vacancy</button>
           <button className="calendar-btn" onClick={() => setShowHeatmap((h) => !h)} aria-pressed={showHeatmap} aria-label="Toggle heatmap">Toggle Heatmap</button>
-          <button className="calendar-btn" onClick={() => setShowFilled((f) => !f)} aria-pressed={showFilled} aria-label="Show filled shifts">Show Filled</button>
+          <button className="calendar-btn" onClick={() => setShowFilled((f) => !f)} aria-pressed={showFilled} aria-label="Show awarded and filled shifts">Show Awarded/Filled</button>
         </div>
       </div>
 
@@ -91,10 +93,11 @@ export default function CalendarView({ vacancies }: Props) {
                 allEvents.reduce(
                   (acc, e: Vacancy) => {
                     const status = (e as any).status || "Open";
-                    if (status === "Open") acc.open++;
-                    else if (status === "Awarded") acc.awarded++;
+                    if (status === "Open") {
+                      acc.open++;
+                      acc.visible.push(e);
+                    } else if (status === "Awarded") acc.awarded++;
                     else if (status === "Filled") acc.filled++;
-                    if (status !== "Filled") acc.visible.push(e);
                     return acc;
                   },
                   { open: 0, awarded: 0, filled: 0, visible: [] as Vacancy[] },
