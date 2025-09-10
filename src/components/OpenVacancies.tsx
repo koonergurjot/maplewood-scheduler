@@ -20,6 +20,7 @@ interface Props {
   undoDelete: () => void;
   staged: Vacancy[] | null;
   readOnly?: boolean;
+  resetBundleKnownAt?: (bundleId: string) => void;
 }
 
 export default function OpenVacancies({
@@ -29,6 +30,7 @@ export default function OpenVacancies({
   undoDelete,
   staged,
   readOnly = false,
+  resetBundleKnownAt,
 }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, setPending] = useState<string[] | null>(null);
@@ -330,6 +332,14 @@ export default function OpenVacancies({
                           >
                             {isOpen ? "Hide" : "Expand"}
                           </button>
+                          {resetBundleKnownAt && (
+                            <button
+                              className="btn btn-sm"
+                              onClick={() => resetBundleKnownAt(primary.bundleId!)}
+                            >
+                              Reset timers
+                            </button>
+                          )}
                           <button
                             className="btn btn-sm"
                             title="Delete vacancy"

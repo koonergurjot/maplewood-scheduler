@@ -520,6 +520,10 @@ export default function App() {
     const resetKnownAt = (vacId) => {
         setVacancies((prev) => prev.map((v) => v.id === vacId ? { ...v, knownAt: new Date().toISOString() } : v));
     };
+    const resetBundleKnownAt = (bundleId) => {
+        const nowISO = new Date().toISOString();
+        setVacancies((prev) => prev.map((v) => v.bundleId === bundleId ? { ...v, knownAt: nowISO } : v));
+    };
     const deleteVacancy = (vacId) => {
         setVacancies((prev) => prev.filter((v) => v.id !== vacId));
         setBids((prev) => prev.filter((b) => b.vacancyId !== vacId));
@@ -833,8 +837,8 @@ export default function App() {
                                                                 gap: 8,
                                                                 alignItems: "center",
                                                             }, children: [_jsx("button", { className: "btn btn-sm", onClick: () => setBulkAwardOpen(true), children: "Bulk Award" }), _jsxs("span", { className: "badge", children: [selectedVacancyIds.length, " selected"] })] })), _jsx(OpenVacanciesRedesign, { vacancies: vacancies, employees: employees, vacations: vacations, settings: settings, selectedIds: selectedVacancyIds, dueNextId: dueNextId, onToggleSelect: (id) => setSelectedVacancyIds((ids) => ids.includes(id)
-                                                                ? ids.filter((x) => x !== id)
-                                                                : [...ids, id]), onToggleSelectMany: toggleMany, onDelete: deleteVacancy, onDeleteMany: stageDeleteMany, awardVacancy: awardVacancy, awardBundle: awardBundle, onSplitBundle: splitBundle, resetKnownAt: resetKnownAt, recommendations: recommendations })] })) : (_jsxs(_Fragment, { children: [_jsxs("div", { style: {
+        ? ids.filter((x) => x !== id)
+        : [...ids, id]), onToggleSelectMany: toggleMany, onDelete: deleteVacancy, onDeleteMany: stageDeleteMany, awardVacancy: awardVacancy, awardBundle: awardBundle, onSplitBundle: splitBundle, resetKnownAt: resetKnownAt, resetBundleKnownAt: resetBundleKnownAt, recommendations: recommendations })] })) : (_jsxs(_Fragment, { children: [_jsxs("div", { style: {
                                                                 marginBottom: 8,
                                                                 display: "flex",
                                                                 gap: 8,
