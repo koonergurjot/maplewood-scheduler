@@ -6,8 +6,9 @@ export function useVacancyFilters() {
   const [filterClass, setFilterClass] = useState<Classification | "">("");
   const [filterShift, setFilterShift] = useState<string>("");
   const [filterCountdown, setFilterCountdown] = useState<string>("");
-  const [filterStart, setFilterStart] = useState<string>("");
-  const [filterEnd, setFilterEnd] = useState<string>("");
+  const [start, setStart] = useState<string>("");
+  const [end, setEnd] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   return {
     filterWing,
@@ -18,10 +19,12 @@ export function useVacancyFilters() {
     setFilterShift,
     filterCountdown,
     setFilterCountdown,
-    filterStart,
-    setFilterStart,
-    filterEnd,
-    setFilterEnd,
+    start,
+    setStart,
+    end,
+    setEnd,
+    search,
+    setSearch,
     filtersOpen,
     setFiltersOpen,
   };
