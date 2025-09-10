@@ -1,8 +1,10 @@
 
 import React from "react";
 import type { Vacancy } from "../types";
+import type { Tag } from "../models/tag";
 import { buildCalendar, isoDate, prevMonth, nextMonth } from "../lib/dates";
 import { groupVacanciesByDate } from "../lib/vacancy";
+import TagFilter from "./TagFilter";
 
 type Props = { vacancies: Vacancy[] };
 
@@ -18,18 +20,34 @@ export default function CalendarView({ vacancies }: Props) {
   const [m, setM] = React.useState(today.getMonth());
   const [showHeatmap, setShowHeatmap] = React.useState(false);
   const [showFilled, setShowFilled] = React.useState(false);
+  const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
 
   const days: Day[] = React.useMemo(() => buildCalendar(y, m), [y, m]);
+
+  const allTags = React.useMemo<Tag[]>(() => {
+    const map: Record<string, Tag> = {};
+    for (const v of vacancies ?? []) {
+      for (const t of v.tags ?? []) map[t.id] = t;
+    }
+    return Object.values(map);
+  }, [vacancies]);
+
+  const filteredVacancies = React.useMemo(() => {
+    if (!selectedTags.length) return vacancies;
+    return (vacancies || []).filter((v) =>
+      v.tags?.some((t) => selectedTags.includes(t.id)),
+    );
+  }, [vacancies, selectedTags]);
 
   // Group events by ISO yyyy-mm-dd
   const eventsByDate = React.useMemo(() => {
     const map: Record<string, Vacancy[]> = {};
-    const grouped = groupVacanciesByDate(vacancies ?? []);
+    const grouped = groupVacanciesByDate(filteredVacancies ?? []);
     for (const [d, arr] of grouped.entries()) {
       map[d] = arr;
     }
     return map;
-  }, [vacancies]);
+  }, [filteredVacancies]);
 
   const todayIso = isoDate(today);
   const todaysEvents = eventsByDate[todayIso] || [];
@@ -47,7 +65,15 @@ export default function CalendarView({ vacancies }: Props) {
   const weekdayShort = new Intl.DateTimeFormat(undefined, { weekday: "short" });
 
   return (
-    <>
+    <div style={{ display: "flex", gap: 16 }}>
+      <aside style={{ minWidth: 180 }}>
+        <TagFilter
+          tags={allTags}
+          selected={selectedTags}
+          onChange={setSelectedTags}
+        />
+      </aside>
+      <div style={{ flex: 1 }}>
       <div className="calendar-mini-toolbar" role="toolbar">
         <div className="counts" aria-live="polite">
           <div className="count"><span className="badge badge-open">{openToday}</span> Open today</div>
@@ -132,11 +158,37 @@ export default function CalendarView({ vacancies }: Props) {
                       data-wing={(e as any).wing || undefined}
                       data-class={(e as any).classification || undefined}
                     >
+                      <div className="event-tags" style={{ display: "flex", gap: 2 }}>
+                        {(e.tags || []).map((t) => (
+                          <span
+                            key={t.id}
+                            title={t.label}
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: "50%",
+                              backgroundColor: t.color,
+                              display: "inline-block",
+                            }}
+                          />
+                        ))}
+                      </div>
                       <div>
                         <strong>{(e as any).shiftStart ?? ""}–{(e as any).shiftEnd ?? ""}</strong>
                         <span className="event-meta"> {(e as any).wing ?? ""} {(e as any).classification ?? ""}</span>
                       </div>
                       <span className="event-meta">{status}</span>
+                      <div className="event-actions" style={{ display: "none" }}>
+                        <button aria-label="Edit" onClick={() => console.log("edit", e.id)}>
+                          ✎
+                        </button>
+                        <button aria-label="Duplicate" onClick={() => console.log("duplicate", e.id)}>
+                          ⧉
+                        </button>
+                        <button aria-label="Delete" onClick={() => console.log("delete", e.id)}>
+                          🗑
+                        </button>
+                      </div>
                       <div className="tooltip" role="tooltip">
                         <div className="title">Shift details</div>
                         <div className="line">Wing: {(e as any).wing ?? "—"}</div>
@@ -155,6 +207,7 @@ export default function CalendarView({ vacancies }: Props) {
         })}
       </div>
     </section>
-    </>
+      </div>
+    </div>
   );
 }

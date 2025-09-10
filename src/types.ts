@@ -58,6 +58,9 @@ export type Vacancy = {
   awardReason?: string;
   overrideUsed?: boolean;
 
+  /** Optional tags for categorizing vacancies */
+  tags?: import("./models/tag").Tag[];
+
   archived?: boolean;
   archivedAt?: string;
 
