@@ -1,9 +1,17 @@
-import { useState, useMemo } from "react";
-import type { Vacancy, Vacation } from "../types";
+import { useState, useMemo, Fragment } from "react";
+import type { Vacancy, Vacation, Classification, Settings } from "../types";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import Toast from "./ui/Toast";
 import { TrashIcon } from "./ui/Icon";
 import CoverageChip from "./ui/CoverageChip";
+import FilterBar from "./ui/FilterBar";
+import { WINGS, SHIFT_PRESETS } from "../types";
+import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
+import { minutesBetween } from "../lib/dates";
+
+const defaultSettings: Settings = {
+  responseWindows: { lt2h: 7, h2to4: 15, h4to24: 30, h24to72: 120, gt72: 1440 },
+};
 
 interface Props {
   vacancies: Vacancy[];
@@ -24,6 +32,12 @@ export default function OpenVacancies({
 }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, setPending] = useState<string[] | null>(null);
+  const [filterWing, setFilterWing] = useState<string>("");
+  const [filterClass, setFilterClass] = useState<Classification | "">("");
+  const [filterShift, setFilterShift] = useState<string>("");
+  const [filterCountdown, setFilterCountdown] = useState<string>("");
+  const [filterStart, setFilterStart] = useState<string>("");
+  const [filterEnd, setFilterEnd] = useState<string>("");
 
   const vacNameById = useMemo(() => {
     const m: Record<string, string> = {};
@@ -41,26 +55,59 @@ export default function OpenVacancies({
     (v) => v.status !== "Filled" && v.status !== "Awarded",
   );
 
+  const filteredVacancies = useMemo(() => {
+    return openVacancies.filter((v) => {
+      if (filterWing && v.wing !== filterWing) return false;
+      if (filterClass && v.classification !== filterClass) return false;
+      if (filterShift) {
+        const preset = SHIFT_PRESETS.find((p) => p.label === filterShift);
+        if (preset && (v.shiftStart !== preset.start || v.shiftEnd !== preset.end))
+          return false;
+      }
+      if (filterCountdown) {
+        const msLeft = deadlineFor(v, defaultSettings).getTime() - Date.now();
+        const winMin = pickWindowMinutes(v, defaultSettings);
+        const sinceKnownMin = minutesBetween(new Date(), new Date(v.knownAt));
+        const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin));
+        let cdClass: string = "green";
+        if (msLeft <= 0) cdClass = "red";
+        else if (pct < 0.25) cdClass = "yellow";
+        if (filterCountdown !== cdClass) return false;
+      }
+      if (filterStart && v.shiftDate < filterStart) return false;
+      if (filterEnd && v.shiftDate > filterEnd) return false;
+      return true;
+    });
+  }, [
+    openVacancies,
+    filterWing,
+    filterClass,
+    filterShift,
+    filterCountdown,
+    filterStart,
+    filterEnd,
+  ]);
+
   const [groupByBundle, setGroupByBundle] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const grouped = useMemo(() => {
-    if (!groupByBundle) return openVacancies.map((v) => [v]);
+    if (!groupByBundle) return filteredVacancies.map((v) => [v]);
     const m = new Map<string, Vacancy[]>();
-    for (const v of openVacancies) {
+    for (const v of filteredVacancies) {
       const key = v.bundleId || v.id;
       const arr = m.get(key) || [];
       arr.push(v);
       m.set(key, arr);
     }
     return Array.from(m.values());
-  }, [openVacancies, groupByBundle]);
+  }, [filteredVacancies, groupByBundle]);
 
   const allChecked =
-    openVacancies.length > 0 && selected.length === openVacancies.length;
+    filteredVacancies.length > 0 && selected.length === filteredVacancies.length;
 
   const toggleAll = (checked: boolean) => {
-    setSelected(checked ? openVacancies.map((v) => v.id) : []);
+    setSelected(checked ? filteredVacancies.map((v) => v.id) : []);
   };
 
   const confirmDelete = (ids: string[]) => {
@@ -101,6 +148,73 @@ export default function OpenVacancies({
           Group by bundle
         </label>
       </div>
+      <FilterBar
+        style={{ marginBottom: 8 }}
+        items={[
+          {
+            type: "select",
+            key: "wing",
+            options: [
+              { value: "", label: "All Wings" },
+              ...WINGS.map((w) => ({ value: w, label: w })),
+            ],
+          },
+          {
+            type: "select",
+            key: "class",
+            options: [
+              { value: "", label: "All Classes" },
+              { value: "RCA", label: "RCA" },
+              { value: "LPN", label: "LPN" },
+              { value: "RN", label: "RN" },
+            ],
+          },
+          {
+            type: "select",
+            key: "shift",
+            options: [
+              { value: "", label: "All Shifts" },
+              ...SHIFT_PRESETS.map((s) => ({ value: s.label, label: s.label })),
+            ],
+          },
+          {
+            type: "select",
+            key: "countdown",
+            options: [
+              { value: "", label: "All Countdowns" },
+              { value: "green", label: "Green" },
+              { value: "yellow", label: "Yellow" },
+              { value: "red", label: "Red" },
+            ],
+          },
+          { type: "date", key: "start" },
+          { type: "date", key: "end" },
+        ]}
+        values={{
+          wing: filterWing,
+          class: filterClass,
+          shift: filterShift,
+          countdown: filterCountdown,
+          start: filterStart,
+          end: filterEnd,
+        }}
+        onChange={(key, value) => {
+          if (key === "wing") setFilterWing(value);
+          else if (key === "class") setFilterClass(value as Classification);
+          else if (key === "shift") setFilterShift(value);
+          else if (key === "countdown") setFilterCountdown(value);
+          else if (key === "start") setFilterStart(value);
+          else if (key === "end") setFilterEnd(value);
+        }}
+        onClear={() => {
+          setFilterWing("");
+          setFilterClass("");
+          setFilterShift("");
+          setFilterCountdown("");
+          setFilterStart("");
+          setFilterEnd("");
+        }}
+      />
       {!readOnly && selected.length > 0 && (
         <div
           style={{
@@ -163,8 +277,8 @@ export default function OpenVacancies({
             if (groupByBundle && group.length > 1 && primary.bundleId) {
               const isOpen = expanded[primary.bundleId] || false;
               return (
-                <>
-                  <tr key={primary.bundleId}>
+                <Fragment key={primary.bundleId}>
+                  <tr key={`${primary.bundleId}-main`}>
                     <td>
                       <input
                         type="checkbox"
@@ -267,7 +381,7 @@ export default function OpenVacancies({
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             }
             return (
