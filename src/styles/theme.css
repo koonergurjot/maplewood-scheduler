@@ -1,0 +1,61 @@
+:root {
+  --bg1: #f0fdf4;
+  --bg2: #ffffff;
+  --card: #ffffff;
+  --stroke: #d1fae5;
+  --text: #064e3b;
+  --brand: #047857;
+  --accent: #10b981;
+  --table-head-bg: var(--card);
+  --table-row-border: #e9e9e9;
+  --table-row-alt: #fafafa;
+  --table-row-hover: #f6faff;
+  --badge-bg: #eef2f7;
+  --badge-text: #334155;
+  --badge-wing-bg: #eefaf3;
+  --badge-wing-text: #206341;
+  --badge-class-bg: #eef2ff;
+  --badge-class-text: #42389d;
+  --section-bg: var(--card);
+  --section-text: #364152;
+  --shift-awarded-bg: #d1fae5;
+  --shift-open-bg: #fef9c3;
+  --shift-open-border: #f59e0b;
+  --employee-recent-bg: #fef9c3;
+  --countdown-red: #b30000;
+  --countdown-yellow: #925f00;
+  --countdown-green: #266a2e;
+  --button-text-on-brand: #fff;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg1: #0f172a;
+  --bg2: #1f2937;
+  --card: #1e293b;
+  --stroke: #334155;
+  --text: #f1f5f9;
+  --brand: #0d9488;
+  --accent: #34d399;
+  --table-head-bg: var(--card);
+  --table-row-border: #334155;
+  --table-row-alt: #0f172a;
+  --table-row-hover: #1f2937;
+  --badge-bg: #334155;
+  --badge-text: #f1f5f9;
+  --badge-wing-bg: #155e75;
+  --badge-wing-text: #ecfeff;
+  --badge-class-bg: #4c1d95;
+  --badge-class-text: #f1f5f9;
+  --section-bg: var(--card);
+  --section-text: #f1f5f9;
+  --shift-awarded-bg: #064e3b;
+  --shift-open-bg: #78350f;
+  --shift-open-border: #d97706;
+  --employee-recent-bg: #78350f;
+  --countdown-red: #f87171;
+  --countdown-yellow: #fde047;
+  --countdown-green: #4ade80;
+  --button-text-on-brand: #fff;
+  color-scheme: dark;
+}
