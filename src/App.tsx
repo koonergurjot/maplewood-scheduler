@@ -775,6 +775,15 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     );
   };
 
+  const resetBundleKnownAt = (bundleId: string) => {
+    const nowISO = new Date().toISOString();
+    setVacancies((prev) =>
+      prev.map((v) =>
+        v.bundleId === bundleId ? { ...v, knownAt: nowISO } : v,
+      ),
+    );
+  };
+
   const deleteVacancy = (vacId: string) => {
     setVacancies((prev) => prev.filter((v) => v.id !== vacId));
     setBids((prev) => prev.filter((b) => b.vacancyId !== vacId));
@@ -1417,6 +1426,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
                       awardBundle={awardBundle}
                       onSplitBundle={splitBundle}
                       resetKnownAt={resetKnownAt}
+                      resetBundleKnownAt={resetBundleKnownAt}
                       recommendations={recommendations}
                     />
                   </>

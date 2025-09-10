@@ -4,7 +4,7 @@ import ConfirmDialog from "./ui/ConfirmDialog";
 import Toast from "./ui/Toast";
 import { TrashIcon } from "./ui/Icon";
 import CoverageChip from "./ui/CoverageChip";
-export default function OpenVacancies({ vacancies, vacations = [], stageDelete, undoDelete, staged, readOnly = false, }) {
+export default function OpenVacancies({ vacancies, vacations = [], stageDelete, undoDelete, staged, readOnly = false, resetBundleKnownAt, }) {
     const [selected, setSelected] = useState([]);
     const [pending, setPending] = useState(null);
     const vacNameById = useMemo(() => {
@@ -83,7 +83,7 @@ export default function OpenVacancies({ vacancies, vacations = [], stageDelete, 
                                                             : "Varies" }), _jsx("td", { style: { textAlign: "right" }, children: !readOnly && (_jsxs(_Fragment, { children: [_jsx("button", { className: "btn btn-sm", onClick: () => setExpanded((prev) => ({
                                                                         ...prev,
                                                                         [primary.bundleId]: !isOpen,
-                                                                    })), children: isOpen ? "Hide" : "Expand" }), _jsx("button", { className: "btn btn-sm", title: "Delete vacancy", "aria-label": "Delete vacancy", "data-testid": `vacancy-delete-${primary.id}`, tabIndex: 0, onClick: () => confirmDelete(ids), children: TrashIcon ? (_jsxs(_Fragment, { children: [_jsx(TrashIcon, { style: { width: 16, height: 16 }, "aria-hidden": "true" }), _jsx("span", { className: "sr-only", children: "Delete vacancy" })] })) : ("Delete") })] })) })] }, primary.bundleId), isOpen && (_jsxs("tr", { children: [_jsx("td", {}), _jsx("td", { colSpan: 4, children: _jsx("div", { className: "bundle-expand", children: group.map((v, i) => (_jsxs("div", { style: {
+                                                                    })), children: isOpen ? "Hide" : "Expand" }), resetBundleKnownAt && (_jsx("button", { className: "btn btn-sm", onClick: () => resetBundleKnownAt(primary.bundleId), children: "Reset timers" })), _jsx("button", { className: "btn btn-sm", title: "Delete vacancy", "aria-label": "Delete vacancy", "data-testid": `vacancy-delete-${primary.id}`, tabIndex: 0, onClick: () => confirmDelete(ids), children: TrashIcon ? (_jsxs(_Fragment, { children: [_jsx(TrashIcon, { style: { width: 16, height: 16 }, "aria-hidden": "true" }), _jsx("span", { className: "sr-only", children: "Delete vacancy" })] })) : ("Delete") })] })) })] }, primary.bundleId), isOpen && (_jsxs("tr", { children: [_jsx("td", {}), _jsx("td", { colSpan: 4, children: _jsx("div", { className: "bundle-expand", children: group.map((v, i) => (_jsxs("div", { style: {
                                                                     display: "flex",
                                                                     gap: 8,
                                                                     padding: "4px 0",

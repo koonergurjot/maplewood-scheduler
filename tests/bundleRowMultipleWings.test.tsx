@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from "react";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import BundleRow from "../src/components/BundleRow";
 import type { Vacancy, Employee, Settings } from "../src/types";
 
@@ -93,6 +93,40 @@ describe("BundleRow", () => {
     expect(rows[1].getAttribute("style")).toContain(
       "border-top: 1px solid var(--stroke)"
     );
+  });
+
+  it("calls onResetBundle and updates knownAt for all items", () => {
+    const items: Vacancy[] = [
+      { ...baseVacancy, id: "v1", wing: "A", shiftDate: "2024-01-01", date: "2024-01-01", bundleId: "g1" },
+      { ...baseVacancy, id: "v2", wing: "B", shiftDate: "2024-01-02", date: "2024-01-02", bundleId: "g1" },
+    ];
+    const updated = "2024-02-01T00:00:00.000Z";
+    const onReset = vi.fn(() => {
+      items.forEach((v) => (v.knownAt = updated));
+    });
+    render(
+      <table>
+        <tbody>
+          <BundleRow
+            groupId="g1"
+            items={items}
+            employees={[] as Employee[]}
+            settings={settings}
+            recommendations={{}}
+            selectedIds={[]}
+            onToggleSelectMany={() => {}}
+            onDeleteMany={() => {}}
+            onSplitBundle={() => {}}
+            onResetBundle={onReset}
+            dueNextId={null}
+          />
+        </tbody>
+      </table>
+    );
+    const btn = screen.getByText("Reset timers");
+    fireEvent.click(btn);
+    expect(onReset).toHaveBeenCalledWith("g1");
+    expect(items.every((v) => v.knownAt === updated)).toBe(true);
   });
 });
 

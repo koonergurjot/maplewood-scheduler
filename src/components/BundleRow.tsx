@@ -21,6 +21,7 @@ type Props = {
   onSplitBundle: (ids: string[]) => void;          // unsets bundleId on every child
   onAwardBundle?: (employeeId: string) => void;     // optional hook
   onEditCoverage?: (bundleId: string) => void;
+  onResetBundle?: (bundleId: string) => void;
   dueNextId: string | null;
   coveredName?: string;
 };
@@ -37,6 +38,7 @@ export default function BundleRow({
   onSplitBundle,
   onAwardBundle,
   onEditCoverage,
+  onResetBundle,
   dueNextId,
   coveredName,
 }: Props) {
@@ -159,6 +161,11 @@ export default function BundleRow({
           <button className="btn btn-sm" onClick={async () => { if (await (window as any).appShowConfirm?.(`Split this bundle into ${childIds.length} individual shifts?`, "Split bundle")) onSplitBundle(childIds); }}>
             Split
           </button>
+          {onResetBundle && (
+            <button className="btn btn-sm" onClick={() => onResetBundle(groupId)}>
+              Reset timers
+            </button>
+          )}
           <button
             className="btn btn-sm danger"
             onClick={() => onDeleteMany(childIds)}

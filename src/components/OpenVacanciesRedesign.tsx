@@ -21,6 +21,7 @@ type Props = {
   onEditCoverage?: (bundleId: string) => void;
   onSplitBundle?: (ids: string[]) => void;
   resetKnownAt: (id: string) => void;
+  resetBundleKnownAt?: (bundleId: string) => void;
   filters?: {
     search?: string;
     wing?: string;
@@ -165,6 +166,7 @@ export default function OpenVacanciesRedesign(props: Props) {
                   onSplitBundle={(ids) => props.onSplitBundle?.(ids)}
                   onEditCoverage={props.onEditCoverage}
                   onAwardBundle={(eid) => props.awardBundle?.(key, eid)}
+                  onResetBundle={props.resetBundleKnownAt}
                   dueNextId={props.dueNextId}
                   coveredName={coveredName}
                 />
