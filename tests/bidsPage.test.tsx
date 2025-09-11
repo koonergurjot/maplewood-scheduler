@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from "react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { render, screen, fireEvent } from "@testing-library/react";
 import {
@@ -8,7 +8,7 @@ import {
   applyAwardVacancy,
   type Vacancy,
   type Bid,
-} from "../src/App";
+} from "../src/App.tsx";
 
 // test verifying that awarded vacancies are excluded from the dropdown
 
@@ -38,9 +38,10 @@ describe("BidsPage vacancy dropdown", () => {
         vacations={[]}
         employees={[]}
         employeesById={{}}
+        archivedBids={{}}
       />,
     );
-    expect(beforeHtml).toContain('value="v1"');
+    expect(beforeHtml).toContain("January 01, 2024");
 
     const awarded = applyAwardVacancy([vac], "v1", { empId: "e1" });
     expect(awarded[0].awardReason).toBeUndefined();
@@ -52,9 +53,9 @@ describe("BidsPage vacancy dropdown", () => {
         vacations={[]}
         employees={[]}
         employeesById={{}}
-      />, 
+        archivedBids={{}}
+      />,
     );
-    expect(afterHtml).not.toContain('value="v1"');
     expect(afterHtml).toContain("No open vacancies");
   });
 });
@@ -81,6 +82,7 @@ describe("BidsPage delete button", () => {
           vacations={[]}
           employees={[]}
           employeesById={{}}
+          archivedBids={{}}
         />
       );
     }

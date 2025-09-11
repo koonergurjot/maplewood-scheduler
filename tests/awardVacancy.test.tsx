@@ -70,9 +70,9 @@ describe("award vacancy UI", () => {
 
     const rows = screen
       .getAllByRole("row")
-      .filter((r) => within(r).queryByText("Allow class override"));
-    const cb1 = within(rows[0]).getAllByRole("checkbox")[0];
-    const cb2 = within(rows[1]).getAllByRole("checkbox")[0];
+      .filter((r) => within(r).queryByRole("checkbox"));
+    const cb1 = within(rows[0]).getByRole("checkbox");
+    const cb2 = within(rows[1]).getByRole("checkbox");
     fireEvent.click(cb1);
     fireEvent.click(cb2);
 
@@ -141,7 +141,8 @@ describe("award vacancy UI", () => {
 
     const row = screen
       .getAllByRole("row")
-      .find((r) => within(r).queryByText("Allow class override"))!;
+      .filter((r) => within(r).queryByRole("checkbox"))[0];
+    fireEvent.click(within(row).getByText("Award"));
     const input = within(row).getByPlaceholderText(/Type name or ID/);
     fireEvent.change(input, { target: { value: "Bob" } });
     const option = (await screen.findAllByText(/Bob B/))[0];
@@ -149,7 +150,7 @@ describe("award vacancy UI", () => {
 
     fireEvent.click(within(row).getByLabelText("Allow class override"));
 
-    fireEvent.click(within(row).getByText("Award"));
+    fireEvent.click(within(row).getByText("Confirm Award"));
 
     expect(alertMock).toHaveBeenCalledWith(
       "Please select a reason for this override.",
