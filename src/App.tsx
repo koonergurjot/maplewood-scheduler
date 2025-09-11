@@ -2334,7 +2334,12 @@ export function BidsPage({
                   onClick={() =>
                     setNewBid((b) => ({
                       ...b,
-                      selectedVacancyIds: filteredVacancyOptions.map((o) => o.id),
+                      selectedVacancyIds: Array.from(
+                        new Set([
+                          ...b.selectedVacancyIds,
+                          ...filteredVacancyOptions.map((o) => o.id),
+                        ]),
+                      ),
                     }))
                   }
                 >
@@ -2467,22 +2472,19 @@ export function BidsPage({
                       targetIds.add(vac.id);
                     }
                   }
-                  setBids((prev: Bid[]) => {
-                    const arr = [...prev];
-                    for (const id of targetIds) {
-                      arr.push({
-                        vacancyId: id,
-                        bidderEmployeeId: newBid.bidderEmployeeId!,
-                        bidderName: newBid.bidderName ?? "",
-                        bidderStatus: (newBid.bidderStatus ?? "Casual") as Status,
-                        bidderClassification: (newBid.bidderClassification ??
-                          "RCA") as Classification,
-                        bidTimestamp: ts,
-                        notes: newBid.notes ?? "",
-                      });
-                    }
-                    return arr;
-                  });
+                  setBids((prev: Bid[]) => [
+                    ...prev,
+                    ...Array.from(targetIds).map((id) => ({
+                      vacancyId: id,
+                      bidderEmployeeId: newBid.bidderEmployeeId!,
+                      bidderName: newBid.bidderName ?? "",
+                      bidderStatus: (newBid.bidderStatus ?? "Casual") as Status,
+                      bidderClassification: (newBid.bidderClassification ??
+                        "RCA") as Classification,
+                      bidTimestamp: ts,
+                      notes: newBid.notes ?? "",
+                    })),
+                  ]);
                   setNewBid({ selectedVacancyIds: [] });
                   setVacancyFilter("");
                   setBidFormKey((prev) => prev + 1);
