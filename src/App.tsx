@@ -2200,9 +2200,12 @@ export function BidsPage({
   const [filterWing, setFilterWing] = useState<string>("");
   const [filterStart, setFilterStart] = useState<string>("");
   const [filterEnd, setFilterEnd] = useState<string>("");
-  const [newBid, setNewBid] = useState<
-    Partial<Bid & { bidDate: string; bidTime: string }>
-  >({});
+  type NewBidState = Partial<
+    Omit<Bid, "vacancyId"> & { bidDate: string; bidTime: string }
+  > & { selectedVacancyIds: string[] };
+  const [newBid, setNewBid] = useState<NewBidState>({
+    selectedVacancyIds: [],
+  });
   const [bidFormKey, setBidFormKey] = useState(0);
   const bidDateRef = useRef<HTMLInputElement>(null);
 
@@ -2265,6 +2268,15 @@ export function BidsPage({
     return options;
   }, [openVacancies, vacancies]);
 
+  const [vacancyFilter, setVacancyFilter] = useState("");
+  const filteredVacancyOptions = useMemo(
+    () =>
+      openVacancyOptions.filter((opt) =>
+        matchText(vacancyFilter, opt.label),
+      ),
+    [openVacancyOptions, vacancyFilter],
+  );
+
   const activeBids = bids.filter((b) => {
     const v = vacancies.find((x) => x.id === b.vacancyId);
     return !v || v.status !== "Awarded";
@@ -2300,27 +2312,74 @@ export function BidsPage({
         <div className="card-h">Add Bid</div>
         <div className="card-c">
           <div className="row cols2">
-            <div>
-              <label>Vacancy</label>
-              <select
-                onChange={(e) =>
-                  setNewBid((b) => ({ ...b, vacancyId: e.target.value }))
-                }
-                value={newBid.vacancyId ?? ""}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label>Vacancies</label>
+              <input
+                type="text"
+                placeholder="Filter vacancies…"
+                value={vacancyFilter}
+                onChange={(e) => setVacancyFilter(e.target.value)}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "center",
+                  margin: "4px 0",
+                }}
               >
-                <option value="" disabled>
-                  Pick vacancy
-                </option>
-                {openVacancyOptions.length ? (
-                  openVacancyOptions.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
+                <span>{newBid.selectedVacancyIds.length} selected</span>
+                <button
+                  className="btn btn-sm"
+                  onClick={() =>
+                    setNewBid((b) => ({
+                      ...b,
+                      selectedVacancyIds: filteredVacancyOptions.map((o) => o.id),
+                    }))
+                  }
+                >
+                  Select All
+                </button>
+                <button
+                  className="btn btn-sm"
+                  onClick={() =>
+                    setNewBid((b) => ({ ...b, selectedVacancyIds: [] }))
+                  }
+                >
+                  Clear
+                </button>
+              </div>
+              <div
+                style={{
+                  maxHeight: 150,
+                  overflowY: "auto",
+                  border: "1px solid var(--stroke)",
+                  padding: 4,
+                  borderRadius: 4,
+                }}
+              >
+                {filteredVacancyOptions.length ? (
+                  filteredVacancyOptions.map((opt) => (
+                    <label key={opt.id} style={{ display: "block" }}>
+                      <input
+                        type="checkbox"
+                        checked={newBid.selectedVacancyIds.includes(opt.id)}
+                        onChange={(e) =>
+                          setNewBid((b) => ({
+                            ...b,
+                            selectedVacancyIds: e.target.checked
+                              ? [...b.selectedVacancyIds, opt.id]
+                              : b.selectedVacancyIds.filter((id) => id !== opt.id),
+                          }))
+                        }
+                      />
                       {opt.label}
-                    </option>
+                    </label>
                   ))
                 ) : (
-                  <option disabled>No open vacancies</option>
+                  <div style={{ padding: 4 }}>No open vacancies</div>
                 )}
-              </select>
+              </div>
             </div>
             <div>
               <label>Employee</label>
@@ -2379,8 +2438,10 @@ export function BidsPage({
               <button
                 className="btn"
                 onClick={() => {
-                  if (!newBid.vacancyId || !newBid.bidderEmployeeId) {
-                    (window as any).appShowAlert?.("Vacancy and employee required");
+                  if (!newBid.selectedVacancyIds.length || !newBid.bidderEmployeeId) {
+                    (window as any).appShowAlert?.(
+                      "At least one vacancy and employee required",
+                    );
                     return;
                   }
                   const ts =
@@ -2389,17 +2450,23 @@ export function BidsPage({
                           `${newBid.bidDate}T${newBid.bidTime}:00`,
                         ).toISOString()
                       : new Date().toISOString();
-                  const vac = vacancies.find((x) => x.id === newBid.vacancyId!);
-                  const targetIds = vac && vac.bundleId
-                    ? vacancies
+                  const targetIds = new Set<string>();
+                  for (const vacId of newBid.selectedVacancyIds) {
+                    const vac = vacancies.find((x) => x.id === vacId);
+                    if (!vac) continue;
+                    if (vac.bundleId) {
+                      vacancies
                         .filter(
                           (x) =>
                             x.bundleId === vac.bundleId &&
                             x.status !== "Filled" &&
                             x.status !== "Awarded",
                         )
-                        .map((x) => x.id)
-                    : [newBid.vacancyId!];
+                        .forEach((x) => targetIds.add(x.id));
+                    } else {
+                      targetIds.add(vac.id);
+                    }
+                  }
                   setBids((prev: Bid[]) => {
                     const arr = [...prev];
                     for (const id of targetIds) {
@@ -2416,8 +2483,9 @@ export function BidsPage({
                     }
                     return arr;
                   });
-                  setNewBid({});
-                  setBidFormKey(prev => prev + 1);
+                  setNewBid({ selectedVacancyIds: [] });
+                  setVacancyFilter("");
+                  setBidFormKey((prev) => prev + 1);
                 }}
               >
                 Add Bid
@@ -2425,8 +2493,9 @@ export function BidsPage({
               <button
                 className="btn btn-sm"
                 onClick={() => {
-                  setNewBid({});
-                  setBidFormKey(prev => prev + 1);
+                  setNewBid({ selectedVacancyIds: [] });
+                  setVacancyFilter("");
+                  setBidFormKey((prev) => prev + 1);
                 }}
               >
                 Clear Form
