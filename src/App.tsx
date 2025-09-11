@@ -2336,24 +2336,37 @@ export function BidsPage({
                 employees={employees}
                 onSelect={(id) => {
                   const e = employeesById[id];
-                  if (e) {
-                    const ineligible = newBid.selectedVacancyIds.filter((vacId) => {
-                      const v = vacancies.find((x) => x.id === vacId);
-                      return v ? !isEligible(v, e) : false;
-                    });
-                    if (ineligible.length) {
-                      (window as any).appShowAlert?.(
-                        `Selected employee may be ineligible for ${ineligible.length} chosen vacancy${ineligible.length > 1 ? "ies" : ""}`,
-                      );
+                  setNewBid((b) => {
+                    const updated = {
+                      ...b,
+                      bidderEmployeeId: id,
+                      bidderName: e ? `${e.firstName} ${e.lastName}` : "",
+                      bidderStatus: e?.status,
+                      bidderClassification: e?.classification,
+                    };
+                    if (e) {
+                      const ineligible = updated.selectedVacancyIds.filter((vacId) => {
+                        const v = vacancies.find((x) => x.id === vacId);
+                        const vacancyEligible =
+                          v &&
+                          v.classification === e.classification &&
+                          (v.offeringStep === "Casuals"
+                            ? e.status === "Casual"
+                            : v.offeringStep === "OT-Full-Time"
+                            ? e.status === "FT" || e.status === "PT"
+                            : v.offeringStep === "OT-Casuals"
+                            ? e.status === "Casual"
+                            : true);
+                        return v ? !vacancyEligible : false;
+                      });
+                      if (ineligible.length) {
+                        (window as any).appShowAlert?.(
+                          `Selected employee may be ineligible for ${ineligible.length} chosen vacancy${ineligible.length > 1 ? "ies" : ""}`,
+                        );
+                      }
                     }
-                  }
-                  setNewBid((b) => ({
-                    ...b,
-                    bidderEmployeeId: id,
-                    bidderName: e ? `${e.firstName} ${e.lastName}` : "",
-                    bidderStatus: e?.status,
-                    bidderClassification: e?.classification,
-                  }));
+                    return updated;
+                  });
                 }}
               />
               <div className="subtitle" style={{ marginTop: 4 }}>

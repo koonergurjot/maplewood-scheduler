@@ -376,6 +376,10 @@ export default function App() {
         setVacancies((prev) => [...vxs, ...prev]);
     };
     const archiveBids = (vacancyIds) => {
+        const now = new Date().toISOString();
+        setVacancies((prev) => prev.map((v) => vacancyIds.includes(v.id)
+            ? { ...v, archived: true, archivedAt: now }
+            : v));
         setBids((prev) => {
             var _a;
             const remaining = [];
@@ -837,8 +841,8 @@ export default function App() {
                                                                 gap: 8,
                                                                 alignItems: "center",
                                                             }, children: [_jsx("button", { className: "btn btn-sm", onClick: () => setBulkAwardOpen(true), children: "Bulk Award" }), _jsxs("span", { className: "badge", children: [selectedVacancyIds.length, " selected"] })] })), _jsx(OpenVacanciesRedesign, { vacancies: vacancies, employees: employees, vacations: vacations, settings: settings, selectedIds: selectedVacancyIds, dueNextId: dueNextId, onToggleSelect: (id) => setSelectedVacancyIds((ids) => ids.includes(id)
-        ? ids.filter((x) => x !== id)
-        : [...ids, id]), onToggleSelectMany: toggleMany, onDelete: deleteVacancy, onDeleteMany: stageDeleteMany, awardVacancy: awardVacancy, awardBundle: awardBundle, onSplitBundle: splitBundle, resetKnownAt: resetKnownAt, resetBundleKnownAt: resetBundleKnownAt, recommendations: recommendations })] })) : (_jsxs(_Fragment, { children: [_jsxs("div", { style: {
+                                                                ? ids.filter((x) => x !== id)
+                                                                : [...ids, id]), onToggleSelectMany: toggleMany, onDelete: deleteVacancy, onDeleteMany: stageDeleteMany, awardVacancy: awardVacancy, awardBundle: awardBundle, onSplitBundle: splitBundle, resetKnownAt: resetKnownAt, resetBundleKnownAt: resetBundleKnownAt, recommendations: recommendations })] })) : (_jsxs(_Fragment, { children: [_jsxs("div", { style: {
                                                                 marginBottom: 8,
                                                                 display: "flex",
                                                                 gap: 8,
@@ -921,7 +925,7 @@ export default function App() {
                                                                         return (_jsx(VacancyRow, { v: v, recId: recId, recName: recName, recWhy: recWhy, employees: employees, selected: selectedVacancyIds.includes(v.id), onToggleSelect: () => setSelectedVacancyIds((ids) => ids.includes(v.id)
                                                                                 ? ids.filter((id) => id !== v.id)
                                                                                 : [...ids, v.id]), isDueNext: !!isDueNext, awardVacancy: (payload) => awardVacancy(v.id, payload), resetKnownAt: () => resetKnownAt(v.id), onDelete: deleteVacancy, coveredName: coveredName, settings: settings }, v.id));
-                                                                    }) })] }), openVacancies.length === 0 && (_jsx("div", { className: "subtitle", style: { marginTop: 8 }, children: "No open vacancies \uD83C\uDF89" }))] })) })] })] })] })), tab === "calendar" && (_jsx("div", { className: "grid", children: _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Monthly Schedule (open shifts)" }), _jsx("div", { className: "card-c", children: _jsx(MonthlySchedule, { vacancies: vacancies }) })] }) })), tab === "bids" && (_jsx(BidsPage, { bids: bids, archivedBids: archivedBids, setBids: setBids, vacancies: vacancies, vacations: vacations, employees: employees, employeesById: employeesById })), tab === "employees" && (_jsx(EmployeesPage, { employees: employees, setEmployees: setEmployees })), tab === "archive" && _jsx(ArchivePage, { vacations: vacations }), tab === "alerts" && (_jsx("div", { className: "grid", children: _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Quick Stats" }), _jsxs("div", { className: "card-c", children: [_jsxs("div", { className: "pill", children: ["Open: ", vacancies.filter((v) => v.status !== "Filled" && v.status !== "Awarded").length] }), _jsxs("div", { className: "pill", style: { marginLeft: 6 }, children: ["Archived vacations:", " ", vacations.filter((v) => v.archived).length] })] })] }) })), tab === "settings" && (_jsx(SettingsPage, { settings: settings, setSettings: setSettings })), coverageOpen && (_jsx(CoverageDaysModal, { open: coverageOpen, startDate: newVacay.startDate, endDate: newVacay.endDate, defaultStart: newVacay.shiftStart ?? defaultShift.start, defaultEnd: newVacay.shiftEnd ?? defaultShift.end, classification: newVacay.classification, initial: coverage ?? undefined, onSave: (payload) => {
+                                                                    }) })] }), openVacancies.length === 0 && (_jsx("div", { className: "subtitle", style: { marginTop: 8 }, children: "No open vacancies \uD83C\uDF89" }))] })) })] })] })] })), tab === "calendar" && (_jsx("div", { className: "grid", children: _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Monthly Schedule (open shifts)" }), _jsx("div", { className: "card-c", children: _jsx(MonthlySchedule, { vacancies: vacancies }) })] }) })), tab === "bids" && (_jsx(BidsPage, { bids: bids, archivedBids: archivedBids, setBids: setBids, vacancies: vacancies, vacations: vacations, employees: employees, employeesById: employeesById })), tab === "employees" && (_jsx(EmployeesPage, { employees: employees, setEmployees: setEmployees })), tab === "archive" && (_jsx(ArchivePage, { vacancies: vacancies, archivedBids: archivedBids })), tab === "alerts" && (_jsx("div", { className: "grid", children: _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Quick Stats" }), _jsxs("div", { className: "card-c", children: [_jsxs("div", { className: "pill", children: ["Open: ", vacancies.filter((v) => v.status !== "Filled" && v.status !== "Awarded").length] }), _jsxs("div", { className: "pill", style: { marginLeft: 6 }, children: ["Archived vacations:", " ", vacations.filter((v) => v.archived).length] })] })] }) })), tab === "settings" && (_jsx(SettingsPage, { settings: settings, setSettings: setSettings })), coverageOpen && (_jsx(CoverageDaysModal, { open: coverageOpen, startDate: newVacay.startDate, endDate: newVacay.endDate, defaultStart: newVacay.shiftStart ?? defaultShift.start, defaultEnd: newVacay.shiftEnd ?? defaultShift.end, classification: newVacay.classification, initial: coverage ?? undefined, onSave: (payload) => {
                             setCoverage(payload);
                             setCoverageOpen(false);
                         }, onClose: () => setCoverageOpen(false) })), appConfig.features.coverageDayPicker && (_jsx(VacancyRangeForm, { open: showRangeForm, onClose: () => setShowRangeForm(false), onSave: handleSaveRange, existingVacancies: vacancies })), _jsxs(Modal, { open: !!confirmState, title: confirmState?.title || "Confirm", onClose: () => {
@@ -1001,9 +1005,10 @@ function EmployeesPage({ employees, setEmployees, }) {
                                 form.reset();
                             }, children: [_jsxs("div", { className: "row cols4", children: [_jsxs("div", { children: [_jsx("label", { children: "Name" }), _jsx("input", { name: "name", type: "text" })] }), _jsxs("div", { children: [_jsx("label", { children: "Class" }), _jsxs("select", { name: "classification", children: [_jsx("option", { value: "RCA", children: "RCA" }), _jsx("option", { value: "LPN", children: "LPN" }), _jsx("option", { value: "RN", children: "RN" })] })] }), _jsxs("div", { children: [_jsx("label", { children: "Status" }), _jsxs("select", { name: "status", children: [_jsx("option", { value: "FT", children: "FT" }), _jsx("option", { value: "PT", children: "PT" }), _jsx("option", { value: "Casual", children: "Casual" })] })] }), _jsxs("div", { children: [_jsx("label", { children: "Rank" }), _jsx("input", { name: "rank", type: "number" })] })] }), _jsx("button", { type: "submit", style: { marginTop: 8 }, children: "Add" })] }) })] }), _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Employees" }), _jsx("div", { className: "card-c", children: _jsxs("table", { className: "responsive-table", children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", {}), _jsx("th", { children: "Name" }), _jsx("th", {}), _jsx("th", {}), _jsx("th", { children: "Class" }), _jsx("th", { children: "Status" }), _jsx("th", { children: "Rank" }), _jsx("th", { children: "Active" })] }) }), _jsx("tbody", { children: employees.map((e) => (_jsxs("tr", { children: [_jsx("td", {}), _jsxs("td", { children: [e.firstName, " ", e.lastName] }), _jsx("td", {}), _jsx("td", {}), _jsx("td", { children: e.classification }), _jsx("td", { children: e.status }), _jsx("td", { children: e.seniorityRank }), _jsx("td", { children: e.active ? "Yes" : "No" })] }, e.id))) })] }) })] })] }));
 }
-function ArchivePage({ vacations }) {
-    const archived = vacations.filter((v) => v.archived);
-    return (_jsx("div", { className: "grid", children: _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Archived Vacations (fully covered)" }), _jsxs("div", { className: "card-c", children: [_jsxs("table", { className: "responsive-table", children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { children: "Employee" }), _jsx("th", { children: "Wing" }), _jsx("th", { children: "From" }), _jsx("th", { children: "To" }), _jsx("th", { children: "Archived" })] }) }), _jsx("tbody", { children: archived.map((v) => (_jsxs("tr", { children: [_jsx("td", { children: v.employeeName }), _jsx("td", { children: v.wing }), _jsx("td", { children: formatDateLong(v.startDate) }), _jsx("td", { children: formatDateLong(v.endDate) }), _jsx("td", { children: new Date(v.archivedAt || "").toLocaleString() })] }, v.id))) })] }), !archived.length && (_jsx("div", { className: "subtitle", style: { marginTop: 8 }, children: "Nothing here yet." }))] })] }) }));
+export function ArchivePage({ vacancies, archivedBids, }) {
+    const archived = vacancies.filter((v) => v.archived);
+    const [expanded, setExpanded] = useState({});
+    return (_jsx("div", { className: "grid", children: _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Archived Vacancies" }), _jsx("div", { className: "card-c", children: _jsx("table", { className: "responsive-table", children: _jsxs("tbody", { children: [archived.map((v) => (_jsxs(Fragment, { children: [_jsx("tr", { onClick: () => setExpanded((prev) => ({ ...prev, [v.id]: !prev[v.id] })), style: { cursor: "pointer", background: "var(--cardAlt)" }, children: _jsx("td", { colSpan: 5, children: displayVacancyLabel(v) }) }), expanded[v.id] && (_jsxs(Fragment, { children: [_jsxs("tr", { children: [_jsx("th", { style: { paddingLeft: 24 }, children: "Employee" }), _jsx("th", { children: "Class" }), _jsx("th", { children: "Status" }), _jsx("th", { children: "Bid at" }), _jsx("th", { children: "Notes" })] }), archivedBids[v.id]?.map((b, i) => (_jsxs("tr", { children: [_jsx("td", { style: { paddingLeft: 24 }, children: b.bidderName }), _jsx("td", { children: b.bidderClassification }), _jsx("td", { children: b.bidderStatus }), _jsx("td", { children: new Date(b.bidTimestamp).toLocaleString() }), _jsx("td", { children: b.notes })] }, i))), !(archivedBids[v.id] && archivedBids[v.id].length) && (_jsx("tr", { children: _jsx("td", { style: { paddingLeft: 24 }, colSpan: 5, children: "No bids" }) }))] }))] }, v.id))), !archived.length && (_jsx("tr", { children: _jsx("td", { children: "No archived vacancies" }) }))] }) }) })] }) }));
 }
 function SettingsPage({ settings, setSettings, }) {
     return (_jsxs("div", { className: "grid", children: [_jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Appearance & Defaults" }), _jsx("div", { className: "card-c", children: _jsxs("div", { className: "row cols2", children: [_jsxs("div", { children: [_jsx("label", { children: "Theme" }), _jsxs("select", { value: settings.theme, onChange: (e) => setSettings((s) => ({
@@ -1050,7 +1055,9 @@ export function BidsPage({ bids, archivedBids, setBids, vacancies, vacations, em
     const [filterWing, setFilterWing] = useState("");
     const [filterStart, setFilterStart] = useState("");
     const [filterEnd, setFilterEnd] = useState("");
-    const [newBid, setNewBid] = useState({});
+    const [newBid, setNewBid] = useState({
+        selectedVacancyIds: [],
+    });
     const [bidFormKey, setBidFormKey] = useState(0);
     const bidDateRef = useRef(null);
     const vacWithCoveredName = (v) => {
@@ -1104,6 +1111,29 @@ export function BidsPage({ bids, archivedBids, setBids, vacancies, vacations, em
         });
         return options;
     }, [openVacancies, vacancies]);
+    const [vacancyFilter, setVacancyFilter] = useState("");
+    const filteredVacancyOptions = useMemo(() => openVacancyOptions.filter((opt) => matchText(vacancyFilter, opt.label)), [openVacancyOptions, vacancyFilter]);
+    const isEligible = (v, emp) => {
+        if (v.classification !== emp.classification)
+            return false;
+        if (v.offeringStep === "Casuals")
+            return emp.status === "Casual";
+        if (v.offeringStep === "OT-Full-Time")
+            return emp.status === "FT" || emp.status === "PT";
+        if (v.offeringStep === "OT-Casuals")
+            return emp.status === "Casual";
+        return true;
+    };
+    const eligibleVacancyIds = useMemo(() => {
+        const emp = employeesById[newBid.bidderEmployeeId ?? ""];
+        if (!emp)
+            return new Set();
+        const set = new Set();
+        for (const v of openVacancies)
+            if (isEligible(v, emp))
+                set.add(v.id);
+        return set;
+    }, [openVacancies, newBid.bidderEmployeeId, employeesById]);
     const activeBids = bids.filter((b) => {
         const v = vacancies.find((x) => x.id === b.vacancyId);
         return !v || v.status !== "Awarded";
@@ -1135,52 +1165,105 @@ export function BidsPage({ bids, archivedBids, setBids, vacancies, vacations, em
         const t = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
         setNewBid((b) => ({ ...b, bidDate: d, bidTime: t }));
     };
-    return (_jsxs("div", { className: "grid", children: [_jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Add Bid" }), _jsx("div", { className: "card-c", children: _jsxs("div", { className: "row cols2", children: [_jsxs("div", { children: [_jsx("label", { children: "Vacancy" }), _jsxs("select", { onChange: (e) => setNewBid((b) => ({ ...b, vacancyId: e.target.value })), value: newBid.vacancyId ?? "", children: [_jsx("option", { value: "", disabled: true, children: "Pick vacancy" }), openVacancyOptions.length ? (openVacancyOptions.map((opt) => (_jsx("option", { value: opt.id, children: opt.label }, opt.id)))) : (_jsx("option", { disabled: true, children: "No open vacancies" }))] })] }), _jsxs("div", { children: [_jsx("label", { children: "Employee" }), _jsx(EmployeeCombo, { employees: employees, onSelect: (id) => {
+    return (_jsxs("div", { className: "grid", children: [_jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Add Bid" }), _jsx("div", { className: "card-c", children: _jsxs("div", { className: "row cols2", children: [_jsxs("div", { style: { gridColumn: "1 / -1" }, children: [_jsx("label", { children: "Employee" }), _jsx(EmployeeCombo, { employees: employees, onSelect: (id) => {
                                                 const e = employeesById[id];
-                                                setNewBid((b) => ({
-                                                    ...b,
-                                                    bidderEmployeeId: id,
-                                                    bidderName: e ? `${e.firstName} ${e.lastName}` : "",
-                                                    bidderStatus: e?.status,
-                                                    bidderClassification: e?.classification,
-                                                }));
-                                            } }, bidFormKey)] }), _jsxs("div", { onClick: () => bidDateRef.current?.showPicker(), children: [_jsx("label", { children: "Bid Date" }), _jsx("input", { type: "date", ref: bidDateRef, value: newBid.bidDate ?? "", onChange: (e) => setNewBid((b) => ({ ...b, bidDate: e.target.value })) })] }), _jsxs("div", { children: [_jsx("label", { children: "Bid Time" }), _jsxs("div", { className: "form-row", children: [_jsx("input", { type: "time", value: newBid.bidTime ?? "", onChange: (e) => setNewBid((b) => ({ ...b, bidTime: e.target.value })) }), _jsx("button", { className: "btn", onClick: setNow, children: "Now" })] })] }), _jsxs("div", { style: { gridColumn: "1 / -1" }, children: [_jsx("label", { children: "Notes" }), _jsx("input", { placeholder: 'e.g., "available for 06:30-14:30"', onChange: (e) => setNewBid((b) => ({ ...b, notes: e.target.value })) })] }), _jsxs("div", { style: { gridColumn: "1 / -1", display: "flex", gap: 8 }, children: [_jsx("button", { className: "btn", onClick: () => {
-                                                if (!newBid.vacancyId || !newBid.bidderEmployeeId) {
-                                                    window.appShowAlert?.("Vacancy and employee required");
+                                                setNewBid((b) => {
+                                                    const updated = {
+                                                        ...b,
+                                                        bidderEmployeeId: id,
+                                                        bidderName: e ? `${e.firstName} ${e.lastName}` : "",
+                                                        bidderStatus: e?.status,
+                                                        bidderClassification: e?.classification,
+                                                    };
+                                                    if (e) {
+                                                        const ineligible = updated.selectedVacancyIds.filter((vacId) => {
+                                                            const v = vacancies.find((x) => x.id === vacId);
+                                                            const vacancyEligible = v &&
+                                                                v.classification === e.classification &&
+                                                                (v.offeringStep === "Casuals"
+                                                                    ? e.status === "Casual"
+                                                                    : v.offeringStep === "OT-Full-Time"
+                                                                        ? e.status === "FT" || e.status === "PT"
+                                                                        : v.offeringStep === "OT-Casuals"
+                                                                            ? e.status === "Casual"
+                                                                            : true);
+                                                            return v ? !vacancyEligible : false;
+                                                        });
+                                                        if (ineligible.length) {
+                                                            window.appShowAlert?.(`Selected employee may be ineligible for ${ineligible.length} chosen vacancy${ineligible.length > 1 ? "ies" : ""}`);
+                                                        }
+                                                    }
+                                                    return updated;
+                                                });
+                                            } }, bidFormKey), _jsx("div", { className: "subtitle", style: { marginTop: 4 }, children: "Select an employee to highlight matching vacancies." })] }), _jsxs("div", { style: { gridColumn: "1 / -1" }, children: [_jsx("label", { children: "Vacancies" }), _jsx("input", { type: "text", placeholder: "Filter vacancies\u2026", value: vacancyFilter, onChange: (e) => setVacancyFilter(e.target.value) }), _jsx("div", { className: "subtitle", style: { margin: "4px 0" }, children: "Eligible vacancies are bolded." }), _jsxs("div", { style: {
+                                                display: "flex",
+                                                gap: 8,
+                                                alignItems: "center",
+                                                margin: "4px 0",
+                                            }, children: [_jsxs("span", { children: [newBid.selectedVacancyIds.length, " selected"] }), _jsx("button", { className: "btn btn-sm", onClick: () => setNewBid((b) => ({
+                                                        ...b,
+                                                        selectedVacancyIds: Array.from(new Set([
+                                                            ...b.selectedVacancyIds,
+                                                            ...filteredVacancyOptions.map((o) => o.id),
+                                                        ])),
+                                                    })), children: "Select All" }), _jsx("button", { className: "btn btn-sm", onClick: () => setNewBid((b) => ({ ...b, selectedVacancyIds: [] })), children: "Clear" })] }), _jsx("div", { style: {
+                                                maxHeight: 150,
+                                                overflowY: "auto",
+                                                border: "1px solid var(--stroke)",
+                                                padding: 4,
+                                                borderRadius: 4,
+                                            }, children: filteredVacancyOptions.length ? (filteredVacancyOptions.map((opt) => (_jsxs("label", { style: {
+                                                    display: "block",
+                                                    fontWeight: eligibleVacancyIds.has(opt.id) ? 700 : undefined,
+                                                }, children: [_jsx("input", { type: "checkbox", checked: newBid.selectedVacancyIds.includes(opt.id), onChange: (e) => setNewBid((b) => ({
+                                                            ...b,
+                                                            selectedVacancyIds: e.target.checked
+                                                                ? [...b.selectedVacancyIds, opt.id]
+                                                                : b.selectedVacancyIds.filter((id) => id !== opt.id),
+                                                        })) }), opt.label] }, opt.id)))) : (_jsx("div", { style: { padding: 4 }, children: "No open vacancies" })) })] }), _jsxs("div", { onClick: () => bidDateRef.current?.showPicker(), children: [_jsx("label", { children: "Bid Date" }), _jsx("input", { type: "date", ref: bidDateRef, value: newBid.bidDate ?? "", onChange: (e) => setNewBid((b) => ({ ...b, bidDate: e.target.value })) })] }), _jsxs("div", { children: [_jsx("label", { children: "Bid Time" }), _jsxs("div", { className: "form-row", children: [_jsx("input", { type: "time", value: newBid.bidTime ?? "", onChange: (e) => setNewBid((b) => ({ ...b, bidTime: e.target.value })) }), _jsx("button", { className: "btn", onClick: setNow, children: "Now" })] })] }), _jsxs("div", { style: { gridColumn: "1 / -1" }, children: [_jsx("label", { children: "Notes" }), _jsx("input", { placeholder: 'e.g., "available for 06:30-14:30"', onChange: (e) => setNewBid((b) => ({ ...b, notes: e.target.value })) })] }), _jsxs("div", { style: { gridColumn: "1 / -1", display: "flex", gap: 8 }, children: [_jsx("button", { className: "btn", onClick: () => {
+                                                if (!newBid.selectedVacancyIds.length || !newBid.bidderEmployeeId) {
+                                                    window.appShowAlert?.("At least one vacancy and employee required");
                                                     return;
                                                 }
                                                 const ts = newBid.bidDate && newBid.bidTime
                                                     ? new Date(`${newBid.bidDate}T${newBid.bidTime}:00`).toISOString()
                                                     : new Date().toISOString();
-                                                const vac = vacancies.find((x) => x.id === newBid.vacancyId);
-                                                const targetIds = vac && vac.bundleId
-                                                    ? vacancies
-                                                        .filter((x) => x.bundleId === vac.bundleId &&
-                                                        x.status !== "Filled" &&
-                                                        x.status !== "Awarded")
-                                                        .map((x) => x.id)
-                                                    : [newBid.vacancyId];
-                                                setBids((prev) => {
-                                                    const arr = [...prev];
-                                                    for (const id of targetIds) {
-                                                        arr.push({
-                                                            vacancyId: id,
-                                                            bidderEmployeeId: newBid.bidderEmployeeId,
-                                                            bidderName: newBid.bidderName ?? "",
-                                                            bidderStatus: (newBid.bidderStatus ?? "Casual"),
-                                                            bidderClassification: (newBid.bidderClassification ??
-                                                                "RCA"),
-                                                            bidTimestamp: ts,
-                                                            notes: newBid.notes ?? "",
-                                                        });
+                                                const targetIds = new Set();
+                                                for (const vacId of newBid.selectedVacancyIds) {
+                                                    const vac = vacancies.find((x) => x.id === vacId);
+                                                    if (!vac)
+                                                        continue;
+                                                    if (vac.bundleId) {
+                                                        vacancies
+                                                            .filter((x) => x.bundleId === vac.bundleId &&
+                                                            x.status !== "Filled" &&
+                                                            x.status !== "Awarded")
+                                                            .forEach((x) => targetIds.add(x.id));
                                                     }
-                                                    return arr;
-                                                });
-                                                setNewBid({});
-                                                setBidFormKey(prev => prev + 1);
+                                                    else {
+                                                        targetIds.add(vac.id);
+                                                    }
+                                                }
+                                                setBids((prev) => [
+                                                    ...prev,
+                                                    ...Array.from(targetIds).map((id) => ({
+                                                        vacancyId: id,
+                                                        bidderEmployeeId: newBid.bidderEmployeeId,
+                                                        bidderName: newBid.bidderName ?? "",
+                                                        bidderStatus: (newBid.bidderStatus ?? "Casual"),
+                                                        bidderClassification: (newBid.bidderClassification ??
+                                                            "RCA"),
+                                                        bidTimestamp: ts,
+                                                        notes: newBid.notes ?? "",
+                                                    })),
+                                                ]);
+                                                setNewBid({ selectedVacancyIds: [] });
+                                                setVacancyFilter("");
+                                                setBidFormKey((prev) => prev + 1);
                                             }, children: "Add Bid" }), _jsx("button", { className: "btn btn-sm", onClick: () => {
-                                                setNewBid({});
-                                                setBidFormKey(prev => prev + 1);
+                                                setNewBid({ selectedVacancyIds: [] });
+                                                setVacancyFilter("");
+                                                setBidFormKey((prev) => prev + 1);
                                             }, children: "Clear Form" })] })] }) })] }), _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Active Bids" }), _jsxs("div", { className: "card-c", children: [_jsx("div", { style: { marginBottom: 8 }, children: _jsx(Button, { size: "sm", onClick: () => setFiltersOpen((o) => !o), children: filtersOpen ? "Hide Filters ▲" : "Show Filters ▼" }) }), filtersOpen && (_jsx(FilterBar, { style: { marginBottom: 8 }, items: [
                                     { type: "text", key: "employee", placeholder: "Employee name…" },
                                     {
