@@ -2269,13 +2269,39 @@ export function BidsPage({
   }, [openVacancies, vacancies]);
 
   const [vacancyFilter, setVacancyFilter] = useState("");
-  const filteredVacancyOptions = useMemo(
-    () =>
-      openVacancyOptions.filter((opt) =>
-        matchText(vacancyFilter, opt.label),
-      ),
-    [openVacancyOptions, vacancyFilter],
-  );
+  const [onlyEligible, setOnlyEligible] = useState(false);
+
+  const selectedEmployee = newBid.bidderEmployeeId
+    ? employeesById[newBid.bidderEmployeeId]
+    : undefined;
+
+  const vacancyEligible = (v: Vacancy, emp?: Employee) => {
+    if (!emp) return true;
+    if (v.classification !== emp.classification) return false;
+    if (v.offeringStep === "Casuals" || v.offeringStep === "OT-Casuals")
+      return emp.status === "Casual";
+    if (v.offeringStep === "OT-Full-Time")
+      return emp.status === "FT" || emp.status === "PT";
+    return true;
+    // other steps allow any status
+  };
+
+  const filteredVacancyOptions = useMemo(() => {
+    return openVacancyOptions.filter((opt) => {
+      if (!matchText(vacancyFilter, opt.label)) return false;
+      if (onlyEligible && selectedEmployee) {
+        const vac = vacancies.find((v) => v.id === opt.id);
+        if (vac && !vacancyEligible(vac, selectedEmployee)) return false;
+      }
+      return true;
+    });
+  }, [
+    openVacancyOptions,
+    vacancyFilter,
+    onlyEligible,
+    selectedEmployee,
+    vacancies,
+  ]);
 
   const activeBids = bids.filter((b) => {
     const v = vacancies.find((x) => x.id === b.vacancyId);
@@ -2313,7 +2339,44 @@ export function BidsPage({
         <div className="card-c">
           <div className="row cols2">
             <div style={{ gridColumn: "1 / -1" }}>
+              <label>Employee</label>
+              <EmployeeCombo
+                key={bidFormKey}
+                employees={employees}
+                onSelect={(id) => {
+                  const e = employeesById[id];
+                  setNewBid((b) => {
+                    const updated = {
+                      ...b,
+                      bidderEmployeeId: id,
+                      bidderName: e ? `${e.firstName} ${e.lastName}` : "",
+                      bidderStatus: e?.status,
+                      bidderClassification: e?.classification,
+                    };
+                    if (e) {
+                      const bad = updated.selectedVacancyIds.filter((vacId) => {
+                        const vac = vacancies.find((x) => x.id === vacId);
+                        return vac ? !vacancyEligible(vac, e) : false;
+                      });
+                      if (bad.length) {
+                        (window as any).appShowAlert?.(
+                          "Warning: employee may be ineligible for some selected vacancies",
+                        );
+                      }
+                    }
+                    return updated;
+                  });
+                }}
+              />
+              <div className="subtitle" style={{ marginTop: 4 }}>
+                Select an employee to highlight matching vacancies below.
+              </div>
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
               <label>Vacancies</label>
+              <div className="subtitle" style={{ marginBottom: 4 }}>
+                Eligible vacancies are highlighted; use the checkbox to filter.
+              </div>
               <input
                 type="text"
                 placeholder="Filter vacancies…"
@@ -2326,9 +2389,18 @@ export function BidsPage({
                   gap: 8,
                   alignItems: "center",
                   margin: "4px 0",
+                  flexWrap: "wrap",
                 }}
               >
                 <span>{newBid.selectedVacancyIds.length} selected</span>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={onlyEligible}
+                    onChange={(e) => setOnlyEligible(e.target.checked)}
+                  />
+                  Eligible only
+                </label>
                 <button
                   className="btn btn-sm"
                   onClick={() =>
@@ -2364,44 +2436,34 @@ export function BidsPage({
                 }}
               >
                 {filteredVacancyOptions.length ? (
-                  filteredVacancyOptions.map((opt) => (
-                    <label key={opt.id} style={{ display: "block" }}>
-                      <input
-                        type="checkbox"
-                        checked={newBid.selectedVacancyIds.includes(opt.id)}
-                        onChange={(e) =>
-                          setNewBid((b) => ({
-                            ...b,
-                            selectedVacancyIds: e.target.checked
-                              ? [...b.selectedVacancyIds, opt.id]
-                              : b.selectedVacancyIds.filter((id) => id !== opt.id),
-                          }))
-                        }
-                      />
-                      {opt.label}
-                    </label>
-                  ))
+                  filteredVacancyOptions.map((opt) => {
+                    const vac = vacancies.find((x) => x.id === opt.id);
+                    const eligible = vac ? vacancyEligible(vac, selectedEmployee) : true;
+                    return (
+                      <label
+                        key={opt.id}
+                        style={{ display: "block", opacity: eligible ? 1 : 0.5 }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={newBid.selectedVacancyIds.includes(opt.id)}
+                          onChange={(e) =>
+                            setNewBid((b) => ({
+                              ...b,
+                              selectedVacancyIds: e.target.checked
+                                ? [...b.selectedVacancyIds, opt.id]
+                                : b.selectedVacancyIds.filter((id) => id !== opt.id),
+                            }))
+                          }
+                        />
+                        {opt.label}
+                      </label>
+                    );
+                  })
                 ) : (
                   <div style={{ padding: 4 }}>No open vacancies</div>
                 )}
               </div>
-            </div>
-            <div>
-              <label>Employee</label>
-              <EmployeeCombo
-                key={bidFormKey}
-                employees={employees}
-                onSelect={(id) => {
-                  const e = employeesById[id];
-                  setNewBid((b) => ({
-                    ...b,
-                    bidderEmployeeId: id,
-                    bidderName: e ? `${e.firstName} ${e.lastName}` : "",
-                    bidderStatus: e?.status,
-                    bidderClassification: e?.classification,
-                  }));
-                }}
-              />
             </div>
             {/* clicking wrapper triggers picker; use same pattern for future date fields */}
             <div onClick={() => bidDateRef.current?.showPicker()}>

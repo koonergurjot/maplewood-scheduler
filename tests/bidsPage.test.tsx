@@ -9,6 +9,7 @@ import {
   type Vacancy,
   type Bid,
 } from "../src/App";
+import { formatDateLong } from "../src/lib/dates";
 
 // test verifying that awarded vacancies are excluded from the dropdown
 
@@ -30,6 +31,7 @@ describe("BidsPage vacancy dropdown", () => {
       status: "Open",
     };
 
+    const label = `${formatDateLong(vac.shiftDate)} • ${vac.shiftStart}–${vac.shiftEnd} •  • ${vac.classification}`.replace(/\s+•\s+$/, "");
     const beforeHtml = renderToStaticMarkup(
       <BidsPage
         bids={[]}
@@ -40,7 +42,7 @@ describe("BidsPage vacancy dropdown", () => {
         employeesById={{}}
       />,
     );
-    expect(beforeHtml).toContain('value="v1"');
+    expect(beforeHtml).toContain(label);
 
     const awarded = applyAwardVacancy([vac], "v1", { empId: "e1" });
     expect(awarded[0].awardReason).toBeUndefined();
@@ -52,9 +54,10 @@ describe("BidsPage vacancy dropdown", () => {
         vacations={[]}
         employees={[]}
         employeesById={{}}
-      />, 
+      />,
     );
-    expect(afterHtml).not.toContain('value="v1"');
+    const addBidSection = afterHtml.split("Archived Bids")[0];
+    expect(addBidSection).not.toContain(label);
     expect(afterHtml).toContain("No open vacancies");
   });
 });
