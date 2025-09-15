@@ -61,7 +61,8 @@ describe("BidsPage vacancy dropdown", () => {
 });
 
 describe("BidsPage delete button", () => {
-  it("removes bid when Delete clicked", () => {
+  it("shows undo toast and restores bid on undo", () => {
+    vi.useFakeTimers();
     const initialBid: Bid = {
       vacancyId: "v1",
       bidderEmployeeId: "e1",
@@ -91,5 +92,11 @@ describe("BidsPage delete button", () => {
     expect(screen.queryByText("Alice")).not.toBeNull();
     fireEvent.click(screen.getByText("Delete"));
     expect(screen.queryByText("Alice")).toBeNull();
+    expect(screen.getByTestId("undo-delete-toast")).toBeTruthy();
+    fireEvent.click(screen.getByText("Undo"));
+    expect(screen.queryByText("Alice")).not.toBeNull();
+    expect(screen.queryByTestId("undo-delete-toast")).toBeNull();
+    vi.runAllTimers();
+    vi.useRealTimers();
   });
 });

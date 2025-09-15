@@ -2311,9 +2311,28 @@ export function BidsPage({
   });
   const awardedVacancies = vacancies.filter((v) => v.status === "Awarded");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [bidUndo, setBidUndo] = useState<
+    { bid: Bid; index: number; timeout: number } | null
+  >(null);
 
   const removeBid = (index: number) => {
-    setBids((prev: Bid[]) => prev.filter((_, idx) => idx !== index));
+    const toDelete = bids[index];
+    const remaining = bids.filter((_, idx) => idx !== index);
+    setBids(remaining);
+    if (bidUndo?.timeout) clearTimeout(bidUndo.timeout);
+    const timeout = window.setTimeout(() => setBidUndo(null), 5000);
+    setBidUndo({ bid: toDelete, index, timeout });
+  };
+
+  const undoBidDelete = () => {
+    if (!bidUndo) return;
+    clearTimeout(bidUndo.timeout);
+    setBids((prev) => {
+      const next = [...prev];
+      next.splice(bidUndo.index, 0, bidUndo.bid);
+      return next;
+    });
+    setBidUndo(null);
   };
 
   const setNow = () => {
@@ -2718,6 +2737,12 @@ export function BidsPage({
           </table>
         </div>
       </div>
+      <Toast
+        open={!!bidUndo}
+        message="Bid deleted."
+        actionLabel="Undo"
+        onAction={undoBidDelete}
+      />
     </div>
   );
 }
