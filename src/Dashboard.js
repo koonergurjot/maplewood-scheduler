@@ -2,6 +2,8 @@ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-run
 import { useMemo, useState } from "react";
 import CalendarView from "./components/CalendarView";
 import OpenVacancies from "./components/OpenVacancies";
+import VacancyRangeForm from "./components/VacancyRangeForm";
+import { createVacanciesFromRange } from "./lib/bundles";
 import useVacancies from "./state/useVacancies";
 import "./styles/branding.css";
 const LS_KEY = "maplewood-scheduler-v3";
@@ -27,8 +29,9 @@ const loadState = () => {
 export default function Dashboard() {
     const data = loadState() || { employees: [], vacations: [] };
     const { employees, vacations } = data;
-    const { vacancies, stageDelete, undoDelete, staged } = useVacancies();
+    const { vacancies, stageDelete, undoDelete, staged, addVacancies } = useVacancies();
     const [view, setView] = useState("list");
+    const [showRangeForm, setShowRangeForm] = useState(false);
     const filled = useMemo(() => vacancies.filter((v) => v.status === "Filled" || v.status === "Awarded"), [vacancies]);
     const employeeLastAssigned = useMemo(() => {
         const map = {};
@@ -56,7 +59,11 @@ export default function Dashboard() {
         const diff = Date.now() - d.getTime();
         return diff < 7 * 24 * 60 * 60 * 1000;
     };
-    return (_jsxs("div", { className: "dashboard", children: [_jsxs("header", { className: "maplewood-header", children: [_jsx("img", { src: "/maplewood-logo.svg", alt: "Maplewood logo", height: 40 }), _jsx("h1", { children: "Shift Dashboard" })] }), _jsxs("nav", { className: "dashboard-nav", children: [_jsx("button", { onClick: () => setView("list"), disabled: view === "list", children: "List View" }), _jsx("button", { onClick: () => setView("calendar"), disabled: view === "calendar", children: "Calendar View" })] }), _jsx("main", { className: "dashboard-content", children: view === "calendar" ? (_jsx(CalendarView, { vacancies: vacancies })) : (_jsxs(_Fragment, { children: [_jsxs("section", { children: [_jsx("h2", { children: "Filled Shifts" }), _jsxs("div", { className: "shift-list", children: [filled.map((v) => (_jsxs("div", { className: "shift-card awarded", children: [v.shiftDate, " ", v.shiftStart, "\u2013", v.shiftEnd, " \u2022 ", v.wing ?? "", " \u2022 ", v.classification] }, v.id))), filled.length === 0 && _jsx("p", { children: "No filled shifts." })] })] }), _jsxs("section", { children: [_jsx("h2", { children: "Open Shifts" }), _jsx(OpenVacancies, { vacancies: vacancies, vacations: vacations, stageDelete: stageDelete, undoDelete: undoDelete, staged: staged })] }), _jsxs("section", { className: "employee-list", children: [_jsx("h2", { children: "Recent Assignments" }), _jsxs("table", { children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { children: "Employee" }), _jsx("th", { children: "Last Assigned" })] }) }), _jsx("tbody", { children: employeesWithLast.map((e) => (_jsxs("tr", { className: isRecent(e.lastAssigned) ? "recent" : undefined, children: [_jsxs("td", { children: [e.firstName, " ", e.lastName] }), _jsx("td", { children: e.lastAssigned
+    const handleSaveRange = (range) => {
+        const newVacancies = createVacanciesFromRange(range);
+        addVacancies(newVacancies);
+    };
+    return (_jsxs("div", { className: "dashboard", children: [_jsxs("header", { className: "maplewood-header", children: [_jsx("img", { src: "/maplewood-logo.svg", alt: "Maplewood logo", height: 40 }), _jsx("h1", { children: "Shift Dashboard" })] }), _jsxs("nav", { className: "dashboard-nav", children: [_jsx("button", { onClick: () => setView("list"), disabled: view === "list", children: "List View" }), _jsx("button", { onClick: () => setView("calendar"), disabled: view === "calendar", children: "Calendar View" })] }), _jsxs(_Fragment, { children: [_jsx("main", { className: "dashboard-content", children: view === "calendar" ? (_jsx(CalendarView, { vacancies: vacancies, onCreateVacancy: () => setShowRangeForm(true) })) : (_jsxs(_Fragment, { children: [_jsxs("section", { children: [_jsx("h2", { children: "Filled Shifts" }), _jsxs("div", { className: "shift-list", children: [filled.map((v) => (_jsxs("div", { className: "shift-card awarded", children: [v.shiftDate, " ", v.shiftStart, "\u2013", v.shiftEnd, " \u2022 ", v.wing ?? "", " \u2022 ", v.classification] }, v.id))), filled.length === 0 && _jsx("p", { children: "No filled shifts." })] })] }), _jsxs("section", { children: [_jsx("h2", { children: "Open Shifts" }), _jsx(OpenVacancies, { vacancies: vacancies, vacations: vacations, stageDelete: stageDelete, undoDelete: undoDelete, staged: staged })] }), _jsxs("section", { className: "employee-list", children: [_jsx("h2", { children: "Recent Assignments" }), _jsxs("table", { children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { children: "Employee" }), _jsx("th", { children: "Last Assigned" })] }) }), _jsx("tbody", { children: employeesWithLast.map((e) => (_jsxs("tr", { className: isRecent(e.lastAssigned) ? "recent" : undefined, children: [_jsxs("td", { children: [e.firstName, " ", e.lastName] }), _jsx("td", { children: e.lastAssigned
                                                             ? new Date(e.lastAssigned).toLocaleDateString()
-                                                            : "—" })] }, e.id))) })] })] })] })) })] }));
+                                                            : "—" })] }, e.id))) })] })] })] })) }), _jsx(VacancyRangeForm, { open: showRangeForm, onClose: () => setShowRangeForm(false), onSave: handleSaveRange, existingVacancies: vacancies })] }));
 }

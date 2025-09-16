@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 import type { Employee, Vacation } from "./App";
 import CalendarView from "./components/CalendarView";
 import OpenVacancies from "./components/OpenVacancies";
+import VacancyRangeForm from "./components/VacancyRangeForm";
+import { createVacanciesFromRange } from "./lib/bundles";
+import type { VacancyRange } from "./types";
 import useVacancies from "./state/useVacancies";
 import "./styles/branding.css";
 
@@ -32,9 +35,10 @@ type State = {
 export default function Dashboard() {
   const data: State = loadState() || { employees: [], vacations: [] };
   const { employees, vacations } = data;
-  const { vacancies, stageDelete, undoDelete, staged } = useVacancies();
+  const { vacancies, stageDelete, undoDelete, staged, addVacancies } = useVacancies();
 
   const [view, setView] = useState<"list" | "calendar">("list");
+  const [showRangeForm, setShowRangeForm] = useState(false);
 
   const filled = useMemo(
     () => vacancies.filter((v) => v.status === "Filled" || v.status === "Awarded"),
@@ -73,6 +77,11 @@ export default function Dashboard() {
     return diff < 7 * 24 * 60 * 60 * 1000;
   };
 
+  const handleSaveRange = (range: VacancyRange, _awardAsBlock: boolean) => {
+    const newVacancies = createVacanciesFromRange(range);
+    addVacancies(newVacancies);
+  };
+
   return (
     <div className="dashboard">
       <header className="maplewood-header">
@@ -94,7 +103,10 @@ export default function Dashboard() {
 
       <main className="dashboard-content">
         {view === "calendar" ? (
-          <CalendarView vacancies={vacancies} />
+          <CalendarView
+            vacancies={vacancies}
+            onCreateVacancy={() => setShowRangeForm(true)}
+          />
         ) : (
           <>
             <section>
@@ -151,6 +163,12 @@ export default function Dashboard() {
           </>
         )}
       </main>
+      <VacancyRangeForm
+        open={showRangeForm}
+        onClose={() => setShowRangeForm(false)}
+        onSave={handleSaveRange}
+        existingVacancies={vacancies}
+      />
     </div>
   );
 }
