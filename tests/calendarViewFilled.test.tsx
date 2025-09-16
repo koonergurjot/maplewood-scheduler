@@ -25,7 +25,9 @@ test("awarded and filled shifts hidden by default and toggle shows them", () => 
     { ...base, id: "v3", status: "Filled" },
   ];
 
-  const { container } = render(<CalendarView vacancies={vacancies} />);
+  const { container } = render(
+    <CalendarView vacancies={vacancies} onCreateVacancy={() => {}} />,
+  );
   const toolbar = container.querySelector(".calendar-mini-toolbar")!;
   expect(toolbar.querySelector(".badge-open")?.textContent).toBe("1");
   expect(toolbar.querySelector(".badge-awarded")?.textContent).toBe("1");

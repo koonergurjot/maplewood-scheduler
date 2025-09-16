@@ -92,12 +92,22 @@ export function useVacancies() {
     persist(vacancies, nextLog);
   }
 
+  function addVacancies(newVacancies: Vacancy[]) {
+    if (!newVacancies.length) return;
+    setVacancies((prev) => {
+      const next = [...newVacancies, ...prev];
+      persist(next);
+      return next;
+    });
+  }
+
   return {
     vacancies,
     stageDelete,
     undoDelete,
     staged,
     auditLog,
+    addVacancies,
   } as const;
 }
 

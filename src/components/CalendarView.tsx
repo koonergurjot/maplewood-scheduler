@@ -6,7 +6,7 @@ import { buildCalendar, isoDate, prevMonth, nextMonth } from "../lib/dates";
 import { groupVacanciesByDate } from "../lib/vacancy";
 import TagFilter from "./TagFilter";
 
-type Props = { vacancies: Vacancy[] };
+type Props = { vacancies: Vacancy[]; onCreateVacancy: () => void };
 
 type Day = { date: Date; inMonth: boolean };
 
@@ -14,7 +14,7 @@ function monthLabel(y: number, m: number) {
   return new Date(y, m, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
-export default function CalendarView({ vacancies }: Props) {
+export default function CalendarView({ vacancies, onCreateVacancy }: Props) {
   const today = React.useMemo(() => new Date(), []);
   const [y, setY] = React.useState(today.getFullYear());
   const [m, setM] = React.useState(today.getMonth());
@@ -82,7 +82,13 @@ export default function CalendarView({ vacancies }: Props) {
         </div>
         <div className="actions">
           <button className="calendar-btn" onClick={() => { setY(today.getFullYear()); setM(today.getMonth()); }} aria-label="Jump to today">Jump to Today</button>
-          <button className="calendar-btn" onClick={() => { /* TODO: navigate to new vacancy */ }} aria-label="Create new vacancy">New Vacancy</button>
+          <button
+            className="calendar-btn"
+            onClick={onCreateVacancy}
+            aria-label="Create new vacancy"
+          >
+            New Vacancy
+          </button>
           <button className="calendar-btn" onClick={() => setShowHeatmap((h) => !h)} aria-pressed={showHeatmap} aria-label="Toggle heatmap">Toggle Heatmap</button>
           <button className="calendar-btn" onClick={() => setShowFilled((f) => !f)} aria-pressed={showFilled} aria-label="Show awarded and filled shifts">Show Awarded/Filled</button>
         </div>

@@ -53,6 +53,15 @@ export function useVacancies() {
         }
         persist(restored);
     }
+    function addVacancies(newVacancies) {
+        if (!newVacancies.length)
+            return;
+        setVacancies((prev) => {
+            const next = [...newVacancies, ...prev];
+            persist(next);
+            return next;
+        });
+    }
     function finalizeDeletes(ids) {
         const entry = {
             id: typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -77,6 +86,7 @@ export function useVacancies() {
         undoDelete,
         staged,
         auditLog,
+        addVacancies,
     };
 }
 export default useVacancies;
