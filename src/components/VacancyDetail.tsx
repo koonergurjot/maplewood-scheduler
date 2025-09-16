@@ -1,39 +1,37 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import OfferingControls from "./OfferingControls";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import { useOfferingRound } from "../offering/useOfferingRound";
 import type { Vacancy } from "../types";
 
-// Dummy store placeholder for demo/testing
-function useVacancyStore() {
-  return {
-    updateVacancy: (_id: string, _patch: Partial<Vacancy>) => {},
-    deleteVacancy: (_id: string) => {},
-    currentUser: "demo-user",
-  };
-}
-
 interface VacancyDetailProps {
   vacancy: Vacancy;
-  onDelete?: (id: string) => void;
+  onUpdate: (id: string, patch: Partial<Vacancy>) => void;
+  onDelete: (id: string) => void;
+  currentUser?: string;
   readOnly?: boolean;
 }
 
-export default function VacancyDetail({ vacancy, onDelete, readOnly = false }: VacancyDetailProps) {
-  const { updateVacancy, deleteVacancy, currentUser } = useVacancyStore();
+export default function VacancyDetail({
+  vacancy,
+  onUpdate,
+  onDelete,
+  currentUser = "system",
+  readOnly = false,
+}: VacancyDetailProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const round = useOfferingRound(
-    vacancy,
-    (patch) => updateVacancy(vacancy.id, patch),
-    currentUser,
+
+  const handleUpdate = useCallback(
+    (patch: Partial<Vacancy>) => {
+      onUpdate(vacancy.id, patch);
+    },
+    [onUpdate, vacancy.id],
   );
 
+  const round = useOfferingRound(vacancy, handleUpdate, currentUser);
+
   const handleDelete = () => {
-    if (onDelete) {
-      onDelete(vacancy.id);
-    } else {
-      deleteVacancy(vacancy.id);
-    }
+    onDelete(vacancy.id);
     setShowDeleteConfirm(false);
   };
 
