@@ -2312,8 +2312,8 @@ export function BidsPage({
   const awardedVacancies = vacancies.filter((v) => v.status === "Awarded");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  const removeBid = (index: number) => {
-    setBids((prev: Bid[]) => prev.filter((_, idx) => idx !== index));
+  const removeBid = (bidToRemove: Bid) => {
+    setBids((prev: Bid[]) => prev.filter((bid) => bid !== bidToRemove));
   };
 
   const setNow = () => {
@@ -2652,7 +2652,7 @@ export function BidsPage({
                       <button
                         className="btn"
                         style={{ background: "var(--bad)", color: "#fff" }}
-                        onClick={() => removeBid(i)}
+                        onClick={() => removeBid(b)}
                       >
                         Delete
                       </button>
