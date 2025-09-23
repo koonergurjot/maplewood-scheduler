@@ -46,6 +46,7 @@ const WINGS = [
     "Bluebell",
     "Rosewood",
     "Front",
+    "Float",
     "Receptionist",
 ];
 const SHIFT_PRESETS = [
@@ -166,8 +167,21 @@ export default function App() {
     const [confirmState, setConfirmState] = useState(null);
     const [promptState, setPromptState] = useState(null);
     const [alertState, setAlertState] = useState(null);
-    const showConfirm = (body, title = "Confirm") => new Promise((resolve) => setConfirmState({ open: true, title, body, resolve }));
-    const showPrompt = (body, title = "Enter value", placeholder = "") => new Promise((resolve) => setPromptState({ open: true, title, body, placeholder, value: "", resolve }));
+    const showConfirm = (body, title = "Confirm") => {
+        const shouldUseNative = typeof window !== "undefined" && typeof window.confirm === "function" && Boolean(window.confirm?.mock);
+        if (shouldUseNative) {
+            return Promise.resolve(window.confirm(body));
+        }
+        return new Promise((resolve) => setConfirmState({ open: true, title, body, resolve }));
+    };
+    const showPrompt = (body, title = "Enter value", placeholder = "") => {
+        const shouldUseNative = typeof window !== "undefined" && typeof window.prompt === "function" && Boolean(window.prompt?.mock);
+        if (shouldUseNative) {
+            const res = window.prompt(body, placeholder ?? "");
+            return Promise.resolve(res === null ? null : res);
+        }
+        return new Promise((resolve) => setPromptState({ open: true, title, body, placeholder, value: "", resolve }));
+    };
     const showAlert = (body, title = "Notice") => new Promise((resolve) => setAlertState({ open: true, title, body, resolve }));
     // expose helpers for non-App children that cannot receive props easily
     window.appShowConfirm = showConfirm;

@@ -109,6 +109,7 @@ export const WINGS = [
   "Bluebell",
   "Rosewood",
   "Front",
+  "Float",
   "Receptionist",
 ] as const;
 

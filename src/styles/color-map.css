@@ -6,11 +6,13 @@
   --amber: #f59e0b;
   --sky: #0ea5e9;
   --violet: #8b5cf6;
+  --pink: #ec4899;
 
   /* Wing mappings */
   --wing-Rosewood: var(--teal);
   --wing-Bluebell: var(--indigo);
   --wing-Shamrock: var(--emerald);
+  --wing-Float: var(--pink);
 
   /* Class mappings */
   --class-RCA: var(--amber);
@@ -36,6 +38,7 @@
 [data-wing="Rosewood"] { --chipColor: var(--wing-Rosewood); }
 [data-wing="Bluebell"] { --chipColor: var(--wing-Bluebell); }
 [data-wing="Shamrock"] { --chipColor: var(--wing-Shamrock); }
+[data-wing="Float"] { --chipColor: var(--wing-Float); }
 
 /* Class selectors */
 [data-class="RCA"] { --chipColor: var(--class-RCA); }
