@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { Vacancy, Employee, Settings } from "../types";
 import type { Recommendation } from "../recommend";
 import { formatDateLong, combineDateTime } from "../lib/dates";
@@ -42,7 +42,7 @@ export default function BundleRow({
   dueNextId,
   coveredName,
 }: Props) {
-  const sorted = React.useMemo(() =>
+  const sorted = useMemo(() =>
     [...items].sort((a,b) =>
       combineDateTime(a.shiftDate, a.shiftStart).getTime() -
       combineDateTime(b.shiftDate, b.shiftStart).getTime()
@@ -63,20 +63,43 @@ export default function BundleRow({
   const dateList = sorted.map((v) => formatDateLong(v.shiftDate)).join(", ");
 
   const rec = recommendations[primary.id];
-  const recId = rec?.id;
-  const recWhy = rec?.why ?? [];
+  const candidates = rec?.candidates ?? [];
+  const hasCandidates = candidates.length > 0;
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [rec]);
+
+  useEffect(() => {
+    if (activeIndex >= candidates.length && candidates.length > 0) {
+      setActiveIndex(candidates.length - 1);
+    }
+  }, [activeIndex, candidates.length]);
+
+  const activeCandidate = candidates[activeIndex];
+  const recId = activeCandidate?.id ?? rec?.id;
+  const recWhy = activeCandidate?.why ?? rec?.why ?? [];
   const recEmp = recId ? employees.find((e) => e.id === recId) : undefined;
   const recName = recEmp
     ? `${recEmp.firstName ?? ""} ${recEmp.lastName ?? ""}`.trim()
-    : "—";
+    : recId ?? "—";
 
   const distinctWings = Array.from(
     new Set(sorted.map((v) => v.wing).filter(Boolean))
   );
   const multipleWings = distinctWings.length > 1;
 
-  const [open, setOpen] = React.useState(false);
-  const [awardOpen, setAwardOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
+  const [awardOpen, setAwardOpen] = useState(false);
+
+  const cycle = (dir: 1 | -1) => {
+    if (!hasCandidates) return;
+    setActiveIndex((idx) => {
+      const next = (idx + dir + candidates.length) % candidates.length;
+      return next;
+    });
+  };
 
   return (
     <>
@@ -120,12 +143,37 @@ export default function BundleRow({
                   className="pill"
                   style={{ cursor: "pointer" }}
                   title={recName}
-                  onClick={() => onAwardBundle?.(recId)}
+                  onClick={() => activeCandidate?.id && onAwardBundle?.(activeCandidate.id)}
                 >
                   {recName}
                 </span>
               ) : (
                 <span className="subtitle">—</span>
+              )}
+              {hasCandidates && candidates.length > 1 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    style={{ padding: "2px 6px" }}
+                    onClick={() => cycle(-1)}
+                    aria-label="Previous bundle recommendation"
+                  >
+                    ◀
+                  </button>
+                  <span className="subtitle" aria-live="polite">
+                    {activeIndex + 1}/{candidates.length}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    style={{ padding: "2px 6px" }}
+                    onClick={() => cycle(1)}
+                    aria-label="Next bundle recommendation"
+                  >
+                    ▶
+                  </button>
+                </div>
               )}
               {multipleWings && (
                 <span className="pill" title={distinctWings.join(", ")}>
@@ -145,7 +193,11 @@ export default function BundleRow({
           <div className="action-grid">
           <button className="btn btn-sm" onClick={()=> setAwardOpen((o)=> !o)}>{awardOpen?"Hide Award":"Award Bundle"}</button>
           {awardOpen && (
-            <InlineEmployeePicker employees={employees} value="" onChange={(id)=> onAwardBundle?.(id)} />
+            <InlineEmployeePicker
+              employees={employees}
+              value={activeCandidate?.id ?? ""}
+              onChange={(id)=> onAwardBundle?.(id)}
+            />
           )}
           <button className="btn btn-sm" onClick={() => setOpen((o) => !o)}>
             {open ? "Hide" : "Expand"}
@@ -206,12 +258,43 @@ export default function BundleRow({
   );
 }
 
-function InlineEmployeePicker({ employees, value, onChange }:{ employees: Employee[]; value: string; onChange: (id:string)=>void }){
-  const [q, setQ] = React.useState("");
-  const list = React.useMemo(()=> employees.filter(e=> `${e.firstName} ${e.lastName}`.toLowerCase().includes(q.toLowerCase())).slice(0,50), [employees,q]);
+function InlineEmployeePicker({
+  employees,
+  value,
+  onChange,
+}: {
+  employees: Employee[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const recommended = useMemo(
+    () => employees.find((e) => e.id === value),
+    [employees, value],
+  );
+  const placeholder = recommended
+    ? `${recommended.firstName ?? ""} ${recommended.lastName ?? ""}`.trim() || recommended.id
+    : "Type name…";
+  useEffect(() => {
+    setQ("");
+  }, [value]);
+  const list = useMemo(
+    () =>
+      employees
+        .filter((e) =>
+          `${e.firstName} ${e.lastName}`.toLowerCase().includes(q.toLowerCase()),
+        )
+        .slice(0, 50),
+    [employees, q],
+  );
   return (
     <div className="dropdown">
-      <input placeholder="Type name…" value={q} onChange={(e)=> setQ(e.target.value)} onFocus={()=>{}} />
+      <input
+        placeholder={placeholder || "Type name…"}
+        value={q}
+        onChange={(e)=> setQ(e.target.value)}
+        onFocus={()=>{}}
+      />
       <div className="menu" style={{ maxHeight: 240, overflow: "auto" }}>
         {list.map((e) => (
           <button

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { formatDateLong, formatDowShort } from "../lib/dates";
 import type { Vacancy, Employee, Settings } from "../types";
 import { OVERRIDE_REASONS } from "../types";
@@ -11,12 +11,11 @@ import {
   CellCountdown,
   CellActions,
 } from "./rows/RowCells";
+import type { Recommendation } from "../recommend";
 
 export default function VacancyRow({
   v,
-  recId,
-  recName,
-  recWhy,
+  recommendation,
   employees,
   selected,
   onToggleSelect,
@@ -28,9 +27,7 @@ export default function VacancyRow({
   settings,
 }: {
   v: Vacancy;
-  recId?: string;
-  recName: string;
-  recWhy: string[];
+  recommendation?: Recommendation;
   employees: Employee[];
   selected: boolean;
   onToggleSelect: () => void;
@@ -46,15 +43,58 @@ export default function VacancyRow({
   settings: Settings;
 }) {
   const [choice, setChoice] = useState<string>("");
+  const [choiceManual, setChoiceManual] = useState<boolean>(false);
   const [overrideClass, setOverrideClass] = useState<boolean>(false);
   const [reason, setReason] = useState<string>("");
   const [awardOpen, setAwardOpen] = useState<boolean>(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const isBundleChild = v.bundleMode === "one-person" && !!v.bundleId;
 
   const chosen = employees.find((e) => e.id === choice);
   const classMismatch = chosen && chosen.classification !== v.classification;
-  const needReason = (!!recId && choice && choice !== recId) || (classMismatch && overrideClass);
+
+  const candidates = recommendation?.candidates ?? [];
+  const hasCandidates = candidates.length > 0;
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [recommendation]);
+
+  useEffect(() => {
+    if (activeIndex >= candidates.length && candidates.length > 0) {
+      setActiveIndex(candidates.length - 1);
+    }
+  }, [activeIndex, candidates.length]);
+
+  const activeCandidate = candidates[activeIndex];
+
+  const recommendedEmployee = useMemo(() => {
+    if (!activeCandidate) return undefined;
+    return employees.find((e) => e.id === activeCandidate.id);
+  }, [activeCandidate, employees]);
+
+  const recName = recommendedEmployee
+    ? `${recommendedEmployee.firstName ?? ""} ${recommendedEmployee.lastName ?? ""}`.trim()
+    : activeCandidate?.id
+    ? activeCandidate.id
+    : "—";
+  const recWhy = activeCandidate?.why ?? recommendation?.why ?? [];
+  const recommendedId = activeCandidate?.id;
+
+  useEffect(() => {
+    if (!awardOpen) return;
+    if (choiceManual) return;
+    if (recommendedId) {
+      setChoice(recommendedId);
+    } else {
+      setChoice("");
+    }
+  }, [awardOpen, recommendedId, choiceManual]);
+
+  const needReason =
+    (!!recommendedId && choice && choice !== recommendedId) ||
+    (classMismatch && overrideClass);
 
   function handleAward() {
     if (classMismatch && !overrideClass) {
@@ -71,9 +111,19 @@ export default function VacancyRow({
       overrideUsed: overrideClass,
     });
     setChoice("");
+    setChoiceManual(false);
     setReason("");
     setOverrideClass(false);
   }
+
+  const cycle = (dir: 1 | -1) => {
+    if (!hasCandidates) return;
+    setActiveIndex((idx) => {
+      const next = (idx + dir + candidates.length) % candidates.length;
+      return next;
+    });
+    setChoiceManual(false);
+  };
 
   return (
     <tr
@@ -120,6 +170,31 @@ export default function VacancyRow({
             <span className="subtitle truncate" title={recName}>
               {recName}
             </span>
+            {hasCandidates && candidates.length > 1 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  style={{ padding: "2px 6px" }}
+                  onClick={() => cycle(-1)}
+                  aria-label="Previous recommendation"
+                >
+                  ◀
+                </button>
+                <span className="subtitle" aria-live="polite">
+                  {activeIndex + 1}/{candidates.length}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  style={{ padding: "2px 6px" }}
+                  onClick={() => cycle(1)}
+                  aria-label="Next recommendation"
+                >
+                  ▶
+                </button>
+              </div>
+            )}
             {recWhy.map((w, i) => (
               <span key={i} className="pill">
                 {w}
@@ -157,7 +232,18 @@ export default function VacancyRow({
           </div>
         ) : (
           <div className="action-grid">
-            <button className="btn btn-sm" onClick={() => setAwardOpen((o) => !o)}>
+            <button
+              className="btn btn-sm"
+              onClick={() =>
+                setAwardOpen((o) => {
+                  const next = !o;
+                  if (next) {
+                    setChoiceManual(false);
+                  }
+                  return next;
+                })
+              }
+            >
               {awardOpen ? "Hide Award" : "Award"}
             </button>
             <button className="btn btn-sm" onClick={resetKnownAt}>
@@ -169,7 +255,10 @@ export default function VacancyRow({
                   allowEmpty
                   employees={employees}
                   value={choice}
-                  onChange={setChoice}
+                  onChange={(val) => {
+                    setChoice(val);
+                    setChoiceManual(true);
+                  }}
                 />
                 <div style={{ whiteSpace: "nowrap" }}>
                   <input
@@ -183,7 +272,8 @@ export default function VacancyRow({
                     <span className="subtitle">Allow class override</span>
                   </label>
                 </div>
-                {needReason || overrideClass || (recId && choice && choice !== recId) ? (
+                {needReason || overrideClass ||
+                (recommendedId && choice && choice !== recommendedId) ? (
                   <select value={reason} onChange={(e) => setReason(e.target.value)}>
                     <option value="">Select reason…</option>
                     {OVERRIDE_REASONS.map((r) => (

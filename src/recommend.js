@@ -11,7 +11,7 @@ export function recommend(vac, bids, employeesById) {
     })
         .filter((c) => !!c.emp && c.emp.active && c.emp.classification === vac.classification);
     if (!candidates.length) {
-        return { why: ["No eligible bidders"] };
+        return { why: ["No eligible bidders"], candidates: [] };
     }
     candidates.sort((a, b) => {
         // Primary sort by seniority hours when available, otherwise rank.
@@ -32,13 +32,20 @@ export function recommend(vac, bids, employeesById) {
         }
         return a.order - b.order;
     });
-    const chosen = candidates[0].emp;
-    const why = [
-        "Bidder",
-        chosen.seniorityHours !== undefined
-            ? `Hours ${chosen.seniorityHours}`
-            : `Rank ${chosen.seniorityRank ?? "?"}`,
-        `Class ${chosen.classification}`,
-    ];
-    return { id: chosen.id, why };
+    const ranked = candidates.map(({ emp }) => ({
+        id: emp.id,
+        why: [
+            "Bidder",
+            emp.seniorityHours !== undefined
+                ? `Hours ${emp.seniorityHours}`
+                : `Rank ${emp.seniorityRank ?? "?"}`,
+            `Class ${emp.classification}`,
+        ],
+    }));
+    const [first] = ranked;
+    return {
+        id: first?.id,
+        why: first?.why ?? ["No eligible bidders"],
+        candidates: ranked,
+    };
 }
