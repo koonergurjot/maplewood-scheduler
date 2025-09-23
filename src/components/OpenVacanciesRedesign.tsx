@@ -211,22 +211,13 @@ export default function OpenVacanciesRedesign(props: Props) {
           {byDate.map(([date, items]) => {
             const rendered: React.ReactNode[] = [];
             for (const v of items) {
-              const rec = recommendations[v.id];
-              const recId = rec?.id;
-              const recName = recId
-                ? `${employeesById[recId]?.firstName ?? ""} ${
-                    employeesById[recId]?.lastName ?? ""
-                  }`.trim()
-                : "—";
-              const recWhy = rec?.why ?? [];
+              const recommendation = recommendations[v.id];
               const coveredName = vacNameById[v.vacationId ?? ""];
               rendered.push(
                 <VacancyRow
                   key={v.id}
                   v={v}
-                  recId={recId}
-                  recName={recName}
-                  recWhy={recWhy}
+                  recommendation={recommendation}
                   employees={employees}
                   selected={props.selectedIds.includes(v.id)}
                   onToggleSelect={() => props.onToggleSelect(v.id)}

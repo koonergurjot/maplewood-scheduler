@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import VacancyRow from "../src/components/VacancyRow";
 import type { Vacancy, Employee, Settings } from "../src/types";
+import type { Recommendation } from "../src/recommend";
 
 describe("VacancyRow", () => {
   it("shows the covered employee name", () => {
@@ -39,18 +40,16 @@ describe("VacancyRow", () => {
         <tbody>
           <VacancyRow
             v={vacancy}
-            recName="—"
-            recWhy={[]}
+            recommendation={{ why: ["No eligible bidders"], candidates: [] } as Recommendation}
             employees={[] as Employee[]}
             selected={false}
             onToggleSelect={() => {}}
             isDueNext={false}
-            onAward={() => {}}
-            onResetKnownAt={() => {}}
+            awardVacancy={() => {}}
+            resetKnownAt={() => {}}
             onDelete={() => {}}
             coveredName="Jane Doe"
             settings={settings}
-            now={0}
           />
         </tbody>
       </table>

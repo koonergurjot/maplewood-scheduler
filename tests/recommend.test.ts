@@ -23,6 +23,8 @@ describe("recommend", () => {
     expect(rec.why).toContain("Bidder");
     expect(rec.why).toContain("Rank 1");
     expect(rec.why).toContain("Class RN");
+    expect(rec.candidates.map((c) => c.id)).toEqual(["b", "a"]);
+    expect(rec.candidates[0].why).toEqual(rec.why);
   });
 
   it("reports when there are no eligible bidders", () => {
@@ -30,6 +32,7 @@ describe("recommend", () => {
     const rec = recommend(vac, bids, employees);
     expect(rec.id).toBeUndefined();
     expect(rec.why[0]).toBe("No eligible bidders");
+    expect(rec.candidates).toEqual([]);
   });
 
   it("uses bid order to break ties in seniority", () => {
@@ -103,5 +106,15 @@ describe("recommend", () => {
     const rec = recommend(vac, hourBids, employeesWithHours);
     expect(rec.id).toBe("x");
     expect(rec.why).toContain("Hours 200");
+    expect(rec.candidates.map((c) => c.id)).toEqual(["x", "y"]);
+  });
+
+  it("includes every eligible bidder sorted by ranking", () => {
+    const vac = { id: "vac1", classification: "RN", offeringTier: "CASUALS" };
+    const rec = recommend(vac, bids, employees);
+    expect(rec.candidates).toHaveLength(2);
+    expect(rec.candidates[0].id).toBe("b");
+    expect(rec.candidates[1].id).toBe("a");
+    expect(rec.candidates[1].why).toContain("Rank 2");
   });
 });

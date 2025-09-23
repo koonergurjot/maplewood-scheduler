@@ -86,16 +86,11 @@ export default function OpenVacanciesRedesign(props) {
                                     return (_jsx(BundleRow, { groupId: key, items: arr, employees: employees, settings: settings, recommendations: recommendations, selectedIds: props.selectedIds, onToggleSelectMany: props.onToggleSelectMany, onDeleteMany: props.onDeleteMany, onSplitBundle: (ids) => props.onSplitBundle?.(ids), onEditCoverage: props.onEditCoverage, onAwardBundle: (eid) => props.awardBundle?.(key, eid), onResetBundle: props.resetBundleKnownAt, dueNextId: props.dueNextId, coveredName: coveredName }, `bundle-${key}`));
                                 }), byDate.map(([date, items]) => {
                                 const rendered = [];
-                                for (const v of items) {
-                                    const rec = recommendations[v.id];
-                                    const recId = rec?.id;
-                                    const recName = recId
-                                        ? `${employeesById[recId]?.firstName ?? ""} ${employeesById[recId]?.lastName ?? ""}`.trim()
-                                        : "—";
-                                    const recWhy = rec?.why ?? [];
-                                    const coveredName = vacNameById[v.vacationId ?? ""];
-                                    rendered.push(_jsx(VacancyRow, { v: v, recId: recId, recName: recName, recWhy: recWhy, employees: employees, selected: props.selectedIds.includes(v.id), onToggleSelect: () => props.onToggleSelect(v.id), awardVacancy: (payload) => props.awardVacancy(v.id, payload), resetKnownAt: () => props.resetKnownAt(v.id), onDelete: props.onDelete, isDueNext: props.dueNextId === v.id, coveredName: coveredName, settings: settings }, v.id));
-                                }
+            for (const v of items) {
+                const recommendation = recommendations[v.id];
+                const coveredName = vacNameById[v.vacationId ?? ""];
+                rendered.push(_jsx(VacancyRow, { v: v, recommendation: recommendation, employees: employees, selected: props.selectedIds.includes(v.id), onToggleSelect: () => props.onToggleSelect(v.id), awardVacancy: (payload) => props.awardVacancy(v.id, payload), resetKnownAt: () => props.resetKnownAt(v.id), onDelete: props.onDelete, isDueNext: props.dueNextId === v.id, coveredName: coveredName, settings: settings }, v.id));
+            }
                                 return (_jsxs(React.Fragment, { children: [_jsx("tr", { className: "section-h", children: _jsx("td", { colSpan: 4, children: fmtDate(date) }) }), rendered] }, `sec-${date}`));
                             })] })] })] }));
 }
