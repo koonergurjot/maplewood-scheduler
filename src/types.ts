@@ -108,9 +108,10 @@ export const WINGS = [
   "Shamrock",
   "Bluebell",
   "Rosewood",
-  "Front",
+  "Recreation",
   "Float",
   "Receptionist",
+  "1 on 1",
 ] as const;
 
 export const SHIFT_PRESETS = [

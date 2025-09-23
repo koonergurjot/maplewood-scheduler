@@ -160,9 +160,10 @@ const WINGS = [
   "Shamrock",
   "Bluebell",
   "Rosewood",
-  "Front",
+  "Recreation",
   "Float",
   "Receptionist",
+  "1 on 1",
 ] as const;
 
 const SHIFT_PRESETS = [
