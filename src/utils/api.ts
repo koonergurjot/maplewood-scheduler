@@ -7,7 +7,10 @@ export function getToken(): string | null {
     if (stored) return stored;
   }
   // Fallback to environment variable
-  const envToken = (import.meta.env.VITE_API_TOKEN || '').trim();
+  const metaEnv = (import.meta as unknown as {
+    env?: Record<string, string | undefined>;
+  }).env;
+  const envToken = (metaEnv?.VITE_API_TOKEN ?? "").trim();
   return envToken || null;
 }
 

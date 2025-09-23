@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { createCsv } from "../server/analyticsFormats/csv.js";
+import type { AggregatedVacancyMetrics } from "../server/metrics.js";
 
 describe("createCsv", () => {
   it("includes averageHours column", () => {
-    const data = [
+    const data: AggregatedVacancyMetrics[] = [
       {
         period: "2024-01",
         posted: 1,

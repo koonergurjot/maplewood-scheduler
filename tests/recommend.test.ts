@@ -1,23 +1,35 @@
 import { describe, it, expect } from "vitest";
 import { recommend } from "../src/recommend";
+import type { Bid, Employee, Vacancy } from "../src/recommend";
 
-const employees = {
+const employees: Record<string, Employee> = {
   a: { id: "a", active: true, seniorityRank: 2, classification: "RN" },
   b: { id: "b", active: true, seniorityRank: 1, classification: "RN" },
   c: { id: "c", active: true, seniorityRank: 1, classification: "LPN" },
   d: { id: "d", active: false, seniorityRank: 1, classification: "RN" },
 };
 
-const bids = [
+const bids: Bid[] = [
   { vacancyId: "vac1", bidderEmployeeId: "a" },
   { vacancyId: "vac1", bidderEmployeeId: "b" },
   { vacancyId: "vac1", bidderEmployeeId: "c" },
   { vacancyId: "vac1", bidderEmployeeId: "d" },
 ];
 
+const BASE_VACANCY: Vacancy = {
+  id: "vac1",
+  classification: "RN",
+  offeringTier: "CASUALS",
+};
+
+const makeVacancy = (overrides: Partial<Vacancy> = {}): Vacancy => ({
+  ...BASE_VACANCY,
+  ...overrides,
+});
+
 describe("recommend", () => {
   it("returns highest seniority matching class", () => {
-    const vac = { id: "vac1", classification: "RN", offeringTier: "CASUALS" };
+    const vac = makeVacancy();
     const rec = recommend(vac, bids, employees);
     expect(rec.id).toBe("b");
     expect(rec.why).toContain("Bidder");
@@ -28,7 +40,7 @@ describe("recommend", () => {
   });
 
   it("reports when there are no eligible bidders", () => {
-    const vac = { id: "vac2", classification: "RN", offeringTier: "CASUALS" };
+    const vac = makeVacancy({ id: "vac2" });
     const rec = recommend(vac, bids, employees);
     expect(rec.id).toBeUndefined();
     expect(rec.why[0]).toBe("No eligible bidders");
@@ -36,12 +48,12 @@ describe("recommend", () => {
   });
 
   it("uses bid order to break ties in seniority", () => {
-    const vac = { id: "vac1", classification: "RN", offeringTier: "CASUALS" };
-    const employeesWithTie = {
+    const vac = makeVacancy();
+    const employeesWithTie: Record<string, Employee> = {
       ...employees,
       e: { id: "e", active: true, seniorityRank: 1, classification: "RN" },
     };
-    const tieBids = [
+    const tieBids: Bid[] = [
       { vacancyId: "vac1", bidderEmployeeId: "e" },
       { vacancyId: "vac1", bidderEmployeeId: "b" },
     ];
@@ -50,12 +62,12 @@ describe("recommend", () => {
   });
 
   it("uses timestamp when available to break bid order ties", () => {
-    const vac = { id: "vac1", classification: "RN", offeringTier: "CASUALS" };
-    const employeesWithTie = {
+    const vac = makeVacancy();
+    const employeesWithTie: Record<string, Employee> = {
       ...employees,
       e: { id: "e", active: true, seniorityRank: 1, classification: "RN" },
     };
-    const tieBids = [
+    const tieBids: Bid[] = [
       {
         vacancyId: "vac1",
         bidderEmployeeId: "b",
@@ -72,12 +84,12 @@ describe("recommend", () => {
   });
 
   it("falls back to bid order when timestamp is invalid", () => {
-    const vac = { id: "vac1", classification: "RN", offeringTier: "CASUALS" };
-    const employeesWithTie = {
+    const vac = makeVacancy();
+    const employeesWithTie: Record<string, Employee> = {
       ...employees,
       e: { id: "e", active: true, seniorityRank: 1, classification: "RN" },
     };
-    const tieBids = [
+    const tieBids: Bid[] = [
       {
         vacancyId: "vac1",
         bidderEmployeeId: "e",
@@ -94,12 +106,12 @@ describe("recommend", () => {
   });
 
   it("prefers higher seniority hours when present", () => {
-    const vac = { id: "vac1", classification: "RN", offeringTier: "CASUALS" };
-    const employeesWithHours = {
+    const vac = makeVacancy();
+    const employeesWithHours: Record<string, Employee> = {
       x: { id: "x", active: true, seniorityHours: 200, classification: "RN" },
       y: { id: "y", active: true, seniorityHours: 100, classification: "RN" },
     };
-    const hourBids = [
+    const hourBids: Bid[] = [
       { vacancyId: "vac1", bidderEmployeeId: "y" },
       { vacancyId: "vac1", bidderEmployeeId: "x" },
     ];
@@ -110,7 +122,7 @@ describe("recommend", () => {
   });
 
   it("includes every eligible bidder sorted by ranking", () => {
-    const vac = { id: "vac1", classification: "RN", offeringTier: "CASUALS" };
+    const vac = makeVacancy();
     const rec = recommend(vac, bids, employees);
     expect(rec.candidates).toHaveLength(2);
     expect(rec.candidates[0].id).toBe("b");
