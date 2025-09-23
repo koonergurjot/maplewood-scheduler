@@ -88,13 +88,15 @@ export default function OpenVacanciesRedesign(props) {
                                 const rendered = [];
                                 for (const v of items) {
                                     const rec = recommendations[v.id];
-                                    const recId = rec?.id;
+                                    const topCandidate = rec?.candidates?.[0];
+                                    const recId = (topCandidate === null || topCandidate === void 0 ? void 0 : topCandidate.id) ?? (rec === null || rec === void 0 ? void 0 : rec.id);
                                     const recName = recId
                                         ? `${employeesById[recId]?.firstName ?? ""} ${employeesById[recId]?.lastName ?? ""}`.trim()
                                         : "—";
-                                    const recWhy = rec?.why ?? [];
+                                    const recWhy = (topCandidate === null || topCandidate === void 0 ? void 0 : topCandidate.why) ?? (rec === null || rec === void 0 ? void 0 : rec.why) ?? [];
+                                    const recCandidates = (rec === null || rec === void 0 ? void 0 : rec.candidates) ?? [];
                                     const coveredName = vacNameById[v.vacationId ?? ""];
-                                    rendered.push(_jsx(VacancyRow, { v: v, recId: recId, recName: recName, recWhy: recWhy, employees: employees, selected: props.selectedIds.includes(v.id), onToggleSelect: () => props.onToggleSelect(v.id), awardVacancy: (payload) => props.awardVacancy(v.id, payload), resetKnownAt: () => props.resetKnownAt(v.id), onDelete: props.onDelete, isDueNext: props.dueNextId === v.id, coveredName: coveredName, settings: settings }, v.id));
+                                    rendered.push(_jsx(VacancyRow, { v: v, recId: recId, recName: recName, recWhy: recWhy, recCandidates: recCandidates, employees: employees, selected: props.selectedIds.includes(v.id), onToggleSelect: () => props.onToggleSelect(v.id), awardVacancy: (payload) => props.awardVacancy(v.id, payload), resetKnownAt: () => props.resetKnownAt(v.id), onDelete: props.onDelete, isDueNext: props.dueNextId === v.id, coveredName: coveredName, settings: settings }, v.id));
                                 }
                                 return (_jsxs(React.Fragment, { children: [_jsx("tr", { className: "section-h", children: _jsx("td", { colSpan: 4, children: fmtDate(date) }) }), rendered] }, `sec-${date}`));
                             })] })] })] }));

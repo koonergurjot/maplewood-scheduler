@@ -1595,13 +1595,15 @@ const [showRangeForm, setShowRangeForm] = useState(false);
                       }
                       const v = row.item;
                       const rec = recommendations[v.id];
-                      const recId = rec?.id;
+                      const topCandidate = rec?.candidates?.[0];
+                      const recId = topCandidate?.id ?? rec?.id;
                       const recName = recId
                         ? `${employeesById[recId]?.firstName ?? ""} ${
                             employeesById[recId]?.lastName ?? ""
                           }`.trim()
                         : "—";
-                      const recWhy = rec?.why ?? [];
+                      const recWhy = topCandidate?.why ?? rec?.why ?? [];
+                      const recCandidates = rec?.candidates ?? [];
                       const coveredName =
                         vacations.find((x) => x.id === v.vacationId)?.employeeName ?? "";
                       const isDueNext = dueNextId === v.id;
@@ -1613,6 +1615,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
                             recId={recId}
                             recName={recName}
                             recWhy={recWhy}
+                            recCandidates={recCandidates}
                             employees={employees}
                             selected={selectedVacancyIds.includes(v.id)}
                             onToggleSelect={() =>

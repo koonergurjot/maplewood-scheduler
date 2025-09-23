@@ -1,15 +1,11 @@
 import { useMemo } from "react";
 import type { Vacancy, Employee, Settings } from "../types";
+import type { Recommendation } from "../recommend";
 import VacancyRow from "./VacancyRow";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
 import { WINGS, SHIFT_PRESETS } from "../types";
 import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
 import { minutesBetween } from "../lib/dates";
-
-export interface Recommendation {
-  id?: string;
-  why: string[];
-}
 
 interface Props {
   vacancies: Vacancy[];
@@ -198,11 +194,13 @@ export default function VacancyList({
           <tbody>
             {filteredVacancies.map((v) => {
               const rec = recommendations[v.id];
-              const recId = rec?.id;
+              const topCandidate = rec?.candidates?.[0];
+              const recId = topCandidate?.id ?? rec?.id;
               const recName = recId
                 ? `${employeesById[recId]?.firstName ?? ""} ${employeesById[recId]?.lastName ?? ""}`.trim()
                 : "—";
-              const recWhy = rec?.why ?? [];
+              const recWhy = topCandidate?.why ?? rec?.why ?? [];
+              const recCandidates = rec?.candidates ?? [];
               const isDueNext = dueNextId === v.id;
               return (
                 <VacancyRow
@@ -211,6 +209,7 @@ export default function VacancyList({
                   recId={recId}
                   recName={recName}
                   recWhy={recWhy}
+                  recCandidates={recCandidates}
                   employees={employees}
                   selected={selectedVacancyIds.includes(v.id)}
                   onToggleSelect={() =>

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import App from "../src/App";
@@ -83,10 +83,15 @@ describe("bundle award", () => {
       .getAllByLabelText("Group by bundle")
       .forEach((cb) => fireEvent.click(cb));
 
-    const awardBtn = await screen.findByText("Award Bundle");
+    const bundleRow = await waitFor(() => document.getElementById("bundle-b1"));
+    const awardBtn = within(bundleRow!)
+      .getAllByRole("button", { name: "Award" })[0];
     fireEvent.click(awardBtn);
 
-    const pick = await screen.findByRole("button", { name: /Alice A/ });
+    const actionGrid = awardBtn.closest("div.action-grid")!;
+    const pickerInput = within(actionGrid).getByPlaceholderText("Type name…");
+    fireEvent.change(pickerInput, { target: { value: "Alice" } });
+    const pick = await within(actionGrid).findByText("Alice A");
     fireEvent.click(pick);
 
     await waitFor(() => {
@@ -108,8 +113,6 @@ describe("bundle award", () => {
 
   test("prompts on conflicts and allows override with reason", async () => {
     const reason = "Manager discretion";
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    vi.spyOn(window, "prompt").mockReturnValue(reason);
 
     localStorage.setItem(
       LS_KEY,
@@ -180,11 +183,26 @@ describe("bundle award", () => {
       .getAllByLabelText("Group by bundle")
       .forEach((cb) => fireEvent.click(cb));
 
-    const awardBtn = await screen.findByText("Award Bundle");
+    const bundleRow = await waitFor(() => document.getElementById("bundle-b1"));
+    const awardBtn = within(bundleRow!)
+      .getAllByRole("button", { name: "Award" })[0];
     fireEvent.click(awardBtn);
 
-    const pick = await screen.findByRole("button", { name: /Alice A/ });
+    const actionGrid = awardBtn.closest("div.action-grid")!;
+    const pickerInput = within(actionGrid).getByPlaceholderText("Type name…");
+    fireEvent.change(pickerInput, { target: { value: "Alice" } });
+    const pick = await within(actionGrid).findByText("Alice A");
     fireEvent.click(pick);
+
+    const confirmDialog = await screen.findByRole("dialog", {
+      name: "Override required",
+    });
+    fireEvent.click(within(confirmDialog).getByText("Confirm"));
+
+    const promptDialog = await screen.findByRole("dialog", { name: "Reason code" });
+    const promptInput = within(promptDialog).getByRole("textbox");
+    fireEvent.change(promptInput, { target: { value: reason } });
+    fireEvent.click(within(promptDialog).getByText("OK"));
 
     await waitFor(() => {
       const stored = JSON.parse(localStorage.getItem(LS_KEY)!);
@@ -195,9 +213,6 @@ describe("bundle award", () => {
         throw new Error("not yet");
       }
     });
-
-    expect(window.confirm).toHaveBeenCalled();
-    expect(window.prompt).toHaveBeenCalled();
 
     const stored = JSON.parse(localStorage.getItem(LS_KEY)!);
     const v1 = stored.vacancies.find((v: any) => v.id === "v1");

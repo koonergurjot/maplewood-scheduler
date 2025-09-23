@@ -210,24 +210,27 @@ export default function OpenVacanciesRedesign(props: Props) {
             })}
           {byDate.map(([date, items]) => {
             const rendered: React.ReactNode[] = [];
-            for (const v of items) {
-              const rec = recommendations[v.id];
-              const recId = rec?.id;
-              const recName = recId
-                ? `${employeesById[recId]?.firstName ?? ""} ${
-                    employeesById[recId]?.lastName ?? ""
-                  }`.trim()
-                : "—";
-              const recWhy = rec?.why ?? [];
-              const coveredName = vacNameById[v.vacationId ?? ""];
-              rendered.push(
-                <VacancyRow
-                  key={v.id}
-                  v={v}
-                  recId={recId}
-                  recName={recName}
-                  recWhy={recWhy}
-                  employees={employees}
+          for (const v of items) {
+            const rec = recommendations[v.id];
+            const topCandidate = rec?.candidates?.[0];
+            const recId = topCandidate?.id ?? rec?.id;
+            const recName = recId
+              ? `${employeesById[recId]?.firstName ?? ""} ${
+                  employeesById[recId]?.lastName ?? ""
+                }`.trim()
+              : "—";
+            const recWhy = topCandidate?.why ?? rec?.why ?? [];
+            const recCandidates = rec?.candidates ?? [];
+            const coveredName = vacNameById[v.vacationId ?? ""];
+            rendered.push(
+              <VacancyRow
+                key={v.id}
+                v={v}
+                recId={recId}
+                recName={recName}
+                recWhy={recWhy}
+                recCandidates={recCandidates}
+                employees={employees}
                   selected={props.selectedIds.includes(v.id)}
                   onToggleSelect={() => props.onToggleSelect(v.id)}
                   awardVacancy={(payload) => props.awardVacancy(v.id, payload)}

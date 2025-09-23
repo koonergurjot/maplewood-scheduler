@@ -1,12 +1,12 @@
 import { jsx as _jsx, Fragment as _Fragment, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { formatDateLong, formatDowShort } from "../lib/dates";
 import { OVERRIDE_REASONS } from "../types";
 import { matchText } from "../lib/text";
 import CoverageChip from "./ui/CoverageChip";
 import { TrashIcon } from "./ui/Icon";
 import { CellSelect, CellDetails, CellCountdown, CellActions, } from "./rows/RowCells";
-export default function VacancyRow({ v, recId, recName, recWhy, employees, selected, onToggleSelect, isDueNext, awardVacancy, resetKnownAt, onDelete, coveredName, settings, }) {
+export default function VacancyRow({ v, recId, recName, recWhy, recCandidates, employees, selected, onToggleSelect, isDueNext, awardVacancy, resetKnownAt, onDelete, coveredName, settings, }) {
     const [choice, setChoice] = useState("");
     const [overrideClass, setOverrideClass] = useState(false);
     const [reason, setReason] = useState("");
@@ -33,23 +33,40 @@ export default function VacancyRow({ v, recId, recName, recWhy, employees, selec
         setReason("");
         setOverrideClass(false);
     }
-    return (_jsxs("tr", { className: `${isDueNext ? "due-next " : ""}${selected ? "selected" : ""}`.trim(), "aria-selected": selected, tabIndex: 0, children: [_jsx(CellSelect, { checked: selected, onChange: onToggleSelect, ariaLabel: `Select vacancy ${v.id}` }), _jsx(CellDetails, { title: _jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [_jsxs("span", { children: [_jsx("span", { className: "pill", children: formatDowShort(v.shiftDate) }), " ", formatDateLong(v.shiftDate), " \u2022 ", v.shiftStart, "-", v.shiftEnd, coveredName && _jsxs(_Fragment, { children: [" \u2022 Covering ", coveredName] })] }), _jsx(CoverageChip, { startDate: v.startDate, endDate: v.endDate, coverageDates: v.coverageDates, variant: "compact" })] }), subtitle: _jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [v.wing && _jsx("span", { className: "pill", children: v.wing }), _jsx("span", { className: "pill", children: v.classification }), _jsx("span", { className: "pill", children: v.offeringStep })] }), rightTag: _jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [_jsx("span", { className: "subtitle truncate", title: recName, children: recName }), recWhy.map((w, i) => (_jsx("span", { className: "pill", children: w }, i)))] }) }), _jsx(CellCountdown, { source: v, settings: settings }), _jsx(CellActions, { children: isBundleChild ? (_jsxs("div", { className: "action-grid", children: [_jsx("button", { className: "btn btn-sm", onClick: resetKnownAt, children: "Reset timer" }), v.bundleId && (_jsx("a", { href: `#bundle-${v.bundleId}`, className: "btn btn-sm", children: "Award at bundle level" })), _jsx("button", { className: "btn btn-sm", "aria-label": "Delete vacancy", title: "Delete vacancy", "data-testid": `vacancy-delete-${v.id}`, tabIndex: 0, onClick: () => onDelete(v.id), children: TrashIcon ? (_jsx(TrashIcon, { style: { width: 16, height: 16 }, "aria-hidden": "true" })) : ("Delete") })] })) : (_jsxs("div", { className: "action-grid", children: [_jsx("button", { className: "btn btn-sm", onClick: () => setAwardOpen((o) => !o), children: awardOpen ? "Hide Award" : "Award" }), _jsx("button", { className: "btn btn-sm", onClick: resetKnownAt, children: "Reset timer" }), awardOpen && (_jsxs(_Fragment, { children: [_jsx(SelectEmployee, { allowEmpty: true, employees: employees, value: choice, onChange: setChoice }), _jsxs("div", { style: { whiteSpace: "nowrap" }, children: [_jsx("input", { id: `override-toggle-${v.id}`, className: "toggle-input", type: "checkbox", checked: overrideClass, onChange: (e) => setOverrideClass(e.target.checked) }), _jsx("label", { htmlFor: `override-toggle-${v.id}`, className: "toggle-box", children: _jsx("span", { className: "subtitle", children: "Allow class override" }) })] }), needReason || overrideClass || (recId && choice && choice !== recId) ? (_jsxs("select", { value: reason, onChange: (e) => setReason(e.target.value), children: [_jsx("option", { value: "", children: "Select reason\u2026" }), OVERRIDE_REASONS.map((r) => (_jsx("option", { value: r, children: r }, r)))] })) : (_jsx("span", { className: "subtitle", children: "\u2014" })), _jsx("button", { className: "btn btn-sm", onClick: handleAward, disabled: !choice, children: "Confirm Award" })] })), _jsx("button", { className: "btn btn-sm", "aria-label": "Delete vacancy", title: "Delete vacancy", "data-testid": `vacancy-delete-${v.id}`, tabIndex: 0, onClick: () => onDelete(v.id), children: TrashIcon ? (_jsx(TrashIcon, { style: { width: 16, height: 16 }, "aria-hidden": "true" })) : ("Delete") })] })) })] }));
+    return (_jsxs("tr", { className: `${isDueNext ? "due-next " : ""}${selected ? "selected" : ""}`.trim(), "aria-selected": selected, tabIndex: 0, children: [_jsx(CellSelect, { checked: selected, onChange: onToggleSelect, ariaLabel: `Select vacancy ${v.id}` }), _jsx(CellDetails, { title: _jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [_jsxs("span", { children: [_jsx("span", { className: "pill", children: formatDowShort(v.shiftDate) }), " ", formatDateLong(v.shiftDate), " \u2022 ", v.shiftStart, "-", v.shiftEnd, coveredName && _jsxs(_Fragment, { children: [" \u2022 Covering ", coveredName] })] }), _jsx(CoverageChip, { startDate: v.startDate, endDate: v.endDate, coverageDates: v.coverageDates, variant: "compact" })] }), subtitle: _jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [v.wing && _jsx("span", { className: "pill", children: v.wing }), _jsx("span", { className: "pill", children: v.classification }), _jsx("span", { className: "pill", children: v.offeringStep })] }), rightTag: _jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [_jsx("span", { className: "subtitle truncate", title: recName, children: recName }), recWhy.map((w, i) => (_jsx("span", { className: "pill", children: w }, i)))] }) }), _jsx(CellCountdown, { source: v, settings: settings }), _jsx(CellActions, { children: isBundleChild ? (_jsxs("div", { className: "action-grid", children: [_jsx("button", { className: "btn btn-sm", onClick: resetKnownAt, children: "Reset timer" }), v.bundleId && (_jsx("a", { href: `#bundle-${v.bundleId}`, className: "btn btn-sm", children: "Award at bundle level" })), _jsx("button", { className: "btn btn-sm", "aria-label": "Delete vacancy", title: "Delete vacancy", "data-testid": `vacancy-delete-${v.id}`, tabIndex: 0, onClick: () => onDelete(v.id), children: TrashIcon ? (_jsx(TrashIcon, { style: { width: 16, height: 16 }, "aria-hidden": "true" })) : ("Delete") })] })) : (_jsxs("div", { className: "action-grid", children: [_jsx("button", { className: "btn btn-sm", onClick: () => setAwardOpen((o) => !o), children: awardOpen ? "Hide Award" : "Award" }), _jsx("button", { className: "btn btn-sm", onClick: resetKnownAt, children: "Reset timer" }), awardOpen && (_jsxs(_Fragment, { children: [_jsx(SelectEmployee, { allowEmpty: true, employees: employees, value: choice, onChange: setChoice, rankedCandidates: recCandidates }), _jsxs("div", { style: { whiteSpace: "nowrap" }, children: [_jsx("input", { id: `override-toggle-${v.id}`, className: "toggle-input", type: "checkbox", checked: overrideClass, onChange: (e) => setOverrideClass(e.target.checked) }), _jsx("label", { htmlFor: `override-toggle-${v.id}`, className: "toggle-box", children: _jsx("span", { className: "subtitle", children: "Allow class override" }) })] }), needReason || overrideClass || (recId && choice && choice !== recId) ? (_jsxs("select", { value: reason, onChange: (e) => setReason(e.target.value), children: [_jsx("option", { value: "", children: "Select reason\u2026" }), OVERRIDE_REASONS.map((r) => (_jsx("option", { value: r, children: r }, r)))] })) : (_jsx("span", { className: "subtitle", children: "\u2014" })), _jsx("button", { className: "btn btn-sm", onClick: handleAward, disabled: !choice, children: "Confirm Award" })] })), _jsx("button", { className: "btn btn-sm", "aria-label": "Delete vacancy", title: "Delete vacancy", "data-testid": `vacancy-delete-${v.id}`, tabIndex: 0, onClick: () => onDelete(v.id), children: TrashIcon ? (_jsx(TrashIcon, { style: { width: 16, height: 16 }, "aria-hidden": "true" })) : ("Delete") })] })) })] }));
 }
-function SelectEmployee({ employees, value, onChange, allowEmpty = false, }) {
+function SelectEmployee({ employees, value, onChange, allowEmpty = false, rankedCandidates = [] }) {
     const [open, setOpen] = useState(false);
+    const [showRanked, setShowRanked] = useState(false);
     const [q, setQ] = useState("");
     useEffect(() => {
         if (!value)
             setQ("");
     }, [value]);
-    const list = employees
+    useEffect(() => {
+        if (!rankedCandidates.length)
+            setShowRanked(false);
+    }, [rankedCandidates.length]);
+    const list = useMemo(() => employees
         .filter((e) => matchText(q, `${e.firstName} ${e.lastName} ${e.id}`))
-        .slice(0, 50);
+        .slice(0, 50), [employees, q]);
+    const ranked = useMemo(() => {
+        if (!rankedCandidates.length)
+            return [];
+        return rankedCandidates
+            .map((candidate) => {
+            const emp = employees.find((e) => e.id === candidate.id);
+            const name = emp ? `${emp.firstName ?? ""} ${emp.lastName ?? ""}`.trim() || emp.id : candidate.id;
+            const subtitle = emp ? `${emp.classification} ${emp.status}`.trim() : "";
+            return { id: candidate.id, why: candidate.why, name, subtitle };
+        })
+            .filter((c) => !!c.id);
+    }, [rankedCandidates, employees]);
     const curr = employees.find((e) => e.id === value);
     return (_jsxs("div", { className: "dropdown", children: [_jsx("input", { placeholder: curr ? `${curr.firstName} ${curr.lastName} (${curr.id})` : "Type name or ID…", value: q, onChange: (e) => {
                     setQ(e.target.value);
                     setOpen(true);
-                }, onFocus: () => setOpen(true) }), open && (_jsxs("div", { className: "menu", style: { maxHeight: 320, overflow: "auto" }, children: [allowEmpty && (_jsx("div", { className: "item", onClick: () => {
+                }, onFocus: () => setOpen(true) }), ranked.length > 0 && (_jsx("button", { type: "button", className: "btn btn-sm", style: { marginTop: 4 }, onClick: () => setShowRanked((prev) => !prev), children: showRanked ? "Hide ranked bidders" : "View ranked bidders" })), open && (_jsxs("div", { className: "menu", style: { maxHeight: 320, overflow: "auto" }, children: [allowEmpty && (_jsx("div", { className: "item", onClick: () => {
                             onChange("EMPTY");
                             setQ("");
                             setOpen(false);
@@ -57,5 +74,10 @@ function SelectEmployee({ employees, value, onChange, allowEmpty = false, }) {
                             onChange(e.id);
                             setQ(`${e.firstName} ${e.lastName} (${e.id})`);
                             setOpen(false);
-                        }, children: [e.firstName, " ", e.lastName, " ", _jsxs("span", { className: "pill", style: { marginLeft: 6 }, children: [e.classification, " ", e.status] })] }, e.id))), !list.length && _jsx("div", { className: "item", style: { opacity: 0.7 }, children: "No matches" })] }))] }));
+                        }, children: [e.firstName, " ", e.lastName, " ", _jsxs("span", { className: "pill", style: { marginLeft: 6 }, children: [e.classification, " ", e.status] })] }, e.id))), !list.length && _jsx("div", { className: "item", style: { opacity: 0.7 }, children: "No matches" })] })), showRanked && (_jsxs("div", { className: "menu", style: { maxHeight: 320, overflow: "auto", marginTop: 4 }, children: [ranked.map((candidate) => (_jsxs("div", { className: "item", style: { display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, fontWeight: candidate.id === value ? 600 : undefined }, onClick: () => {
+                            onChange(candidate.id);
+                            setQ(`${candidate.name} (${candidate.id})`);
+                            setOpen(false);
+                            setShowRanked(false);
+                        }, children: [_jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [_jsx("span", { children: candidate.name }), _jsx("span", { className: "subtitle", children: candidate.id }), candidate.subtitle && (_jsx("span", { className: "pill", style: { marginLeft: 6 }, children: candidate.subtitle }))] }), _jsx("div", { style: { display: "flex", gap: 4, flexWrap: "wrap" }, children: candidate.why.map((reason, idx) => (_jsx("span", { className: "pill", children: reason }, idx))) })] }, candidate.id))), !ranked.length && _jsx("div", { className: "item", style: { opacity: 0.7 }, children: "No ranked bidders" })] }))] }));
 }

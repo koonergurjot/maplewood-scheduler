@@ -19,8 +19,10 @@ export default function BundleRow({ groupId, items, employees, settings, recomme
         : formatDateLong(first || primary.shiftDate);
     const dateList = sorted.map((v) => formatDateLong(v.shiftDate)).join(", ");
     const rec = recommendations[primary.id];
-    const recId = rec?.id;
-    const recWhy = rec?.why ?? [];
+    const topCandidate = rec?.candidates?.[0];
+    const recId = (topCandidate === null || topCandidate === void 0 ? void 0 : topCandidate.id) ?? (rec === null || rec === void 0 ? void 0 : rec.id);
+    const recWhy = (topCandidate === null || topCandidate === void 0 ? void 0 : topCandidate.why) ?? (rec === null || rec === void 0 ? void 0 : rec.why) ?? [];
+    const recCandidates = (rec === null || rec === void 0 ? void 0 : rec.candidates) ?? [];
     const recEmp = recId ? employees.find((e) => e.id === recId) : undefined;
     const recName = recEmp
         ? `${recEmp.firstName ?? ""} ${recEmp.lastName ?? ""}`.trim()
@@ -34,7 +36,7 @@ export default function BundleRow({ groupId, items, employees, settings, recomme
                                 alignItems: "center",
                                 gap: 8,
                                 flexWrap: "wrap",
-                            }, children: _jsx("span", { className: "subtitle", children: rangeLabel }) }), rightTag: _jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [recId ? (_jsx("span", { className: "pill", style: { cursor: "pointer" }, title: recName, onClick: () => onAwardBundle?.(recId), children: recName })) : (_jsx("span", { className: "subtitle", children: "\u2014" })), multipleWings && (_jsx("span", { className: "pill", title: distinctWings.join(", "), children: "Multiple wings" })), recWhy.map((w, i) => (_jsx("span", { className: "pill", children: w }, i)))] }) }), _jsx(CellCountdown, { source: primary, settings: settings }), _jsx(CellActions, { children: _jsxs("div", { className: "action-grid", children: [_jsx("button", { className: "btn btn-sm", onClick: () => setAwardOpen((o) => !o), children: awardOpen ? "Hide Award" : "Award" }), awardOpen && (_jsx(InlineEmployeePicker, { employees: employees, value: "", onChange: (id) => onAwardBundle?.(id) })), _jsx("button", { className: "btn btn-sm", onClick: () => setOpen((o) => !o), children: open ? "Hide" : "Expand" }), onEditCoverage && (_jsx("button", { className: "btn btn-sm", onClick: () => onEditCoverage(groupId), children: "Edit coverage" })), _jsx("button", { className: "btn btn-sm", onClick: async () => { if (await window.appShowConfirm?.(`Split this bundle into ${childIds.length} individual shifts?`, "Split bundle"))
+                            }, children: _jsx("span", { className: "subtitle", children: rangeLabel }) }), rightTag: _jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [recId ? (_jsx("span", { className: "pill", style: { cursor: "pointer" }, title: recName, onClick: () => onAwardBundle?.(recId), children: recName })) : (_jsx("span", { className: "subtitle", children: "\u2014" })), multipleWings && (_jsx("span", { className: "pill", title: distinctWings.join(", "), children: "Multiple wings" })), recWhy.map((w, i) => (_jsx("span", { className: "pill", children: w }, i)))] }) }), _jsx(CellCountdown, { source: primary, settings: settings }), _jsx(CellActions, { children: _jsxs("div", { className: "action-grid", children: [_jsx("button", { className: "btn btn-sm", onClick: () => setAwardOpen((o) => !o), children: awardOpen ? "Hide Award" : "Award" }), awardOpen && (_jsx(InlineEmployeePicker, { employees: employees, value: recId ?? "", rankedCandidates: recCandidates, onChange: (id) => onAwardBundle?.(id) })), _jsx("button", { className: "btn btn-sm", onClick: () => setOpen((o) => !o), children: open ? "Hide" : "Expand" }), onEditCoverage && (_jsx("button", { className: "btn btn-sm", onClick: () => onEditCoverage(groupId), children: "Edit coverage" })), _jsx("button", { className: "btn btn-sm", onClick: async () => { if (await window.appShowConfirm?.(`Split this bundle into ${childIds.length} individual shifts?`, "Split bundle"))
         onSplitBundle(childIds); }, children: "Split" }), onResetBundle && (_jsx("button", { className: "btn btn-sm", onClick: () => onResetBundle(groupId), children: "Reset timers" })), _jsx("button", { className: "btn btn-sm danger", onClick: () => onDeleteMany(childIds), children: "Delete" })] }) })] }), open && (_jsxs("tr", { children: [_jsx("td", {}), _jsx("td", { colSpan: 3, children: _jsx("div", { className: "bundle-expand", children: sorted.map((v, i) => (_jsxs("div", { style: {
                                     display: "flex",
                                     gap: 8,
@@ -42,8 +44,31 @@ export default function BundleRow({ groupId, items, employees, settings, recomme
                                     borderTop: i === 0 ? undefined : "1px solid var(--stroke)",
                                 }, children: [_jsx("div", { style: { minWidth: 160 }, children: formatDateLong(v.shiftDate) }), _jsxs("div", { style: { minWidth: 100 }, children: [v.shiftStart, "\u2013", v.shiftEnd] }), _jsx("div", { style: { minWidth: 100 }, children: v.wing ?? "-" })] }, v.id))) }) })] }))] }));
 }
-function InlineEmployeePicker({ employees, value, onChange }) {
+function InlineEmployeePicker({ employees, value, onChange, rankedCandidates = [] }) {
     const [q, setQ] = React.useState("");
-    const list = React.useMemo(() => employees.filter(e => `${e.firstName} ${e.lastName}`.toLowerCase().includes(q.toLowerCase())).slice(0, 50), [employees, q]);
-    return (_jsxs("div", { className: "dropdown", children: [_jsx("input", { placeholder: "Type name\u2026", value: q, onChange: (e) => setQ(e.target.value), onFocus: () => { } }), q && (_jsxs("div", { className: "menu", style: { maxHeight: 240, overflow: "auto" }, children: [list.map(e => (_jsxs("div", { className: "item", onClick: () => { onChange(e.id); setQ(""); }, children: [e.firstName, " ", e.lastName] }, e.id))), !list.length && _jsx("div", { className: "item", style: { opacity: .7 }, children: "No matches" })] }))] }));
+    const [showRanked, setShowRanked] = React.useState(false);
+    React.useEffect(() => {
+        if (!rankedCandidates.length)
+            setShowRanked(false);
+    }, [rankedCandidates.length]);
+    const list = React.useMemo(() => employees
+        .filter(e => `${e.firstName} ${e.lastName}`.toLowerCase().includes(q.toLowerCase()))
+        .slice(0, 50), [employees, q]);
+    const ranked = React.useMemo(() => {
+        if (!rankedCandidates.length)
+            return [];
+        return rankedCandidates
+            .map((candidate) => {
+            const emp = employees.find((e) => e.id === candidate.id);
+            const name = emp
+                ? `${emp.firstName ?? ""} ${emp.lastName ?? ""}`.trim() || emp.id
+                : candidate.id;
+            const subtitle = emp
+                ? `${emp.classification} ${emp.status}`.trim()
+                : "";
+            return { id: candidate.id, why: candidate.why, name, subtitle };
+        })
+            .filter((c) => !!c.id);
+    }, [rankedCandidates, employees]);
+    return (_jsxs("div", { className: "dropdown", children: [_jsx("input", { placeholder: "Type name\u2026", value: q, onChange: (e) => setQ(e.target.value), onFocus: () => { } }), ranked.length > 0 && (_jsx("button", { type: "button", className: "btn btn-sm", style: { marginTop: 4 }, onClick: () => setShowRanked((prev) => !prev), children: showRanked ? "Hide ranked bidders" : "View ranked bidders" })), q && (_jsxs("div", { className: "menu", style: { maxHeight: 240, overflow: "auto" }, children: [list.map(e => (_jsxs("div", { className: "item", onClick: () => { onChange(e.id); setQ(""); setShowRanked(false); }, children: [e.firstName, " ", e.lastName] }, e.id))), !list.length && _jsx("div", { className: "item", style: { opacity: .7 }, children: "No matches" })] })), showRanked && (_jsxs("div", { className: "menu", style: { maxHeight: 320, overflow: "auto", marginTop: 4 }, children: [ranked.map((candidate) => (_jsxs("div", { className: "item", style: { display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, fontWeight: candidate.id === value ? 600 : undefined }, onClick: () => { onChange(candidate.id); setQ(""); setShowRanked(false); }, children: [_jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }, children: [_jsx("span", { children: candidate.name }), _jsx("span", { className: "subtitle", children: candidate.id }), candidate.subtitle && (_jsx("span", { className: "pill", style: { marginLeft: 6 }, children: candidate.subtitle }))] }), _jsx("div", { style: { display: "flex", gap: 4, flexWrap: "wrap" }, children: candidate.why.map((reason, idx) => (_jsx("span", { className: "pill", children: reason }, idx))) })] }, candidate.id))), !ranked.length && _jsx("div", { className: "item", style: { opacity: .7 }, children: "No ranked bidders" })] }))] }));
 }

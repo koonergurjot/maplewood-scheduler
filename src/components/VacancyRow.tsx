@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { formatDateLong, formatDowShort } from "../lib/dates";
 import type { Vacancy, Employee, Settings } from "../types";
 import { OVERRIDE_REASONS } from "../types";
@@ -11,12 +11,14 @@ import {
   CellCountdown,
   CellActions,
 } from "./rows/RowCells";
+import type { RecommendationCandidate } from "../recommend";
 
 export default function VacancyRow({
   v,
   recId,
   recName,
   recWhy,
+  recCandidates,
   employees,
   selected,
   onToggleSelect,
@@ -31,6 +33,7 @@ export default function VacancyRow({
   recId?: string;
   recName: string;
   recWhy: string[];
+  recCandidates: RecommendationCandidate[];
   employees: Employee[];
   selected: boolean;
   onToggleSelect: () => void;
@@ -170,6 +173,7 @@ export default function VacancyRow({
                   employees={employees}
                   value={choice}
                   onChange={setChoice}
+                  rankedCandidates={recCandidates}
                 />
                 <div style={{ whiteSpace: "nowrap" }}>
                   <input
@@ -230,20 +234,50 @@ function SelectEmployee({
   value,
   onChange,
   allowEmpty = false,
+  rankedCandidates = [],
 }: {
   employees: Employee[];
   value: string;
   onChange: (v: string) => void;
   allowEmpty?: boolean;
+  rankedCandidates?: RecommendationCandidate[];
 }) {
   const [open, setOpen] = useState(false);
+  const [showRanked, setShowRanked] = useState(false);
   const [q, setQ] = useState("");
   useEffect(() => {
     if (!value) setQ("");
   }, [value]);
-  const list = employees
-    .filter((e) => matchText(q, `${e.firstName} ${e.lastName} ${e.id}`))
-    .slice(0, 50);
+  useEffect(() => {
+    if (!rankedCandidates.length) setShowRanked(false);
+  }, [rankedCandidates.length]);
+  const list = useMemo(
+    () =>
+      employees
+        .filter((e) => matchText(q, `${e.firstName} ${e.lastName} ${e.id}`))
+        .slice(0, 50),
+    [employees, q],
+  );
+  const ranked = useMemo(() => {
+    if (!rankedCandidates.length) return [] as Array<{
+      id: string;
+      name: string;
+      subtitle: string;
+      why: string[];
+    }>;
+    return rankedCandidates
+      .map((candidate) => {
+        const emp = employees.find((e) => e.id === candidate.id);
+        const name = emp
+          ? `${emp.firstName ?? ""} ${emp.lastName ?? ""}`.trim() || emp.id
+          : candidate.id;
+        const subtitle = emp
+          ? `${emp.classification} ${emp.status}`.trim()
+          : "";
+        return { id: candidate.id, why: candidate.why, name, subtitle };
+      })
+      .filter((c) => !!c.id);
+  }, [rankedCandidates, employees]);
   const curr = employees.find((e) => e.id === value);
   return (
     <div className="dropdown">
@@ -256,6 +290,16 @@ function SelectEmployee({
         }}
         onFocus={() => setOpen(true)}
       />
+      {ranked.length > 0 && (
+        <button
+          type="button"
+          className="btn btn-sm"
+          style={{ marginTop: 4 }}
+          onClick={() => setShowRanked((prev) => !prev)}
+        >
+          {showRanked ? "Hide ranked bidders" : "View ranked bidders"}
+        </button>
+      )}
       {open && (
         <div className="menu" style={{ maxHeight: 320, overflow: "auto" }}>
           {allowEmpty && (
@@ -287,6 +331,49 @@ function SelectEmployee({
             </div>
           ))}
           {!list.length && <div className="item" style={{ opacity: 0.7 }}>No matches</div>}
+        </div>
+      )}
+      {showRanked && (
+        <div className="menu" style={{ maxHeight: 320, overflow: "auto", marginTop: 4 }}>
+          {ranked.map((candidate) => (
+            <div
+              key={candidate.id}
+              className="item"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                gap: 4,
+                fontWeight: candidate.id === value ? 600 : undefined,
+              }}
+              onClick={() => {
+                onChange(candidate.id);
+                setQ(`${candidate.name} (${candidate.id})`);
+                setOpen(false);
+                setShowRanked(false);
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span>{candidate.name}</span>
+                <span className="subtitle">{candidate.id}</span>
+                {candidate.subtitle && (
+                  <span className="pill" style={{ marginLeft: 6 }}>{candidate.subtitle}</span>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {candidate.why.map((reason, idx) => (
+                  <span key={idx} className="pill">
+                    {reason}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+          {!ranked.length && (
+            <div className="item" style={{ opacity: 0.7 }}>
+              No ranked bidders
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -64,13 +64,15 @@ export default function VacancyList({ vacancies, employees, employeesById, recom
                                 }, children: "Clear" })] })), _jsxs("table", { className: "vac-table responsive-table", children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { children: _jsx("input", { type: "checkbox", "aria-label": "Select all vacancies", checked: filteredVacancies.length > 0 &&
                                                     selectedVacancyIds.length === filteredVacancies.length, onChange: (e) => toggleAllVacancies(e.target.checked) }) }), _jsx("th", { children: "Details" }), _jsx("th", { children: "Countdown" }), _jsx("th", { children: "Actions" })] }) }), _jsx("tbody", { children: filteredVacancies.map((v) => {
                                     const rec = recommendations[v.id];
-                                    const recId = rec?.id;
+                                    const topCandidate = rec?.candidates?.[0];
+                                    const recId = (topCandidate === null || topCandidate === void 0 ? void 0 : topCandidate.id) ?? (rec === null || rec === void 0 ? void 0 : rec.id);
                                     const recName = recId
                                         ? `${employeesById[recId]?.firstName ?? ""} ${employeesById[recId]?.lastName ?? ""}`.trim()
                                         : "—";
-                                    const recWhy = rec?.why ?? [];
+                                    const recWhy = (topCandidate === null || topCandidate === void 0 ? void 0 : topCandidate.why) ?? (rec === null || rec === void 0 ? void 0 : rec.why) ?? [];
+                                    const recCandidates = (rec === null || rec === void 0 ? void 0 : rec.candidates) ?? [];
                                     const isDueNext = dueNextId === v.id;
-                                    return (_jsx(VacancyRow, { v: v, recId: recId, recName: recName, recWhy: recWhy, employees: employees, selected: selectedVacancyIds.includes(v.id), onToggleSelect: () => setSelectedVacancyIds((ids) => ids.includes(v.id)
+                                    return (_jsx(VacancyRow, { v: v, recId: recId, recName: recName, recWhy: recWhy, recCandidates: recCandidates, employees: employees, selected: selectedVacancyIds.includes(v.id), onToggleSelect: () => setSelectedVacancyIds((ids) => ids.includes(v.id)
                                             ? ids.filter((id) => id !== v.id)
                                             : [...ids, v.id]), isDueNext: !!isDueNext, awardVacancy: (payload) => awardVacancy(v.id, payload), resetKnownAt: () => resetKnownAt(v.id), onDelete: deleteVacancy, settings: settings }, v.id));
                                 }) })] }), filteredVacancies.length === 0 && (_jsx("div", { className: "subtitle", style: { marginTop: 8 }, children: "No open vacancies \uD83C\uDF89" }))] })] }));

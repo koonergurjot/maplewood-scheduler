@@ -41,12 +41,13 @@ describe("VacancyRow", () => {
             v={vacancy}
             recName="—"
             recWhy={[]}
+            recCandidates={[]}
             employees={[] as Employee[]}
             selected={false}
             onToggleSelect={() => {}}
             isDueNext={false}
-            onAward={() => {}}
-            onResetKnownAt={() => {}}
+            awardVacancy={() => {}}
+            resetKnownAt={() => {}}
             onDelete={() => {}}
             coveredName="Jane Doe"
             settings={settings}

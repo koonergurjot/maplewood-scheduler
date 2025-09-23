@@ -63,8 +63,10 @@ export default function BundleRow({
   const dateList = sorted.map((v) => formatDateLong(v.shiftDate)).join(", ");
 
   const rec = recommendations[primary.id];
-  const recId = rec?.id;
-  const recWhy = rec?.why ?? [];
+  const topCandidate = rec?.candidates?.[0];
+  const recId = topCandidate?.id ?? rec?.id;
+  const recWhy = topCandidate?.why ?? rec?.why ?? [];
+  const recCandidates = rec?.candidates ?? [];
   const recEmp = recId ? employees.find((e) => e.id === recId) : undefined;
   const recName = recEmp
     ? `${recEmp.firstName ?? ""} ${recEmp.lastName ?? ""}`.trim()
@@ -145,7 +147,12 @@ export default function BundleRow({
           <div className="action-grid">
           <button className="btn btn-sm" onClick={()=> setAwardOpen((o)=> !o)}>{awardOpen?"Hide Award":"Award"}</button>
           {awardOpen && (
-            <InlineEmployeePicker employees={employees} value="" onChange={(id)=> onAwardBundle?.(id)} />
+            <InlineEmployeePicker
+              employees={employees}
+              value={recId ?? ""}
+              rankedCandidates={recCandidates}
+              onChange={(id)=> onAwardBundle?.(id)}
+            />
           )}
           <button className="btn btn-sm" onClick={() => setOpen((o) => !o)}>
             {open ? "Hide" : "Expand"}
@@ -206,20 +213,129 @@ export default function BundleRow({
   );
 }
 
-function InlineEmployeePicker({ employees, value, onChange }:{ employees: Employee[]; value: string; onChange: (id:string)=>void }){
+function InlineEmployeePicker({
+  employees,
+  value,
+  onChange,
+  rankedCandidates = [],
+}: {
+  employees: Employee[];
+  value: string;
+  onChange: (id: string) => void;
+  rankedCandidates?: Recommendation["candidates"];
+}) {
   const [q, setQ] = React.useState("");
-  const list = React.useMemo(()=> employees.filter(e=> `${e.firstName} ${e.lastName}`.toLowerCase().includes(q.toLowerCase())).slice(0,50), [employees,q]);
+  const [showRanked, setShowRanked] = React.useState(false);
+  React.useEffect(() => {
+    if (!rankedCandidates.length) setShowRanked(false);
+  }, [rankedCandidates.length]);
+  const list = React.useMemo(
+    () =>
+      employees
+        .filter((e) =>
+          `${e.firstName} ${e.lastName}`
+            .toLowerCase()
+            .includes(q.toLowerCase()),
+        )
+        .slice(0, 50),
+    [employees, q],
+  );
+  const ranked = React.useMemo(() => {
+    if (!rankedCandidates.length) return [] as Array<{
+      id: string;
+      name: string;
+      subtitle: string;
+      why: string[];
+    }>;
+    return rankedCandidates
+      .map((candidate) => {
+        const emp = employees.find((e) => e.id === candidate.id);
+        const name = emp
+          ? `${emp.firstName ?? ""} ${emp.lastName ?? ""}`.trim() || emp.id
+          : candidate.id;
+        const subtitle = emp
+          ? `${emp.classification} ${emp.status}`.trim()
+          : "";
+        return { id: candidate.id, why: candidate.why, name, subtitle };
+      })
+      .filter((c) => !!c.id);
+  }, [rankedCandidates, employees]);
   return (
     <div className="dropdown">
-      <input placeholder="Type name…" value={q} onChange={(e)=> setQ(e.target.value)} onFocus={()=>{}} />
+      <input
+        placeholder="Type name…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        onFocus={() => {}}
+      />
+      {ranked.length > 0 && (
+        <button
+          type="button"
+          className="btn btn-sm"
+          style={{ marginTop: 4 }}
+          onClick={() => setShowRanked((prev) => !prev)}
+        >
+          {showRanked ? "Hide ranked bidders" : "View ranked bidders"}
+        </button>
+      )}
       {q && (
         <div className="menu" style={{ maxHeight: 240, overflow: "auto" }}>
-          {list.map(e=> (
-            <div key={e.id} className="item" onClick={()=>{ onChange(e.id); setQ(""); }}>
+          {list.map((e) => (
+            <div
+              key={e.id}
+              className="item"
+              onClick={() => {
+                onChange(e.id);
+                setQ("");
+                setShowRanked(false);
+              }}
+            >
               {e.firstName} {e.lastName}
             </div>
           ))}
-          {!list.length && <div className="item" style={{ opacity:.7 }}>No matches</div>}
+          {!list.length && <div className="item" style={{ opacity: 0.7 }}>No matches</div>}
+        </div>
+      )}
+      {showRanked && (
+        <div className="menu" style={{ maxHeight: 320, overflow: "auto", marginTop: 4 }}>
+          {ranked.map((candidate) => (
+            <div
+              key={candidate.id}
+              className="item"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                gap: 4,
+                fontWeight: candidate.id === value ? 600 : undefined,
+              }}
+              onClick={() => {
+                onChange(candidate.id);
+                setQ("");
+                setShowRanked(false);
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span>{candidate.name}</span>
+                <span className="subtitle">{candidate.id}</span>
+                {candidate.subtitle && (
+                  <span className="pill" style={{ marginLeft: 6 }}>{candidate.subtitle}</span>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {candidate.why.map((reason, idx) => (
+                  <span key={idx} className="pill">
+                    {reason}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+          {!ranked.length && (
+            <div className="item" style={{ opacity: 0.7 }}>
+              No ranked bidders
+            </div>
+          )}
         </div>
       )}
     </div>
