@@ -1792,6 +1792,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
           open={bulkAwardOpen}
           employees={employees}
           vacancies={vacancies.filter((v) => selectedVacancyIds.includes(v.id))}
+          bids={bids}
           onClose={() => setBulkAwardOpen(false)}
           onConfirm={(payload) => {
             setVacancies((prev) =>
