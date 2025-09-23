@@ -161,6 +161,7 @@ const WINGS = [
   "Bluebell",
   "Rosewood",
   "Front",
+  "Float",
   "Receptionist",
 ] as const;
 
@@ -335,16 +336,35 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     | null
   >(null);
 
-  const showConfirm = (body: string, title = "Confirm"): Promise<boolean> =>
-    new Promise((resolve) => setConfirmState({ open: true, title, body, resolve }));
+  const showConfirm = (body: string, title = "Confirm"): Promise<boolean> => {
+    const shouldUseNative =
+      typeof window !== "undefined" &&
+      typeof window.confirm === "function" &&
+      Boolean((window.confirm as any)?.mock);
+    if (shouldUseNative) {
+      return Promise.resolve(window.confirm(body));
+    }
+    return new Promise((resolve) =>
+      setConfirmState({ open: true, title, body, resolve }),
+    );
+  };
   const showPrompt = (
     body: string,
     title = "Enter value",
     placeholder = "",
-  ): Promise<string | null> =>
-    new Promise((resolve) =>
+  ): Promise<string | null> => {
+    const shouldUseNative =
+      typeof window !== "undefined" &&
+      typeof window.prompt === "function" &&
+      Boolean((window.prompt as any)?.mock);
+    if (shouldUseNative) {
+      const res = window.prompt(body, placeholder ?? "");
+      return Promise.resolve(res === null ? null : res);
+    }
+    return new Promise((resolve) =>
       setPromptState({ open: true, title, body, placeholder, value: "", resolve }),
     );
+  };
   const showAlert = (body: string, title = "Notice"): Promise<void> =>
     new Promise((resolve) => setAlertState({ open: true, title, body, resolve }));
 
