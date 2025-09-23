@@ -6,6 +6,10 @@ import { useVacancyFilters } from "../hooks/useVacancyFilters";
 import { WINGS, SHIFT_PRESETS } from "../types";
 import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
 import { minutesBetween } from "../lib/dates";
+import { List, type RowComponentProps } from "react-window";
+
+const ROW_HEIGHT = 220;
+const MAX_LIST_HEIGHT = 600;
 
 interface Props {
   vacancies: Vacancy[];
@@ -101,6 +105,40 @@ export default function VacancyList({
     setSelectedVacancyIds(checked ? filteredVacancies.map((v) => v.id) : []);
   };
 
+  const listHeight = useMemo(() => {
+    if (filteredVacancies.length === 0) return 0;
+    return Math.min(
+      MAX_LIST_HEIGHT,
+      Math.max(filteredVacancies.length, 1) * ROW_HEIGHT,
+    );
+  }, [filteredVacancies.length]);
+
+  const rowProps = useMemo<VacancyListRowProps>(() => {
+    return {
+      items: filteredVacancies,
+      employees,
+      recommendations,
+      selectedVacancyIds,
+      setSelectedVacancyIds,
+      awardVacancy,
+      resetKnownAt,
+      deleteVacancy,
+      settings,
+      dueNextId,
+    };
+  }, [
+    filteredVacancies,
+    employees,
+    recommendations,
+    selectedVacancyIds,
+    setSelectedVacancyIds,
+    awardVacancy,
+    resetKnownAt,
+    deleteVacancy,
+    settings,
+    dueNextId,
+  ]);
+
   return (
     <div className="card">
       <div className="card-h">Open Vacancies</div>
@@ -170,10 +208,14 @@ export default function VacancyList({
             </button>
           </div>
         )}
-        <table className="vac-table responsive-table">
-          <thead>
-            <tr>
-              <th>
+        <div
+          className="vac-table virtual-vac-table responsive-table"
+          role="table"
+          aria-label="Open vacancies"
+        >
+          <div className="vac-table__header" role="rowgroup">
+            <div className="vac-table__header-row" role="row">
+              <div className="vac-table__header-cell" role="columnheader">
                 <input
                   type="checkbox"
                   aria-label="Select all vacancies"
@@ -183,45 +225,95 @@ export default function VacancyList({
                   }
                   onChange={(e) => toggleAllVacancies(e.target.checked)}
                 />
-              </th>
-              <th>Details</th>
-              <th>Countdown</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredVacancies.map((v) => {
-              const isDueNext = dueNextId === v.id;
-              return (
-                <VacancyRow
-                  key={v.id}
-                  v={v}
-                  recommendation={recommendations[v.id]}
-                  employees={employees}
-                  selected={selectedVacancyIds.includes(v.id)}
-                  onToggleSelect={() =>
-                    setSelectedVacancyIds((ids: string[]) =>
-                      ids.includes(v.id)
-                        ? ids.filter((id) => id !== v.id)
-                        : [...ids, v.id],
-                    )
-                  }
-                  isDueNext={!!isDueNext}
-                  awardVacancy={(payload) => awardVacancy(v.id, payload)}
-                  resetKnownAt={() => resetKnownAt(v.id)}
-                  onDelete={deleteVacancy}
-                  settings={settings}
-                />
-              );
-            })}
-          </tbody>
-        </table>
-        {filteredVacancies.length === 0 && (
-          <div className="subtitle" style={{ marginTop: 8 }}>
-            No open vacancies 🎉
+              </div>
+              <div className="vac-table__header-cell" role="columnheader">
+                Details
+              </div>
+              <div className="vac-table__header-cell" role="columnheader">
+                Countdown
+              </div>
+              <div className="vac-table__header-cell" role="columnheader">
+                Actions
+              </div>
+            </div>
           </div>
-        )}
+          {filteredVacancies.length > 0 && listHeight > 0 ? (
+            <List
+              className="vac-table__body vac-table__scroller"
+              style={{ height: listHeight, width: "100%" }}
+              rowCount={filteredVacancies.length}
+              rowHeight={ROW_HEIGHT}
+              overscanCount={4}
+              rowComponent={VirtualVacancyRow}
+              rowProps={rowProps}
+              role="rowgroup"
+            />
+          ) : (
+            <div className="vac-table__empty" role="row">
+              <div className="vac-table__cell" role="cell">
+                No open vacancies 🎉
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
+type VacancyListRowProps = {
+  items: Vacancy[];
+  employees: Employee[];
+  recommendations: Record<string, Recommendation>;
+  selectedVacancyIds: string[];
+  setSelectedVacancyIds: (fn: any) => void;
+  awardVacancy: Props["awardVacancy"];
+  resetKnownAt: Props["resetKnownAt"];
+  deleteVacancy: NonNullable<Props["deleteVacancy"]>;
+  settings: Settings;
+  dueNextId: string | null;
+};
+
+const VirtualVacancyRow = ({
+  ariaAttributes,
+  index,
+  style,
+  items,
+  employees,
+  recommendations,
+  selectedVacancyIds,
+  setSelectedVacancyIds,
+  awardVacancy,
+  resetKnownAt,
+  deleteVacancy,
+  settings,
+  dueNextId,
+}: RowComponentProps<VacancyListRowProps>) => {
+  const vacancy = items[index];
+  if (!vacancy) return null;
+  const { role: _role, ...restAria } = ariaAttributes ?? {};
+  const isDueNext = dueNextId === vacancy.id;
+  return (
+    <VacancyRow
+      as="div"
+      style={{ ...style, width: "100%" }}
+      ariaProps={restAria}
+      v={vacancy}
+      recommendation={recommendations[vacancy.id]}
+      employees={employees}
+      selected={selectedVacancyIds.includes(vacancy.id)}
+      onToggleSelect={() =>
+        setSelectedVacancyIds((ids: string[]) =>
+          ids.includes(vacancy.id)
+            ? ids.filter((id) => id !== vacancy.id)
+            : [...ids, vacancy.id],
+        )
+      }
+      isDueNext={!!isDueNext}
+      awardVacancy={(payload) => awardVacancy(vacancy.id, payload)}
+      resetKnownAt={() => resetKnownAt(vacancy.id)}
+      onDelete={deleteVacancy}
+      settings={settings}
+    />
+  );
+};

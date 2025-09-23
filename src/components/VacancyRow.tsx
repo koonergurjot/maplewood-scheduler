@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import type { CSSProperties } from "react";
 import { formatDateLong, formatDowShort } from "../lib/dates";
 import type { Vacancy, Employee, Settings } from "../types";
 import { OVERRIDE_REASONS } from "../types";
@@ -25,6 +26,9 @@ export default function VacancyRow({
   onDelete,
   coveredName,
   settings,
+  as = "tr",
+  style,
+  ariaProps,
 }: {
   v: Vacancy;
   recommendation?: Recommendation;
@@ -41,6 +45,9 @@ export default function VacancyRow({
   onDelete: (id: string) => void;
   coveredName?: string;
   settings: Settings;
+  as?: "tr" | "div";
+  style?: CSSProperties;
+  ariaProps?: Record<string, string | number | undefined>;
 }) {
   const [choice, setChoice] = useState<string>("");
   const [choiceManual, setChoiceManual] = useState<boolean>(false);
@@ -125,20 +132,34 @@ export default function VacancyRow({
     setChoiceManual(false);
   };
 
+  const RowComponent = (as === "div" ? "div" : "tr") as keyof JSX.IntrinsicElements;
+  const cellComponent = as === "div" ? "div" : "td";
+  const rowClassName = `${as === "div" ? "vac-table__row " : ""}${
+    isDueNext ? "due-next " : ""
+  }${selected ? "selected" : ""}`
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const sanitizedAriaProps = { ...(ariaProps ?? {}) };
+  delete sanitizedAriaProps.role;
+  const rowExtraProps = as === "div" ? { role: "row", ...sanitizedAriaProps } : {};
+
   return (
-    <tr
-      className={`${isDueNext ? "due-next " : ""}${
-        selected ? "selected" : ""
-      }`.trim()}
+    <RowComponent
+      className={rowClassName}
       aria-selected={selected}
       tabIndex={0}
+      style={style}
+      {...rowExtraProps}
     >
       <CellSelect
+        component={cellComponent}
         checked={selected}
         onChange={onToggleSelect}
         ariaLabel={`Select vacancy ${v.id}`}
       />
       <CellDetails
+        component={cellComponent}
         title={
           <div
             style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}
@@ -203,8 +224,8 @@ export default function VacancyRow({
           </div>
         }
       />
-      <CellCountdown source={v} settings={settings} />
-      <CellActions>
+      <CellCountdown component={cellComponent} source={v} settings={settings} />
+      <CellActions component={cellComponent}>
         {isBundleChild ? (
           <div className="action-grid">
             <button className="btn btn-sm" onClick={resetKnownAt}>
@@ -311,7 +332,7 @@ export default function VacancyRow({
           </div>
         )}
       </CellActions>
-    </tr>
+    </RowComponent>
   );
 }
 
