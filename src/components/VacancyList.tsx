@@ -1,20 +1,15 @@
 import { useMemo } from "react";
 import type { Vacancy, Employee, Settings } from "../types";
+import type { Recommendation } from "../recommend";
 import VacancyRow from "./VacancyRow";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
 import { WINGS, SHIFT_PRESETS } from "../types";
 import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
 import { minutesBetween } from "../lib/dates";
 
-export interface Recommendation {
-  id?: string;
-  why: string[];
-}
-
 interface Props {
   vacancies: Vacancy[];
   employees: Employee[];
-  employeesById: Record<string, Employee>;
   recommendations: Record<string, Recommendation>;
   selectedVacancyIds: string[];
   setSelectedVacancyIds: (fn: any) => void;
@@ -40,7 +35,6 @@ interface Props {
 export default function VacancyList({
   vacancies,
   employees,
-  employeesById,
   recommendations,
   selectedVacancyIds,
   setSelectedVacancyIds,
@@ -89,9 +83,9 @@ export default function VacancyList({
       }
       if (start && v.shiftDate < start) return false;
       if (end && v.shiftDate > end) return false;
-    return true;
-  });
-}, [
+      return true;
+    });
+  }, [
     vacancies,
     filterWing,
     filterClass,
@@ -197,20 +191,12 @@ export default function VacancyList({
           </thead>
           <tbody>
             {filteredVacancies.map((v) => {
-              const rec = recommendations[v.id];
-              const recId = rec?.id;
-              const recName = recId
-                ? `${employeesById[recId]?.firstName ?? ""} ${employeesById[recId]?.lastName ?? ""}`.trim()
-                : "—";
-              const recWhy = rec?.why ?? [];
               const isDueNext = dueNextId === v.id;
               return (
                 <VacancyRow
                   key={v.id}
                   v={v}
-                  recId={recId}
-                  recName={recName}
-                  recWhy={recWhy}
+                  recommendation={recommendations[v.id]}
                   employees={employees}
                   selected={selectedVacancyIds.includes(v.id)}
                   onToggleSelect={() =>
