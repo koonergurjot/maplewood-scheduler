@@ -3,6 +3,7 @@ import React from "react";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import OpenVacanciesRedesign from "../src/components/OpenVacanciesRedesign.tsx";
+import type { Vacancy } from "../src/types";
 
 vi.mock("../src/hooks/useVacancyFilters", async () => {
   return await import("../src/hooks/useVacancyFilters.ts");
@@ -18,7 +19,7 @@ const settings = {
   },
 };
 
-const vacancies = [
+const vacancies: Vacancy[] = [
   {
     id: "v1",
     reason: "Shift A",
@@ -93,8 +94,10 @@ describe("OpenVacanciesRedesign filters", () => {
   });
 
   it("filters by date range", () => {
-    const { container } = renderComponent();
-    const [start, end] = container.querySelectorAll('input[type="date"]');
+  const { container } = renderComponent();
+  const [start, end] = Array.from(
+    container.querySelectorAll<HTMLInputElement>('input[type="date"]'),
+  ) as [HTMLInputElement, HTMLInputElement];
     fireEvent.change(start, { target: { value: "2024-01-15" } });
     expect(screen.queryByText("Alpha")).toBeNull();
     expect(screen.getByText("Beta")).toBeTruthy();

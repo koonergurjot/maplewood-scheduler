@@ -4,14 +4,52 @@ import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import OpenVacancies from "../src/components/OpenVacancies";
 import useVacancies from "../src/state/useVacancies";
+import type { Vacation, Vacancy } from "../src/types";
 
 const LS_KEY = "maplewood-scheduler-v3";
 
-function setupLocalStorage(vacancies: any[] = [], auditLog: any[] = []) {
+const BASE_VACANCY: Vacancy = {
+  id: "vacancy-1",
+  reason: "Shift",
+  classification: "RN",
+  date: "2024-01-01",
+  start: "08:00",
+  end: "16:00",
+  shiftDate: "2024-01-01",
+  shiftStart: "08:00",
+  shiftEnd: "16:00",
+  knownAt: "2024-01-01T00:00:00.000Z",
+  offeringTier: "CASUALS",
+  offeringStep: "Casuals",
+  status: "Open",
+};
+
+const BASE_VACATION: Vacation = {
+  id: "vac-1",
+  employeeId: "emp-1",
+  employeeName: "Employee One",
+  classification: "RN",
+  wing: "Alpha",
+  startDate: "2024-01-01",
+  endDate: "2024-01-02",
+};
+
+function makeVacancy(overrides: Partial<Vacancy> = {}): Vacancy {
+  return { ...BASE_VACANCY, ...overrides };
+}
+
+function makeVacation(overrides: Partial<Vacation> = {}): Vacation {
+  return { ...BASE_VACATION, ...overrides };
+}
+
+function setupLocalStorage(
+  vacancies: Vacancy[] = [],
+  auditLog: unknown[] = [],
+) {
   localStorage.setItem(LS_KEY, JSON.stringify({ vacancies, auditLog }));
 }
 
-  describe("OpenVacancies", () => {
+describe("OpenVacancies", () => {
   beforeEach(() => {
     localStorage.clear();
   });
@@ -19,39 +57,19 @@ function setupLocalStorage(vacancies: any[] = [], auditLog: any[] = []) {
 
   it("renders delete buttons with tooltip", () => {
     const vacancies = [
-      {
-        id: "v1",
-        classification: "RN",
-        date: "2024-01-01",
-        start: "08:00",
-        end: "16:00",
-        shiftDate: "2024-01-01",
-        shiftStart: "08:00",
-        shiftEnd: "16:00",
-        knownAt: "2024-01-01T00:00:00.000Z",
-        offeringTier: "CASUALS",
-        offeringStep: "Casuals",
-        status: "Open",
-      },
-      {
+      makeVacancy({ id: "v1" }),
+      makeVacancy({
         id: "v2",
         classification: "LPN",
         date: "2024-01-02",
-        start: "08:00",
-        end: "16:00",
         shiftDate: "2024-01-02",
-        shiftStart: "08:00",
-        shiftEnd: "16:00",
         knownAt: "2024-01-02T00:00:00.000Z",
-        offeringTier: "CASUALS",
-        offeringStep: "Casuals",
-        status: "Open",
-      },
+      }),
     ];
     setupLocalStorage(vacancies);
 
     let vacState: ReturnType<typeof useVacancies>;
-    const vacations: any[] = [];
+    const vacations: Vacation[] = [];
     function Wrapper() {
       vacState = useVacancies();
       return <OpenVacancies {...vacState} vacations={vacations} />;
@@ -66,39 +84,19 @@ function setupLocalStorage(vacancies: any[] = [], auditLog: any[] = []) {
   it("bulk deletes vacancies and records audit log", async () => {
     vi.useFakeTimers();
     const vacancies = [
-      {
-        id: "v1",
-        classification: "RN",
-        date: "2024-01-01",
-        start: "08:00",
-        end: "16:00",
-        shiftDate: "2024-01-01",
-        shiftStart: "08:00",
-        shiftEnd: "16:00",
-        knownAt: "2024-01-01T00:00:00.000Z",
-        offeringTier: "CASUALS",
-        offeringStep: "Casuals",
-        status: "Open",
-      },
-      {
+      makeVacancy({ id: "v1" }),
+      makeVacancy({
         id: "v2",
         classification: "LPN",
         date: "2024-01-02",
-        start: "08:00",
-        end: "16:00",
         shiftDate: "2024-01-02",
-        shiftStart: "08:00",
-        shiftEnd: "16:00",
         knownAt: "2024-01-02T00:00:00.000Z",
-        offeringTier: "CASUALS",
-        offeringStep: "Casuals",
-        status: "Open",
-      },
+      }),
     ];
     setupLocalStorage(vacancies);
 
     let vacState: ReturnType<typeof useVacancies>;
-    const vacations: any[] = [];
+    const vacations: Vacation[] = [];
     function Wrapper() {
       vacState = useVacancies();
       return <OpenVacancies {...vacState} vacations={vacations} />;
@@ -126,26 +124,12 @@ function setupLocalStorage(vacancies: any[] = [], auditLog: any[] = []) {
     vi.useRealTimers();
   });
 
-    it("shows covered employee name when linked to a vacation", () => {
-      const vacancies = [
-        {
-          id: "v1",
-          classification: "RN",
-          date: "2024-01-01",
-          start: "08:00",
-          end: "16:00",
-          shiftDate: "2024-01-01",
-          shiftStart: "08:00",
-          shiftEnd: "16:00",
-          knownAt: "2024-01-01T00:00:00.000Z",
-          offeringTier: "CASUALS",
-          offeringStep: "Casuals",
-          status: "Open",
-          vacationId: "vac1",
-        },
-      ];
+  it("shows covered employee name when linked to a vacation", () => {
+    const vacancies = [
+      makeVacancy({ id: "v1", vacationId: "vac1" }),
+    ];
     const vacations = [
-      { id: "vac1", employeeName: "John Doe" },
+      makeVacation({ id: "vac1", employeeName: "John Doe" }),
     ];
     setupLocalStorage(vacancies);
 
@@ -157,59 +141,39 @@ function setupLocalStorage(vacancies: any[] = [], auditLog: any[] = []) {
 
     render(<Wrapper />);
 
-      expect(screen.getByText("John Doe")).toBeTruthy();
-    });
+    expect(screen.getByText("John Doe")).toBeTruthy();
+  });
 
-    it("bundles multi-day vacancies into a single row", () => {
-      const vacancies = [
-        {
-          id: "v1",
-          bundleId: "b1",
-          classification: "RN",
-          date: "2024-01-01",
-          start: "08:00",
-          end: "16:00",
-          shiftDate: "2024-01-01",
-          shiftStart: "08:00",
-          shiftEnd: "16:00",
-          knownAt: "2024-01-01T00:00:00.000Z",
-          offeringTier: "CASUALS",
-          offeringStep: "Casuals",
-          status: "Open",
-          startDate: "2024-01-01",
-          endDate: "2024-01-02",
-        },
-        {
-          id: "v2",
-          bundleId: "b1",
-          classification: "RN",
-          date: "2024-01-02",
-          start: "08:00",
-          end: "16:00",
-          shiftDate: "2024-01-02",
-          shiftStart: "08:00",
-          shiftEnd: "16:00",
-          knownAt: "2024-01-01T00:00:00.000Z",
-          offeringTier: "CASUALS",
-          offeringStep: "Casuals",
-          status: "Open",
-          startDate: "2024-01-01",
-          endDate: "2024-01-02",
-        },
-      ];
-      setupLocalStorage(vacancies);
+  it("bundles multi-day vacancies into a single row", () => {
+    const vacancies = [
+      makeVacancy({
+        id: "v1",
+        bundleId: "b1",
+        startDate: "2024-01-01",
+        endDate: "2024-01-02",
+      }),
+      makeVacancy({
+        id: "v2",
+        bundleId: "b1",
+        date: "2024-01-02",
+        shiftDate: "2024-01-02",
+        startDate: "2024-01-01",
+        endDate: "2024-01-02",
+      }),
+    ];
+    setupLocalStorage(vacancies);
 
-      let vacState: ReturnType<typeof useVacancies>;
-      const vacations: any[] = [];
-      function Wrapper() {
-        vacState = useVacancies();
-        return <OpenVacancies {...vacState} vacations={vacations} />;
-      }
+    let vacState: ReturnType<typeof useVacancies>;
+    const vacations: Vacation[] = [];
+    function Wrapper() {
+      vacState = useVacancies();
+      return <OpenVacancies {...vacState} vacations={vacations} />;
+    }
 
-      const { container } = render(<Wrapper />);
-      fireEvent.click(screen.getAllByLabelText("Group by bundle")[0]);
-      const buttons = container.querySelectorAll('[data-testid^="vacancy-delete-"]');
-      expect(buttons.length).toBe(1);
-    });
+    const { container } = render(<Wrapper />);
+    fireEvent.click(screen.getAllByLabelText("Group by bundle")[0]);
+    const buttons = container.querySelectorAll('[data-testid^="vacancy-delete-"]');
+    expect(buttons.length).toBe(1);
+  });
   });
 
