@@ -21,5 +21,19 @@ module.exports = {
     "react/prop-types": "off",
     "no-ex-assign": "off",
     "@typescript-eslint/no-non-null-asserted-optional-chain": "off"
-  }
+  },
+  overrides: [
+    {
+      files: ["src/**/*.{js,jsx}"],
+      rules: {
+        "no-restricted-syntax": [
+          "error",
+          {
+            selector: "Program",
+            message: "Modules in src/ must be written in TypeScript (.ts/.tsx)."
+          }
+        ]
+      }
+    }
+  ]
 };
