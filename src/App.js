@@ -45,9 +45,10 @@ const WINGS = [
     "Shamrock",
     "Bluebell",
     "Rosewood",
-    "Front",
+    "Recreation",
     "Float",
     "Receptionist",
+    "1 on 1",
 ];
 const SHIFT_PRESETS = [
     { label: "Day", start: "06:30", end: "14:30" },
