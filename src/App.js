@@ -1156,8 +1156,8 @@ export function BidsPage({ bids, archivedBids, setBids, vacancies, vacations, em
     });
     const awardedVacancies = vacancies.filter((v) => v.status === "Awarded");
     const [expanded, setExpanded] = useState({});
-    const removeBid = (index) => {
-        setBids((prev) => prev.filter((_, idx) => idx !== index));
+    const removeBid = (bidToRemove) => {
+        setBids((prev) => prev.filter((bid) => bid !== bidToRemove));
     };
     const setNow = () => {
         const now = new Date();
@@ -1322,7 +1322,7 @@ export function BidsPage({ bids, archivedBids, setBids, vacancies, vacations, em
                                     setFilterEnd("");
                                 } })), _jsxs("table", { className: "responsive-table", children: [_jsx("thead", { children: _jsxs("tr", { children: [_jsx("th", { children: "Vacancy" }), _jsx("th", { children: "Employee" }), _jsx("th", { children: "Class" }), _jsx("th", { children: "Status" }), _jsx("th", { children: "Bid at" }), _jsx("th", {})] }) }), _jsx("tbody", { children: filteredActiveBids.map((b, i) => {
                                             const v = vacancies.find((x) => x.id === b.vacancyId);
-                                            return (_jsxs("tr", { children: [_jsx("td", { children: v ? displayVacancyLabel(v) : b.vacancyId }), _jsx("td", { children: b.bidderName }), _jsx("td", { children: b.bidderClassification }), _jsx("td", { children: b.bidderStatus }), _jsx("td", { children: new Date(b.bidTimestamp).toLocaleString() }), _jsx("td", { children: _jsx("button", { className: "btn", style: { background: "var(--bad)", color: "#fff" }, onClick: () => removeBid(i), children: "Delete" }) })] }, i));
+                                            return (_jsxs("tr", { children: [_jsx("td", { children: v ? displayVacancyLabel(v) : b.vacancyId }), _jsx("td", { children: b.bidderName }), _jsx("td", { children: b.bidderClassification }), _jsx("td", { children: b.bidderStatus }), _jsx("td", { children: new Date(b.bidTimestamp).toLocaleString() }), _jsx("td", { children: _jsx("button", { className: "btn", style: { background: "var(--bad)", color: "#fff" }, onClick: () => removeBid(b), children: "Delete" }) })] }, i));
                                         }) })] })] })] }), _jsxs("div", { className: "card", children: [_jsx("div", { className: "card-h", children: "Archived Bids" }), _jsx("div", { className: "card-c", children: _jsx("table", { className: "responsive-table", children: _jsxs("tbody", { children: [awardedVacancies.map((v) => (_jsxs(Fragment, { children: [_jsx("tr", { onClick: () => setExpanded((prev) => ({ ...prev, [v.id]: !prev[v.id] })), style: { cursor: "pointer", background: "var(--cardAlt)" }, children: _jsx("td", { colSpan: 5, children: displayVacancyLabel(v) }) }), expanded[v.id] && (_jsxs(Fragment, { children: [_jsxs("tr", { children: [_jsx("th", { style: { paddingLeft: 24 }, children: "Employee" }), _jsx("th", { children: "Class" }), _jsx("th", { children: "Status" }), _jsx("th", { children: "Bid at" }), _jsx("th", { children: "Notes" })] }), archivedBids[v.id]?.map((b, i) => (_jsxs("tr", { children: [_jsx("td", { style: { paddingLeft: 24 }, children: b.bidderName }), _jsx("td", { children: b.bidderClassification }), _jsx("td", { children: b.bidderStatus }), _jsx("td", { children: new Date(b.bidTimestamp).toLocaleString() }), _jsx("td", { children: b.notes })] }, i))), !(archivedBids[v.id] && archivedBids[v.id].length) && (_jsx("tr", { children: _jsx("td", { style: { paddingLeft: 24 }, colSpan: 5, children: "No bids" }) }))] }))] }, v.id))), !awardedVacancies.length && (_jsx("tr", { children: _jsx("td", { children: "No archived bids" }) }))] }) }) })] })] }));
 }
 function CoverageDayList({ dateISO, vacancies, }) {
