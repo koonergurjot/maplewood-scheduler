@@ -1,6 +1,14 @@
 import React, { useEffect, useRef } from "react";
 
-export function Modal({ open, title, children, onClose, footer }: { open: boolean; title?: string; children: React.ReactNode; onClose: () => void; footer?: React.ReactNode }) {
+interface ModalProps {
+  open: boolean;
+  title?: string;
+  children: React.ReactNode;
+  onClose: () => void;
+  footer?: React.ReactNode;
+}
+
+export function Modal({ open, title, children, onClose, footer }: ModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
