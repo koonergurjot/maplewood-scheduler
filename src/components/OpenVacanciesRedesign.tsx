@@ -45,6 +45,8 @@ export default function OpenVacanciesRedesign(props: Props) {
     setEnd,
     filterClass,
     setFilterClass,
+    bundleMode,
+    setBundleMode,
   } = useVacancyFilters();
   const employeesById = useMemo(() => {
     const map: Record<string, Employee> = {};
@@ -82,10 +84,10 @@ export default function OpenVacanciesRedesign(props: Props) {
     if (filters?.wing) list = list.filter((v) => (v.wing || "") === filters!.wing);
     if (filters?.classification)
       list = list.filter((v) => v.classification === filters!.classification);
-    if (filters?.bundlesOnly) list = list.filter((v) => v.bundleId);
-    if (filters?.singlesOnly) list = list.filter((v) => !v.bundleId);
+    if (bundleMode === "bundles") list = list.filter((v) => v.bundleId);
+    if (bundleMode === "singles") list = list.filter((v) => !v.bundleId);
     return list;
-  }, [vacancies, search, filterClass, start, end, filters, vacNameById]);
+  }, [vacancies, search, filterClass, start, end, filters, vacNameById, bundleMode]);
 
   const [groupByBundle, setGroupByBundle] = useState(true);
 
@@ -148,16 +150,18 @@ export default function OpenVacanciesRedesign(props: Props) {
         startDate={start}
         endDate={end}
         category={filterClass}
-        categories={["RCA", "LPN", "RN"]}
         onQueryChange={setSearch}
         onStartDateChange={setStart}
         onEndDateChange={setEnd}
-        onCategoryChange={(v) => setFilterClass(v as any)}
+        onCategoryChange={(value) => setFilterClass(value)}
+        bundleMode={bundleMode}
+        onBundleModeChange={(mode) => setBundleMode(mode)}
         onClear={() => {
           setSearch("");
           setStart("");
           setEnd("");
           setFilterClass("");
+          setBundleMode("all");
         }}
       />
       <div style={{ marginBottom: 8 }}>

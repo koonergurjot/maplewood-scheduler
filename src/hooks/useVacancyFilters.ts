@@ -9,6 +9,7 @@ export function useVacancyFilters() {
   const [start, setStart] = useState<string>("");
   const [end, setEnd] = useState<string>("");
   const [search, setSearch] = useState<string>("");
+  const [bundleMode, setBundleMode] = useState<"all" | "bundles" | "singles">("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
   return {
     filterWing,
@@ -25,6 +26,8 @@ export function useVacancyFilters() {
     setEnd,
     search,
     setSearch,
+    bundleMode,
+    setBundleMode,
     filtersOpen,
     setFiltersOpen,
   };
