@@ -203,6 +203,15 @@ const saveState = (state: any): boolean => {
   }
 };
 
+type StagedDeleteSnapshot = {
+  previousVacancies: Vacancy[];
+  previousBids: Bid[];
+  previousArchivedBids: Record<string, Bid[]>;
+  previousSelectedIds: string[];
+  message: string;
+  timeout: ReturnType<typeof setTimeout>;
+};
+
 // ---------- Utils ----------
 
 const displayVacancyLabel = (v: Vacancy) => {
@@ -308,14 +317,17 @@ export default function App() {
   const [archivedBids, setArchivedBids] = useState<Record<string, Bid[]>>(
     persisted?.archivedBids ?? {},
   );
-const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
-const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
-const [bundleUndo, setBundleUndo] = useState<{
-  snapshot: Vacancy[];
-  message: string;
-  timeout: number;
-} | null>(null);
-const [showRangeForm, setShowRangeForm] = useState(false);
+  const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
+  const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
+  const [bundleUndo, setBundleUndo] = useState<{
+    snapshot: Vacancy[];
+    message: string;
+    timeout: number;
+  } | null>(null);
+  const [stagedDelete, setStagedDelete] = useState<StagedDeleteSnapshot | null>(
+    null,
+  );
+  const [showRangeForm, setShowRangeForm] = useState(false);
   // Modal system (confirm/prompt/alert)
   const [confirmState, setConfirmState] = useState<
     | { open: true; title: string; body: string; resolve: (ok: boolean) => void }
@@ -816,14 +828,73 @@ const [showRangeForm, setShowRangeForm] = useState(false);
     );
   };
 
-  const deleteVacancy = (vacId: string) => {
-    setVacancies((prev) => prev.filter((v) => v.id !== vacId));
-    setBids((prev) => prev.filter((b) => b.vacancyId !== vacId));
-    setArchivedBids((prev) => {
-      const { [vacId]: _removed, ...rest } = prev;
-      return rest;
+  const stageDeleteVacancies = (ids: string[]) => {
+    const uniqueIds = Array.from(new Set(ids));
+    if (!uniqueIds.length) return;
+
+    const previousVacancies = [...vacancies];
+    const previousBids = [...bids];
+    const previousArchivedBids = { ...archivedBids };
+    const previousSelectedIds = [...selectedVacancyIds];
+    const toRemove = previousVacancies.filter((v) => uniqueIds.includes(v.id));
+    if (!toRemove.length) return;
+
+    if (stagedDelete?.timeout) {
+      clearTimeout(stagedDelete.timeout);
+    }
+
+    const remainingVacancies = previousVacancies.filter(
+      (v) => !uniqueIds.includes(v.id),
+    );
+    const remainingBids = previousBids.filter(
+      (b) => !uniqueIds.includes(b.vacancyId),
+    );
+    const nextArchivedBids = { ...archivedBids };
+    uniqueIds.forEach((id) => {
+      if (id in nextArchivedBids) {
+        delete nextArchivedBids[id];
+      }
     });
-    setSelectedVacancyIds((ids) => ids.filter((id) => id !== vacId));
+
+    setVacancies(remainingVacancies);
+    setBids(remainingBids);
+    setArchivedBids(nextArchivedBids);
+    setSelectedVacancyIds((ids) => ids.filter((id) => !uniqueIds.includes(id)));
+
+    const message =
+      toRemove.length > 1 ? `${toRemove.length} vacancies deleted.` : "Vacancy deleted.";
+
+    const timeout = setTimeout(() => {
+      setStagedDelete((current) => {
+        if (!current || current.timeout !== timeout) return current;
+        return null;
+      });
+    }, 5000);
+
+    setStagedDelete({
+      previousVacancies,
+      previousBids,
+      previousArchivedBids,
+      previousSelectedIds,
+      message,
+      timeout,
+    });
+  };
+
+  const undoDelete = () => {
+    setStagedDelete((prev) => {
+      if (!prev) return prev;
+      clearTimeout(prev.timeout);
+      setVacancies(prev.previousVacancies);
+      setBids(prev.previousBids);
+      setArchivedBids(prev.previousArchivedBids);
+      setSelectedVacancyIds(prev.previousSelectedIds);
+      return null;
+    });
+  };
+
+  const deleteVacancy = (vacId: string) => {
+    stageDeleteVacancies([vacId]);
   };
 
   // Figure out which open vacancy is "due next" (soonest positive deadline)
@@ -954,7 +1025,7 @@ const [showRangeForm, setShowRangeForm] = useState(false);
   };
 
   const stageDeleteMany = (ids: string[]) => {
-    ids.forEach((id) => deleteVacancy(id));
+    stageDeleteVacancies(ids);
   };
 
   const splitBundle = (ids: string[]) => {
@@ -1802,6 +1873,12 @@ const [showRangeForm, setShowRangeForm] = useState(false);
             setSelectedVacancyIds([]);
             setBulkAwardOpen(false);
           }}
+        />
+        <Toast
+          open={!!stagedDelete}
+          message={stagedDelete?.message || ""}
+          actionLabel="Undo (5s)"
+          onAction={undoDelete}
         />
         <Toast
           open={!!bundleUndo}

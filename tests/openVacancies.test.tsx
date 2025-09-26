@@ -124,6 +124,47 @@ describe("OpenVacancies", () => {
     vi.useRealTimers();
   });
 
+  it("allows undoing a vacancy delete from the toast", () => {
+    vi.useFakeTimers();
+    const vacancies = [
+      makeVacancy({ id: "v1" }),
+      makeVacancy({
+        id: "v2",
+        classification: "LPN",
+        date: "2024-01-02",
+        shiftDate: "2024-01-02",
+        knownAt: "2024-01-02T00:00:00.000Z",
+      }),
+    ];
+    setupLocalStorage(vacancies);
+
+    let vacState: ReturnType<typeof useVacancies>;
+    const vacations: Vacation[] = [];
+    function Wrapper() {
+      vacState = useVacancies();
+      return <OpenVacancies {...vacState} vacations={vacations} />;
+    }
+
+    render(<Wrapper />);
+
+    fireEvent.click(screen.getAllByTitle("Delete vacancy")[0]);
+    fireEvent.click(screen.getByText("Delete"));
+
+    expect(screen.getByTestId("undo-delete-toast")).toBeTruthy();
+
+    fireEvent.click(screen.getByText("Undo"));
+
+    expect(screen.queryByTestId("undo-delete-toast")).toBeNull();
+    expect(screen.getAllByTitle("Delete vacancy")).toHaveLength(2);
+
+    vi.runAllTimers();
+
+    const persisted = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+    expect(persisted.auditLog ?? []).toHaveLength(0);
+
+    vi.useRealTimers();
+  });
+
   it("shows covered employee name when linked to a vacation", () => {
     const vacancies = [
       makeVacancy({ id: "v1", vacationId: "vac1" }),
