@@ -990,6 +990,18 @@ const [showRangeForm, setShowRangeForm] = useState(false);
         .title{font-size:22px;font-weight:800}
         .subtitle{color:var(--muted);font-size:13px}
         .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .smart-filter-bar{flex-wrap:nowrap;overflow-x:auto;padding:4px 0}
+        .smart-filter-bar>*{flex-shrink:0}
+        .smart-filter-bar input:not([type="checkbox"]){width:auto}
+        .smart-filter-bar input[type="text"]{min-width:180px}
+        .smart-filter-bar .date-range{display:flex;gap:4px;flex-wrap:nowrap}
+        .smart-filter-bar .date-range input{min-width:140px}
+        .smart-filter-bar .chip-group{display:flex;gap:4px;flex-wrap:nowrap}
+        .smart-filter-bar .pill-toggle{background:var(--chipBg);color:var(--chipText);border:1px solid var(--stroke);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s,border-color .2s}
+        .smart-filter-bar .pill-toggle[data-active="true"]{background:var(--brand);color:#fff;border-color:var(--brand)}
+        .smart-filter-bar .active-filter-chips{display:flex;gap:4px;align-items:center;flex-wrap:nowrap}
+        .smart-filter-bar .active-filter-chip{display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+        .smart-filter-bar .active-filter-chip:hover{border-color:var(--brand);color:var(--brand)}
         .btn{background:var(--cardAlt);border:1px solid var(--stroke);padding:9px 12px;border-radius:12px;color:var(--text);cursor:pointer;font-weight:600;transition:background .2s,transform .2s,box-shadow .2s}
         .btn:hover{border-color:var(--brand);background:var(--brand);color:#fff;box-shadow:0 2px 4px rgba(0,0,0,.1);transform:translateY(-1px)}
         .btn-sm{padding:4px 8px;font-size:12px}
