@@ -165,7 +165,9 @@ export default function OpenVacanciesRedesign(props: Props) {
           <input
             type="checkbox"
             checked={groupByBundle}
-            onChange={() => setGroupByBundle(true)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              setGroupByBundle(event.target.checked)
+            }
           />
           Group by bundle
         </label>
