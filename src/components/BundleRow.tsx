@@ -24,6 +24,7 @@ type Props = {
   onResetBundle?: (bundleId: string) => void;
   dueNextId: string | null;
   coveredName?: string;
+  onOpenDetail?: (id: string) => void;
 };
 
 export default function BundleRow({
@@ -41,6 +42,7 @@ export default function BundleRow({
   onResetBundle,
   dueNextId,
   coveredName,
+  onOpenDetail,
 }: Props) {
   const sorted = useMemo(() =>
     [...items].sort((a,b) =>
@@ -191,42 +193,63 @@ export default function BundleRow({
         <CellCountdown source={primary} settings={settings} />
         <CellActions>
           <div className="action-grid">
-          <button className="btn btn-sm" onClick={()=> setAwardOpen((o)=> !o)}>{awardOpen?"Hide Award":"Award Bundle"}</button>
-          {awardOpen && (
-            <InlineEmployeePicker
-              employees={employees}
-              value={activeCandidate?.id ?? ""}
-              onChange={(id)=> onAwardBundle?.(id)}
-            />
-          )}
-          <button className="btn btn-sm" onClick={() => setOpen((o) => !o)}>
-            {open ? "Hide" : "Expand"}
-          </button>
-          {onEditCoverage && (
+            {onOpenDetail && (
+              <button className="btn btn-sm" onClick={() => onOpenDetail(primary.id)}>
+                Details
+              </button>
+            )}
             <button
               className="btn btn-sm"
-              onClick={() => onEditCoverage(groupId)}
+              onClick={() => setAwardOpen((o) => !o)}
             >
-              Edit coverage
+              {awardOpen ? "Hide Award" : "Award Bundle"}
             </button>
-          )}
-          <button className="btn btn-sm" onClick={async () => { if (await (window as any).appShowConfirm?.(`Split this bundle into ${childIds.length} individual shifts?`, "Split bundle")) onSplitBundle(childIds); }}>
-            Split
-          </button>
-          {onResetBundle && (
-            <button className="btn btn-sm" onClick={() => onResetBundle(groupId)}>
-              Reset timers
+            {awardOpen && (
+              <InlineEmployeePicker
+                employees={employees}
+                value={activeCandidate?.id ?? ""}
+                onChange={(id) => onAwardBundle?.(id)}
+              />
+            )}
+            <button className="btn btn-sm" onClick={() => setOpen((o) => !o)}>
+              {open ? "Hide" : "Expand"}
             </button>
-          )}
-          <button
-            className="btn btn-sm danger"
-            onClick={() => onDeleteMany(childIds)}
-          >
-            Delete
-          </button>
+            {onEditCoverage && (
+              <button
+                className="btn btn-sm"
+                onClick={() => onEditCoverage(groupId)}
+              >
+                Edit coverage
+              </button>
+            )}
+            <button
+              className="btn btn-sm"
+              onClick={async () => {
+                const confirmed = await (window as any).appShowConfirm?.(
+                  `Split this bundle into ${childIds.length} individual shifts?`,
+                  "Split bundle",
+                );
+                if (confirmed) {
+                  onSplitBundle(childIds);
+                }
+              }}
+            >
+              Split
+            </button>
+            {onResetBundle && (
+              <button className="btn btn-sm" onClick={() => onResetBundle(groupId)}>
+                Reset timers
+              </button>
+            )}
+            <button
+              className="btn btn-sm danger"
+              onClick={() => onDeleteMany(childIds)}
+            >
+              Delete
+            </button>
           </div>
         </CellActions>
-      </tr>
+        </tr>
 
       {open && (
         <tr>

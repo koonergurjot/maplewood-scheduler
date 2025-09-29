@@ -21,6 +21,7 @@ import VacancyRangeForm from "./components/VacancyRangeForm";
 import BundleRow from "./components/BundleRow";
 import CoverageDaysModal from "./components/CoverageDaysModal";
 import VacancyRow from "./components/VacancyRow";
+import VacancyDetail from "./components/VacancyDetail";
 import OpenVacanciesRedesign from "./components/OpenVacanciesRedesign";
 import { appConfig } from "./config";
 import type { VacancyRange, VacancyStatus, BundleMode } from "./types";
@@ -327,6 +328,7 @@ export default function App() {
   const [stagedDelete, setStagedDelete] = useState<StagedDeleteSnapshot | null>(
     null,
   );
+  const [activeVacancyId, setActiveVacancyId] = useState<string | null>(null);
   const [showRangeForm, setShowRangeForm] = useState(false);
   // Modal system (confirm/prompt/alert)
   const [confirmState, setConfirmState] = useState<
@@ -432,6 +434,24 @@ export default function App() {
     () => Object.fromEntries(employees.map((e) => [e.id, e])),
     [employees],
   );
+  const activeVacancy = useMemo(
+    () => vacancies.find((v) => v.id === activeVacancyId) ?? null,
+    [vacancies, activeVacancyId],
+  );
+
+  const handleOpenVacancyDetail = (id: string) => {
+    setActiveVacancyId(id);
+  };
+
+  const handleCloseVacancyDetail = () => {
+    setActiveVacancyId(null);
+  };
+
+  const handleVacancyDetailUpdate = (id: string, patch: Partial<Vacancy>) => {
+    setVacancies((prev) =>
+      prev.map((vacancy) => (vacancy.id === id ? { ...vacancy, ...patch } : vacancy)),
+    );
+  };
 
   // Recommendation: choose among eligible bidders with highest seniority (rank 1 best)
   const recommendations = useMemo<Record<string, Recommendation>>(() => {
@@ -838,6 +858,10 @@ export default function App() {
     const previousSelectedIds = [...selectedVacancyIds];
     const toRemove = previousVacancies.filter((v) => uniqueIds.includes(v.id));
     if (!toRemove.length) return;
+
+    setActiveVacancyId((curr) =>
+      curr && uniqueIds.includes(curr) ? null : curr,
+    );
 
     if (stagedDelete?.timeout) {
       clearTimeout(stagedDelete.timeout);
@@ -1542,6 +1566,7 @@ export default function App() {
                       onSplitBundle={splitBundle}
                       resetKnownAt={resetKnownAt}
                       resetBundleKnownAt={resetBundleKnownAt}
+                      onOpenDetail={handleOpenVacancyDetail}
                       recommendations={recommendations}
                     />
                   </>
@@ -1693,6 +1718,7 @@ export default function App() {
                             onDeleteMany={stageDeleteMany}
                             onSplitBundle={splitBundle}
                             onAwardBundle={(empId) => awardBundle(row.key, empId)}
+                            onOpenDetail={handleOpenVacancyDetail}
                             dueNextId={dueNextId}
                           />
                         );
@@ -1723,6 +1749,7 @@ export default function App() {
                             onDelete={deleteVacancy}
                             coveredName={coveredName}
                             settings={settings}
+                            onOpenDetail={() => handleOpenVacancyDetail(v.id)}
                           />
                         );
                     })}
@@ -1821,6 +1848,22 @@ export default function App() {
             existingVacancies={vacancies}
           />
         )}
+        <Modal
+          open={!!activeVacancy}
+          title="Vacancy Detail"
+          onClose={handleCloseVacancyDetail}
+        >
+          {activeVacancy && (
+            <VacancyDetail
+              vacancy={activeVacancy}
+              onUpdate={handleVacancyDetailUpdate}
+              onDelete={(id) => {
+                deleteVacancy(id);
+                handleCloseVacancyDetail();
+              }}
+            />
+          )}
+        </Modal>
         {/* App-level modals */}
         <Modal
           open={!!confirmState}

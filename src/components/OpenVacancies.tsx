@@ -21,6 +21,7 @@ interface Props {
   staged: Vacancy[] | null;
   readOnly?: boolean;
   resetBundleKnownAt?: (bundleId: string) => void;
+  onOpenDetail?: (id: string) => void;
 }
 
 export default function OpenVacancies({
@@ -31,6 +32,7 @@ export default function OpenVacancies({
   staged,
   readOnly = false,
   resetBundleKnownAt,
+  onOpenDetail,
 }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, setPending] = useState<string[] | null>(null);
@@ -319,49 +321,66 @@ export default function OpenVacancies({
                         : "Varies"}
                     </td>
                     <td style={{ textAlign: "right" }}>
-                      {!readOnly && (
-                        <>
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          gap: 4,
+                          flexWrap: "wrap",
+                          justifyContent: "flex-end",
+                        }}
+                      >
+                        {onOpenDetail && (
                           <button
                             className="btn btn-sm"
-                            onClick={() =>
-                              setExpanded((prev) => ({
-                                ...prev,
-                                [primary.bundleId!]: !isOpen,
-                              }))
-                            }
+                            onClick={() => onOpenDetail(primary.id)}
                           >
-                            {isOpen ? "Hide" : "Expand"}
+                            Details
                           </button>
-                          {resetBundleKnownAt && (
+                        )}
+                        {!readOnly && (
+                          <>
                             <button
                               className="btn btn-sm"
-                              onClick={() => resetBundleKnownAt(primary.bundleId!)}
+                              onClick={() =>
+                                setExpanded((prev) => ({
+                                  ...prev,
+                                  [primary.bundleId!]: !isOpen,
+                                }))
+                              }
                             >
-                              Reset timers
+                              {isOpen ? "Hide" : "Expand"}
                             </button>
-                          )}
-                          <button
-                            className="btn btn-sm"
-                            title="Delete vacancy"
-                            aria-label="Delete vacancy"
-                            data-testid={`vacancy-delete-${primary.id}`}
-                            tabIndex={0}
-                            onClick={() => confirmDelete(ids)}
-                          >
-                            {TrashIcon ? (
-                              <>
-                                <TrashIcon
-                                  style={{ width: 16, height: 16 }}
-                                  aria-hidden="true"
-                                />
-                                <span className="sr-only">Delete vacancy</span>
-                              </>
-                            ) : (
-                              "Delete"
+                            {resetBundleKnownAt && (
+                              <button
+                                className="btn btn-sm"
+                                onClick={() => resetBundleKnownAt(primary.bundleId!)}
+                              >
+                                Reset timers
+                              </button>
                             )}
-                          </button>
-                        </>
-                      )}
+                            <button
+                              className="btn btn-sm"
+                              title="Delete vacancy"
+                              aria-label="Delete vacancy"
+                              data-testid={`vacancy-delete-${primary.id}`}
+                              tabIndex={0}
+                              onClick={() => confirmDelete(ids)}
+                            >
+                              {TrashIcon ? (
+                                <>
+                                  <TrashIcon
+                                    style={{ width: 16, height: 16 }}
+                                    aria-hidden="true"
+                                  />
+                                  <span className="sr-only">Delete vacancy</span>
+                                </>
+                              ) : (
+                                "Delete"
+                              )}
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                   {isOpen && (
@@ -433,28 +452,45 @@ export default function OpenVacancies({
                     : "Varies"}
                 </td>
                 <td style={{ textAlign: "right" }}>
-                  {!readOnly && (
-                    <button
-                      className="btn btn-sm"
-                      title="Delete vacancy"
-                      aria-label="Delete vacancy"
-                      data-testid={`vacancy-delete-${primary.id}`}
-                      tabIndex={0}
-                      onClick={() => confirmDelete(ids)}
-                    >
-                      {TrashIcon ? (
-                        <>
-                          <TrashIcon
-                            style={{ width: 16, height: 16 }}
-                            aria-hidden="true"
-                          />
-                          <span className="sr-only">Delete vacancy</span>
-                        </>
-                      ) : (
-                        "Delete"
-                      )}
-                    </button>
-                  )}
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      gap: 4,
+                      flexWrap: "wrap",
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    {onOpenDetail && (
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => onOpenDetail(primary.id)}
+                      >
+                        Details
+                      </button>
+                    )}
+                    {!readOnly && (
+                      <button
+                        className="btn btn-sm"
+                        title="Delete vacancy"
+                        aria-label="Delete vacancy"
+                        data-testid={`vacancy-delete-${primary.id}`}
+                        tabIndex={0}
+                        onClick={() => confirmDelete(ids)}
+                      >
+                        {TrashIcon ? (
+                          <>
+                            <TrashIcon
+                              style={{ width: 16, height: 16 }}
+                              aria-hidden="true"
+                            />
+                            <span className="sr-only">Delete vacancy</span>
+                          </>
+                        ) : (
+                          "Delete"
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             );

@@ -24,6 +24,7 @@ type Props = {
   onSplitBundle?: (ids: string[]) => void;
   resetKnownAt: (id: string) => void;
   resetBundleKnownAt?: (bundleId: string) => void;
+  onOpenDetail?: (id: string) => void;
   filters?: {
     search?: string;
     wing?: string;
@@ -209,6 +210,7 @@ export default function OpenVacanciesRedesign(props: Props) {
                   onEditCoverage={props.onEditCoverage}
                   onAwardBundle={(eid) => props.awardBundle?.(key, eid)}
                   onResetBundle={props.resetBundleKnownAt}
+                  onOpenDetail={props.onOpenDetail}
                   dueNextId={props.dueNextId}
                   coveredName={coveredName}
                 />
@@ -233,6 +235,11 @@ export default function OpenVacanciesRedesign(props: Props) {
                   isDueNext={props.dueNextId === v.id}
                   coveredName={coveredName}
                   settings={settings}
+                  onOpenDetail={
+                    props.onOpenDetail
+                      ? () => props.onOpenDetail?.(v.id)
+                      : undefined
+                  }
                 />,
               );
             }
