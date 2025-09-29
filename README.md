@@ -122,13 +122,13 @@ npm run dev
 | Variable | Default | Description |
 |---------|---------|-------------|
 | `ANALYTICS_AUTH_TOKEN` | – | Bearer token for analytics endpoints |
-| `PORT` | `3000` | Server port |
+| `PORT` | `3001` | Analytics server port (binds to all network interfaces) |
 
 Example `.env.local`:
 
 ```bash
 ANALYTICS_AUTH_TOKEN=mys3cret
-PORT=3000
+PORT=3001
 ```
 
 ## Usage

@@ -12,7 +12,7 @@ npm run preview
 
 ```bash
 docker build -t maplewood-scheduler .
-docker run -p 3000:3000 maplewood-scheduler
+docker run -p 3001:3001 maplewood-scheduler
 ```
 
 ## Netlify
