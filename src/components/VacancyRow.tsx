@@ -29,6 +29,7 @@ export default function VacancyRow({
   as = "tr",
   style,
   ariaProps,
+  onOpenDetail,
 }: {
   v: Vacancy;
   recommendation?: Recommendation;
@@ -48,6 +49,7 @@ export default function VacancyRow({
   as?: "tr" | "div";
   style?: CSSProperties;
   ariaProps?: Record<string, string | number | undefined>;
+  onOpenDetail?: () => void;
 }) {
   const [choice, setChoice] = useState<string>("");
   const [choiceManual, setChoiceManual] = useState<boolean>(false);
@@ -228,6 +230,11 @@ export default function VacancyRow({
       <CellActions component={cellComponent}>
         {isBundleChild ? (
           <div className="action-grid">
+            {onOpenDetail && (
+              <button className="btn btn-sm" onClick={onOpenDetail}>
+                Details
+              </button>
+            )}
             <button className="btn btn-sm" onClick={resetKnownAt}>
               Reset timer
             </button>
@@ -253,6 +260,11 @@ export default function VacancyRow({
           </div>
         ) : (
           <div className="action-grid">
+            {onOpenDetail && (
+              <button className="btn btn-sm" onClick={onOpenDetail}>
+                Details
+              </button>
+            )}
             <button
               className="btn btn-sm"
               onClick={() =>
