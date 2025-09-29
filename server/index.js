@@ -104,7 +104,7 @@ app.get("/api/analytics/export", requireAuth, (req, res) => {
 
 if (process.env.NODE_ENV !== "test") {
   const port = process.env.PORT || 3001;
-  app.listen(port, "localhost", () => {
+  app.listen(port, () => {
     console.log(`Analytics server running on port ${port}`);
   });
 }
