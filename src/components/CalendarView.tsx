@@ -6,7 +6,24 @@ import { buildCalendar, isoDate, prevMonth, nextMonth } from "../lib/dates";
 import { groupVacanciesByDate } from "../lib/vacancy";
 import TagFilter from "./TagFilter";
 
-type Props = { vacancies: Vacancy[]; onCreateVacancy: () => void };
+export type CalendarVacancyActionContext = {
+  vacancy: Vacancy;
+  date: string;
+  events: Vacancy[];
+};
+
+type VacancyActionHandler = (
+  vacancyId: string,
+  context: CalendarVacancyActionContext,
+) => void;
+
+type Props = {
+  vacancies: Vacancy[];
+  onCreateVacancy: () => void;
+  onEditVacancy?: VacancyActionHandler;
+  onDuplicateVacancy?: VacancyActionHandler;
+  onDeleteVacancy?: VacancyActionHandler;
+};
 
 type Day = { date: Date; inMonth: boolean };
 
@@ -14,7 +31,13 @@ function monthLabel(y: number, m: number) {
   return new Date(y, m, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
-export default function CalendarView({ vacancies, onCreateVacancy }: Props) {
+export default function CalendarView({
+  vacancies,
+  onCreateVacancy,
+  onEditVacancy,
+  onDuplicateVacancy,
+  onDeleteVacancy,
+}: Props) {
   const today = React.useMemo(() => new Date(), []);
   const [y, setY] = React.useState(today.getFullYear());
   const [m, setM] = React.useState(today.getMonth());
@@ -185,13 +208,32 @@ export default function CalendarView({ vacancies, onCreateVacancy }: Props) {
                       </div>
                       <span className="event-meta">{status}</span>
                       <div className="event-actions" style={{ display: "none" }}>
-                        <button aria-label="Edit" onClick={() => console.log("edit", e.id)}>
+                        <button
+                          aria-label="Edit"
+                          onClick={() =>
+                            onEditVacancy?.(e.id, { vacancy: e, date: iso, events })
+                          }
+                        >
                           ✎
                         </button>
-                        <button aria-label="Duplicate" onClick={() => console.log("duplicate", e.id)}>
+                        <button
+                          aria-label="Duplicate"
+                          onClick={() =>
+                            onDuplicateVacancy?.(e.id, {
+                              vacancy: e,
+                              date: iso,
+                              events,
+                            })
+                          }
+                        >
                           ⧉
                         </button>
-                        <button aria-label="Delete" onClick={() => console.log("delete", e.id)}>
+                        <button
+                          aria-label="Delete"
+                          onClick={() =>
+                            onDeleteVacancy?.(e.id, { vacancy: e, date: iso, events })
+                          }
+                        >
                           🗑
                         </button>
                       </div>

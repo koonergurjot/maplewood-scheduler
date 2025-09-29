@@ -1,10 +1,14 @@
 import { useMemo, useState } from "react";
 import type { Employee, Vacation } from "./App";
-import CalendarView from "./components/CalendarView";
+import CalendarView, {
+  type CalendarVacancyActionContext,
+} from "./components/CalendarView";
+import EventForm from "./components/EventForm";
 import OpenVacancies from "./components/OpenVacancies";
 import VacancyRangeForm from "./components/VacancyRangeForm";
 import { createVacanciesFromRange } from "./lib/bundles";
-import type { VacancyRange } from "./types";
+import type { Vacancy, VacancyRange } from "./types";
+import type { Tag } from "./models/tag";
 import useVacancies from "./state/useVacancies";
 import "./styles/branding.css";
 
@@ -35,14 +39,36 @@ type State = {
 export default function Dashboard() {
   const data: State = loadState() || { employees: [], vacations: [] };
   const { employees, vacations } = data;
-  const { vacancies, stageDelete, undoDelete, staged, addVacancies } = useVacancies();
+  const {
+    vacancies,
+    stageDelete,
+    undoDelete,
+    staged,
+    addVacancies,
+    updateVacancy,
+  } = useVacancies();
 
   const [view, setView] = useState<"list" | "calendar">("list");
   const [showRangeForm, setShowRangeForm] = useState(false);
+  const [editingVacancy, setEditingVacancy] = useState<Vacancy | null>(null);
+  const [editingTagIds, setEditingTagIds] = useState<string[]>([]);
 
   const filled = useMemo(
     () => vacancies.filter((v) => v.status === "Filled" || v.status === "Awarded"),
     [vacancies],
+  );
+
+  const availableTags = useMemo<Tag[]>(() => {
+    const map: Record<string, Tag> = {};
+    for (const v of vacancies) {
+      for (const t of v.tags ?? []) map[t.id] = t;
+    }
+    return Object.values(map);
+  }, [vacancies]);
+
+  const tagsById = useMemo(
+    () => Object.fromEntries(availableTags.map((tag) => [tag.id, tag])),
+    [availableTags],
   );
 
   const employeeLastAssigned = useMemo(() => {
@@ -82,6 +108,58 @@ export default function Dashboard() {
     addVacancies(newVacancies);
   };
 
+  const handleEditVacancy = (
+    _vacancyId: string,
+    context: CalendarVacancyActionContext,
+  ) => {
+    setEditingVacancy(context.vacancy);
+    setEditingTagIds((context.vacancy.tags ?? []).map((t) => t.id));
+  };
+
+  const handleDuplicateVacancy = (
+    _vacancyId: string,
+    context: CalendarVacancyActionContext,
+  ) => {
+    const source = context.vacancy;
+    const newId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const duplicate: Vacancy = {
+      ...source,
+      id: newId,
+      status: "Open",
+      awardedTo: undefined,
+      awardedAt: undefined,
+      awardReason: undefined,
+      overrideUsed: undefined,
+      bundleId: undefined,
+      bundleMode: undefined,
+      knownAt: new Date().toISOString(),
+    };
+    addVacancies([duplicate]);
+  };
+
+  const handleDeleteVacancy = (vacancyId: string) => {
+    stageDelete([vacancyId]);
+  };
+
+  const closeEditModal = () => {
+    setEditingVacancy(null);
+    setEditingTagIds([]);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingVacancy) return;
+    const nextTags = editingTagIds
+      .map((id) => tagsById[id])
+      .filter((tag): tag is Tag => Boolean(tag));
+    updateVacancy(editingVacancy.id, {
+      tags: nextTags.length ? nextTags : undefined,
+    });
+    closeEditModal();
+  };
+
   return (
     <div className="dashboard">
       <header className="maplewood-header">
@@ -106,6 +184,9 @@ export default function Dashboard() {
           <CalendarView
             vacancies={vacancies}
             onCreateVacancy={() => setShowRangeForm(true)}
+            onEditVacancy={handleEditVacancy}
+            onDuplicateVacancy={handleDuplicateVacancy}
+            onDeleteVacancy={handleDeleteVacancy}
           />
         ) : (
           <>
@@ -169,6 +250,45 @@ export default function Dashboard() {
         onSave={handleSaveRange}
         existingVacancies={vacancies}
       />
+      {editingVacancy && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-vacancy-title"
+        >
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 id="edit-vacancy-title" className="text-lg font-semibold">
+                Edit Vacancy
+              </h2>
+              <button onClick={closeEditModal} className="px-2 py-1 rounded-md border">
+                Close
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Adjust tags for {editingVacancy.shiftDate} {editingVacancy.shiftStart}–
+              {editingVacancy.shiftEnd}.
+            </p>
+            <EventForm
+              availableTags={availableTags}
+              selectedTagIds={editingTagIds}
+              onTagChange={setEditingTagIds}
+            />
+            <div className="mt-6 flex justify-end gap-2">
+              <button onClick={closeEditModal} className="px-3 py-2 rounded-md border">
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-3 py-2 rounded-md bg-black text-white"
+              >
+                Save changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
