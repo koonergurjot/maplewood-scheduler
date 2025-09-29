@@ -115,6 +115,8 @@ npm install
 npm run dev
 ```
 
+> **Note:** The UI fetches analytics data from the Express backend during local development. In another terminal, run `node server/index.js` (or your preferred proxy to the analytics API) so `/api` requests resolve to a server such as `http://localhost:3001` while the Vite dev server is running.
+
 ## Configuration
 
 | Variable | Default | Description |
