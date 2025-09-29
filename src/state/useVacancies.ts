@@ -101,6 +101,19 @@ export function useVacancies() {
     });
   }
 
+  function updateVacancy(id: string, patch: Partial<Vacancy>) {
+    setVacancies((prev) => {
+      let changed = false;
+      const next = prev.map((vac) => {
+        if (vac.id !== id) return vac;
+        changed = true;
+        return { ...vac, ...patch };
+      });
+      if (changed) persist(next);
+      return next;
+    });
+  }
+
   return {
     vacancies,
     stageDelete,
@@ -108,6 +121,7 @@ export function useVacancies() {
     staged,
     auditLog,
     addVacancies,
+    updateVacancy,
   } as const;
 }
 
