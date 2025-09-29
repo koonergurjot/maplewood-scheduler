@@ -89,7 +89,7 @@ export default function OpenVacanciesRedesign(props: Props) {
     return list;
   }, [vacancies, search, filterClass, start, end, filters, vacNameById, bundleMode]);
 
-  const [groupByBundle, setGroupByBundle] = useState(true);
+  const [groupByBundle, setGroupByBundle] = useState(false);
 
   // Cross-day bundle groups so multi-day vacancies render as ONE row
   const bundleGroups = useMemo(() => {

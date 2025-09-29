@@ -37,3 +37,11 @@ export function saveState(state: any): boolean {
     return false;
   }
 }
+
+export function clearState() {
+  try {
+    localStorage.removeItem(LS_KEY);
+  } catch (err) {
+    console.warn("Unable to reset localStorage state.", err);
+  }
+}

@@ -49,9 +49,11 @@ export function useSchedulerState() {
   );
 
   const employeesById = useMemo(() => {
-    const m = new Map<string, Employee>();
-    for (const e of employees) m.set(e.id, e);
-    return m;
+    const map: Record<string, Employee> = {};
+    for (const e of employees) {
+      map[e.id] = e;
+    }
+    return map;
   }, [employees]);
 
   useEffect(() => {

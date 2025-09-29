@@ -25,11 +25,13 @@ import OpenVacanciesRedesign from "./components/OpenVacanciesRedesign";
 import { appConfig } from "./config";
 import type { VacancyRange, VacancyStatus, BundleMode } from "./types";
 export { OVERRIDE_REASONS } from "./types";
-import { createVacanciesFromRange, bundleContiguousVacanciesByRef } from "./lib/bundles";
+import { createVacanciesFromRange } from "./lib/bundles";
 import Toast from "./components/ui/Toast";
 import Button from "./components/ui/Button";
 import FilterBar from "./components/ui/FilterBar";
 import Modal from "./components/ui/Modal";
+import { useSchedulerState } from "./hooks/useSchedulerState";
+import { clearState } from "./utils/storage";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -175,34 +177,6 @@ const SHIFT_PRESETS = [
 const VACANT_EMPLOYEE_ID = "__vacant__";
 
 // ---------- Local Storage ----------
-const LS_KEY = "maplewood-scheduler-v3";
-const loadState = () => {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (err) {
-    console.error("Failed to parse saved state", err);
-    if (typeof window !== "undefined" && typeof window.alert === "function") {
-      window.alert("Stored data was corrupted and has been reset.");
-    }
-    try {
-      localStorage.removeItem(LS_KEY);
-    } catch (removeErr) {
-      console.error("Failed to reset localStorage", removeErr);
-    }
-    return null;
-  }
-};
-const saveState = (state: any): boolean => {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(state));
-    return true;
-  } catch (err) {
-    console.warn("Unable to access localStorage. State not persisted.", err);
-    return false;
-  }
-};
-
 type StagedDeleteSnapshot = {
   previousVacancies: Vacancy[];
   previousBids: Bid[];
@@ -292,31 +266,25 @@ export const archiveBidsForVacancy = (
 
 // ---------- Main App ----------
 export default function App() {
-  const persisted = loadState();
+  const {
+    employees,
+    setEmployees,
+    vacations,
+    setVacations,
+    vacancies,
+    setVacancies,
+    bids,
+    setBids,
+    archivedBids,
+    setArchivedBids,
+    settings: rawSettings,
+    setSettings,
+    employeesById,
+    vacancyRanges,
+    setVacancyRanges,
+    updateVacancy,
+  } = useSchedulerState();
   const [tab, setTab] = useState<typeof TAB_KEYS[number]>("coverage");
-
-  const [employees, setEmployees] = useState<Employee[]>(
-    persisted?.employees ?? [],
-  );
-  const [vacations, setVacations] = useState<Vacation[]>(
-    persisted?.vacations ?? [],
-  );
-  const [vacancies, setVacancies] = useState<Vacancy[]>(
-    bundleContiguousVacanciesByRef(
-      (persisted?.vacancies ?? []).map((v: any) => ({
-        offeringTier: "CASUALS",
-        offeringRoundStartedAt:
-          v.offeringRoundStartedAt ?? new Date().toISOString(),
-        offeringRoundMinutes: v.offeringRoundMinutes ?? 120,
-        offeringAutoProgress: v.offeringAutoProgress ?? true,
-        ...v,
-      })),
-    ),
-  );
-  const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
-  const [archivedBids, setArchivedBids] = useState<Record<string, Bid[]>>(
-    persisted?.archivedBids ?? {},
-  );
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
   const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
   const [bundleUndo, setBundleUndo] = useState<{
@@ -385,17 +353,29 @@ export default function App() {
   (window as any).appShowConfirm = showConfirm;
   (window as any).appShowPrompt = showPrompt;
   (window as any).appShowAlert = showAlert;
-  const persistedSettings = persisted?.settings ?? {};
-  const storedOrder: string[] = persistedSettings.tabOrder || [];
-  const mergedOrder = [
-    ...storedOrder,
-    ...TAB_KEYS.filter((k) => !storedOrder.includes(k)),
-  ];
-  const [settings, setSettings] = useState<Settings>({
-    ...defaultSettings,
-    ...persistedSettings,
-    tabOrder: mergedOrder,
-  });
+  const settings = useMemo(() => {
+    const storedOrder: string[] = rawSettings.tabOrder || [];
+    const mergedOrder = [
+      ...storedOrder,
+      ...TAB_KEYS.filter((k) => !storedOrder.includes(k)),
+    ];
+    return {
+      ...defaultSettings,
+      ...rawSettings,
+      tabOrder: mergedOrder,
+    } as Settings;
+  }, [rawSettings]);
+
+  useEffect(() => {
+    const storedOrder = rawSettings.tabOrder || [];
+    const mergedOrder = settings.tabOrder || [];
+    const differs =
+      storedOrder.length !== mergedOrder.length ||
+      mergedOrder.some((key, index) => storedOrder[index] !== key);
+    if (differs) {
+      setSettings((prev: Settings) => ({ ...prev, tabOrder: mergedOrder }));
+    }
+  }, [rawSettings.tabOrder, settings.tabOrder, setSettings]);
 
   const [filterWing, setFilterWing] = useState<string>("");
   const [filterClass, setFilterClass] = useState<Classification | "">("");
@@ -412,26 +392,6 @@ export default function App() {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-
-  useEffect(() => {
-    if (
-      !saveState({
-        employees,
-        vacations,
-        vacancies,
-        bids,
-        archivedBids,
-        settings,
-      })
-    ) {
-      // localStorage unavailable; state persistence disabled
-    }
-  }, [employees, vacations, vacancies, bids, archivedBids, settings]);
-
-  const employeesById = useMemo(
-    () => Object.fromEntries(employees.map((e) => [e.id, e])),
-    [employees],
-  );
 
   // Recommendation: choose among eligible bidders with highest seniority (rank 1 best)
   const recommendations = useMemo<Record<string, Recommendation>>(() => {
@@ -622,6 +582,7 @@ export default function App() {
   };
 
   const handleSaveRange = (range: VacancyRange, _awardAsBlock: boolean) => {
+    setVacancyRanges((prev) => [range, ...prev]);
     const vxs = createVacanciesFromRange(range);
     setVacancies((prev) => [...vxs, ...prev]);
   };
@@ -812,11 +773,7 @@ export default function App() {
   };
 
   const resetKnownAt = (vacId: string) => {
-    setVacancies((prev) =>
-      prev.map((v) =>
-        v.id === vacId ? { ...v, knownAt: new Date().toISOString() } : v,
-      ),
-    );
+    updateVacancy(vacId, { knownAt: new Date().toISOString() });
   };
 
   const resetBundleKnownAt = (bundleId: string) => {
@@ -1190,7 +1147,15 @@ export default function App() {
                 const blob = new Blob(
                   [
                     JSON.stringify(
-                      { employees, vacations, vacancies, bids, settings },
+                      {
+                        employees,
+                        vacations,
+                        vacancies,
+                        bids,
+                        archivedBids,
+                        vacancyRanges,
+                        settings,
+                      },
                       null,
                       2,
                     ),
@@ -1211,7 +1176,7 @@ export default function App() {
               onClick={async () => {
                 const ok = await showConfirm("Reset ALL data?", "Reset");
                 if (!ok) return;
-                localStorage.removeItem(LS_KEY);
+                clearState();
                 location.reload();
               }}
             >
@@ -1235,8 +1200,8 @@ export default function App() {
         {tab === "coverage" && (
           <>
 
-          
-          <CoverageRangesPanel />
+
+          <CoverageRangesPanel ranges={vacancyRanges} />
           <div className="grid">
             <div className="card">
               <div className="card-h">

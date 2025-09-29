@@ -98,6 +98,25 @@ export default function SearchFilterBar({
           onChange={(e: ChangeEvent<HTMLInputElement>) => onQueryChange(e.target.value)}
         />
       </div>
+      <div style={{ minWidth: 160 }}>
+        <label className="subtitle" htmlFor="classification-filter-select">
+          Classification
+        </label>
+        <select
+          id="classification-filter-select"
+          value={category}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+            onCategoryChange(event.target.value as Classification | "")
+          }
+        >
+          <option value="">All classifications</option>
+          {CLASSIFICATIONS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="chip-group" aria-label="Classification filters">
         {CLASSIFICATIONS.map((c) => (
           <button
