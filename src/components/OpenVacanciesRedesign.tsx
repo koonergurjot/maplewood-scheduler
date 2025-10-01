@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import type { Vacancy, Employee, Settings, Vacation } from "../types";
 import type { Recommendation } from "../recommend";
 import BundleRow from "./BundleRow";
@@ -90,11 +90,8 @@ export default function OpenVacanciesRedesign(props: Props) {
     return list;
   }, [vacancies, search, filterClass, start, end, filters, vacNameById, bundleMode]);
 
-  const [groupByBundle, setGroupByBundle] = useState(true);
-
   // Cross-day bundle groups so multi-day vacancies render as ONE row
   const bundleGroups = useMemo(() => {
-    if (!groupByBundle) return [] as Array<[string, Vacancy[]]>;
     const m = new Map<string, Vacancy[]>();
     for (const v of filtered) {
       if (!v.bundleId) continue;
@@ -112,7 +109,7 @@ export default function OpenVacanciesRedesign(props: Props) {
       ),
     );
     return out;
-  }, [filtered, groupByBundle]);
+  }, [filtered]);
 
   const bundledChildIds = useMemo(() => {
     const set = new Set<string>();
@@ -123,7 +120,7 @@ export default function OpenVacanciesRedesign(props: Props) {
   const byDate = useMemo(() => {
     const m = new Map<string, Vacancy[]>();
     for (const v of filtered) {
-      if (groupByBundle && bundledChildIds.has(v.id)) continue; // skip children already shown in bundles
+      if (bundledChildIds.has(v.id)) continue; // skip children already shown in bundles
       const key = v.shiftDate;
       if (!m.has(key)) m.set(key, []);
       m.get(key)!.push(v);
@@ -135,7 +132,7 @@ export default function OpenVacanciesRedesign(props: Props) {
           combineDateTime(b.shiftDate, b.shiftStart).getTime(),
       );
     return Array.from(m.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [filtered, groupByBundle, bundledChildIds]);
+  }, [filtered, bundledChildIds]);
 
   const fmtDate = (iso: string) =>
     new Date(iso + "T00:00:00").toLocaleDateString(undefined, {
@@ -165,19 +162,6 @@ export default function OpenVacanciesRedesign(props: Props) {
           setBundleMode("all");
         }}
       />
-      <div style={{ marginBottom: 8 }}>
-        <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <input
-            type="checkbox"
-            checked={groupByBundle}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              if (!event.target.checked) return;
-              setGroupByBundle(true);
-            }}
-          />
-          Group by bundle
-        </label>
-      </div>
       <table className="vacancies">
         <thead>
           <tr>
@@ -188,13 +172,12 @@ export default function OpenVacanciesRedesign(props: Props) {
           </tr>
         </thead>
         <tbody>
-          {groupByBundle && bundleGroups.length > 0 && (
+          {bundleGroups.length > 0 && (
             <tr className="section-h">
               <td colSpan={4}>Bundled Vacancies</td>
             </tr>
           )}
-          {groupByBundle &&
-            bundleGroups.map(([key, arr]) => {
+          {bundleGroups.map(([key, arr]) => {
               const coveredName = vacNameById[arr[0].vacationId ?? ""];
               return (
                 <BundleRow

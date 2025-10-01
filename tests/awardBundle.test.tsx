@@ -79,10 +79,6 @@ describe("bundle award", () => {
       </MemoryRouter>,
     );
 
-    screen
-      .getAllByLabelText("Group by bundle")
-      .forEach((cb) => fireEvent.click(cb));
-
     const awardBtn = await screen.findByText("Award Bundle");
     fireEvent.click(awardBtn);
 
@@ -175,10 +171,6 @@ describe("bundle award", () => {
         <App />
       </MemoryRouter>,
     );
-
-    screen
-      .getAllByLabelText("Group by bundle")
-      .forEach((cb) => fireEvent.click(cb));
 
     const awardBtn = await screen.findByText("Award Bundle");
     fireEvent.click(awardBtn);
