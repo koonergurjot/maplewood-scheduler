@@ -111,6 +111,31 @@ export default function SearchFilterBar({
           </button>
         ))}
       </div>
+      <select
+        aria-label="Classification filter"
+        value={category}
+        onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+          onCategoryChange(event.target.value as Classification | "")
+        }
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: "hidden",
+          clip: "rect(0 0 0 0)",
+          whiteSpace: "nowrap",
+          border: 0,
+        }}
+      >
+        <option value="">All Classes</option>
+        {CLASSIFICATIONS.map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
+      </select>
       <div className="date-range" aria-label="Date range filters">
         <input
           type="date"

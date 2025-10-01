@@ -24,6 +24,7 @@ import VacancyRow from "./components/VacancyRow";
 import VacancyDetail from "./components/VacancyDetail";
 import OpenVacanciesRedesign from "./components/OpenVacanciesRedesign";
 import SearchFilterBar from "./components/SearchFilterBar";
+import { useVacancyFilters } from "./hooks/useVacancyFilters";
 import { appConfig } from "./config";
 import { CLASSIFICATIONS } from "./types";
 import type { VacancyRange, VacancyStatus, BundleMode } from "./types";
@@ -2433,6 +2434,25 @@ export function BidsPage({
   });
   const [bidFormKey, setBidFormKey] = useState(0);
   const bidDateRef = useRef<HTMLInputElement>(null);
+  const {
+    search: vacancySearch,
+    setSearch: setVacancySearch,
+    start: vacancyStart,
+    setStart: setVacancyStart,
+    end: vacancyEnd,
+    setEnd: setVacancyEnd,
+    filterClass: vacancyFilterClass,
+    setFilterClass: setVacancyFilterClass,
+    bundleMode: vacancyBundleMode,
+    setBundleMode: setVacancyBundleMode,
+  } = useVacancyFilters();
+  const resetVacancyFilters = () => {
+    setVacancySearch("");
+    setVacancyStart("");
+    setVacancyEnd("");
+    setVacancyFilterClass("");
+    setVacancyBundleMode("all");
+  };
 
   const vacWithCoveredName = (v: Vacancy) => {
     const vac = vacations.find((x) => x.id === v.vacationId);
@@ -2444,11 +2464,50 @@ export function BidsPage({
     (v) => v.status !== "Filled" && v.status !== "Awarded",
   );
 
+  const vacNameById = useMemo(() => {
+    const map: Record<string, string> = {};
+    vacations.forEach((vac) => {
+      map[vac.id] = vac.employeeName;
+    });
+    return map;
+  }, [vacations]);
+
+  const filteredOpenVacancies = useMemo(() => {
+    let list = [...openVacancies];
+    if (vacancySearch) {
+      const q = vacancySearch.toLowerCase();
+      list = list.filter((v) => {
+        const employeeName = vacNameById[v.vacationId ?? ""] || "";
+        return (
+          (v.reason || "").toLowerCase().includes(q) ||
+          (v.wing || "").toLowerCase().includes(q) ||
+          (v.classification || "").toLowerCase().includes(q) ||
+          employeeName.toLowerCase().includes(q)
+        );
+      });
+    }
+    if (vacancyFilterClass)
+      list = list.filter((v) => v.classification === vacancyFilterClass);
+    if (vacancyStart) list = list.filter((v) => v.shiftDate >= vacancyStart);
+    if (vacancyEnd) list = list.filter((v) => v.shiftDate <= vacancyEnd);
+    if (vacancyBundleMode === "bundles") list = list.filter((v) => v.bundleId);
+    if (vacancyBundleMode === "singles") list = list.filter((v) => !v.bundleId);
+    return list;
+  }, [
+    openVacancies,
+    vacancySearch,
+    vacancyFilterClass,
+    vacancyStart,
+    vacancyEnd,
+    vacancyBundleMode,
+    vacNameById,
+  ]);
+
   // Build options for the Add Bid selector: bundles appear as ONE option
-  const openVacancyOptions = useMemo(() => {
-    const byBundle = new Map<string, typeof openVacancies>();
-    const singles: typeof openVacancies = [];
-    for (const v of openVacancies) {
+  const filteredVacancyOptions = useMemo(() => {
+    const byBundle = new Map<string, typeof filteredOpenVacancies>();
+    const singles: typeof filteredOpenVacancies = [];
+    for (const v of filteredOpenVacancies) {
       if (v.bundleId) {
         const arr = byBundle.get(v.bundleId) || [];
         arr.push(v);
@@ -2482,25 +2541,18 @@ export function BidsPage({
     // Singles
     for (const v of singles) options.push({ id: v.id, label: displayVacancyLabel(v) });
     // Sort by earliest start
+    const vacancyById = new Map(filteredOpenVacancies.map((v) => [v.id, v]));
     options.sort((a, b) => {
-      const va = vacancies.find((v) => v.id === a.id)!;
-      const vb = vacancies.find((v) => v.id === b.id)!;
+      const va = vacancyById.get(a.id);
+      const vb = vacancyById.get(b.id);
+      if (!va || !vb) return 0;
       return (
         combineDateTime(va.shiftDate, va.shiftStart).getTime() -
         combineDateTime(vb.shiftDate, vb.shiftStart).getTime()
       );
     });
     return options;
-  }, [openVacancies, vacancies]);
-
-  const [vacancyFilter, setVacancyFilter] = useState("");
-  const filteredVacancyOptions = useMemo(
-    () =>
-      openVacancyOptions.filter((opt) =>
-        matchText(vacancyFilter, opt.label),
-      ),
-    [openVacancyOptions, vacancyFilter],
-  );
+  }, [filteredOpenVacancies]);
 
   const isEligible = (v: Vacancy, emp: Employee) => {
     if (v.classification !== emp.classification) return false;
@@ -2515,9 +2567,9 @@ export function BidsPage({
     const emp = employeesById[newBid.bidderEmployeeId ?? ""];
     if (!emp) return new Set<string>();
     const set = new Set<string>();
-    for (const v of openVacancies) if (isEligible(v, emp)) set.add(v.id);
+    for (const v of filteredOpenVacancies) if (isEligible(v, emp)) set.add(v.id);
     return set;
-  }, [openVacancies, newBid.bidderEmployeeId, employeesById]);
+  }, [filteredOpenVacancies, newBid.bidderEmployeeId, employeesById]);
 
   const activeBids = bids.filter((b) => {
     const v = vacancies.find((x) => x.id === b.vacancyId);
@@ -2600,12 +2652,21 @@ export function BidsPage({
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <label>Vacancies</label>
-              <input
-                type="text"
-                placeholder="Filter vacancies…"
-                value={vacancyFilter}
-                onChange={(e) => setVacancyFilter(e.target.value)}
-              />
+              <div style={{ margin: "8px 0" }}>
+                <SearchFilterBar
+                  query={vacancySearch}
+                  startDate={vacancyStart}
+                  endDate={vacancyEnd}
+                  category={vacancyFilterClass}
+                  bundleMode={vacancyBundleMode}
+                  onQueryChange={setVacancySearch}
+                  onStartDateChange={setVacancyStart}
+                  onEndDateChange={setVacancyEnd}
+                  onCategoryChange={setVacancyFilterClass}
+                  onBundleModeChange={setVacancyBundleMode}
+                  onClear={resetVacancyFilters}
+                />
+              </div>
               <div className="subtitle" style={{ margin: "4px 0" }}>
                 Eligible vacancies are bolded.
               </div>
@@ -2764,7 +2825,7 @@ export function BidsPage({
                     })),
                   ]);
                   setNewBid({ selectedVacancyIds: [] });
-                  setVacancyFilter("");
+                  resetVacancyFilters();
                   setBidFormKey((prev) => prev + 1);
                 }}
               >
@@ -2774,7 +2835,7 @@ export function BidsPage({
                 className="btn btn-sm"
                 onClick={() => {
                   setNewBid({ selectedVacancyIds: [] });
-                  setVacancyFilter("");
+                  resetVacancyFilters();
                   setBidFormKey((prev) => prev + 1);
                 }}
               >
