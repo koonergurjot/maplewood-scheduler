@@ -85,15 +85,19 @@
   gap: 12px;
   margin: 16px 0 20px;
 }
+.summary-grid .card {
+  grid-column: span 3;
+}
 @media (max-width: 1100px) {
   .summary-grid { grid-template-columns: repeat(6, 1fr); }
+  .summary-grid .card { grid-column: span 6; }
 }
 @media (max-width: 720px) {
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .summary-grid .card { grid-column: span 2; }
 }
 
 .card {
-  grid-column: span 3;
   background: var(--card);
   border: 1px solid var(--stroke);
   border-radius: 14px;
