@@ -2,30 +2,34 @@ import { describe, it, expect } from "vitest";
 import { aggregateByMonth, sampleVacancies } from "../server/metrics.js";
 
 describe("aggregateByMonth", () => {
-  it("calculates metrics correctly", () => {
-    const result = aggregateByMonth(sampleVacancies);
-    const jan = result.find((r) => r.period === "2024-01");
-    const feb = result.find((r) => r.period === "2024-02");
-    expect(jan?.posted).toBe(3);
-    expect(jan?.awarded).toBe(1);
-    expect(jan?.cancelled).toBe(1);
-    expect(jan?.cancellationRate).toBeCloseTo(1 / 3);
-    expect(jan?.overtime).toBe(2);
-    expect(jan?.averageHours).toBeCloseTo(26 / 3);
-    expect(feb?.posted).toBe(3);
-    expect(feb?.awarded).toBe(2);
-    expect(feb?.cancelled).toBe(1);
-    expect(feb?.cancellationRate).toBeCloseTo(1 / 3);
-    expect(feb?.overtime).toBe(1);
-    expect(feb?.averageHours).toBeCloseTo(25 / 3);
+  it("calculates totals, breakdowns, and moving averages", () => {
+    const analytics = aggregateByMonth(sampleVacancies);
+    expect(analytics.availableClassifications).toEqual(["LPN", "RCA", "RN"]);
+    expect(analytics.forecast).toHaveLength(3);
+
+    const jan = analytics.periods.find((period) => period.period === "2024-01");
+    const apr = analytics.periods.find((period) => period.period === "2024-04");
+
+    expect(jan?.totals.posted).toBe(3);
+    expect(jan?.totals.awarded).toBe(1);
+    expect(jan?.totals.cancellationRate).toBeCloseTo(1 / 3);
+    expect(jan?.totals.overtime).toBe(2);
+    expect(jan?.classifications.RN.awarded).toBe(1);
+    expect(jan?.classifications.LPN.posted).toBe(1);
+    expect(jan?.movingAverage.posted).toBeNull();
+
+    expect(apr?.movingAverage.posted).toBeCloseTo(7 / 3);
+    expect(apr?.movingAverage.overtime).toBeCloseTo(8 / 3);
   });
 
   it("supports custom overtime threshold", () => {
-    const result = aggregateByMonth(sampleVacancies, { overtimeThreshold: 10 });
-    const jan = result.find((r) => r.period === "2024-01");
-    const feb = result.find((r) => r.period === "2024-02");
-    expect(jan?.overtime).toBe(0);
-    expect(feb?.overtime).toBe(0);
+    const analytics = aggregateByMonth(sampleVacancies, {
+      overtimeThreshold: 10,
+    });
+    const jan = analytics.periods.find((period) => period.period === "2024-01");
+    const feb = analytics.periods.find((period) => period.period === "2024-02");
+    expect(jan?.totals.overtime).toBe(0);
+    expect(feb?.totals.overtime).toBe(0);
   });
 
   it("ignores vacancies with unknown status", () => {
@@ -34,10 +38,10 @@ describe("aggregateByMonth", () => {
       status: "pending",
       hours: 5,
     };
-    const result = aggregateByMonth([...sampleVacancies, extra]);
-    const jan = result.find((r) => r.period === "2024-01");
-    expect(jan?.posted).toBe(3);
-    expect(jan?.awarded).toBe(1);
-    expect(jan?.cancelled).toBe(1);
+    const analytics = aggregateByMonth([...sampleVacancies, extra]);
+    const jan = analytics.periods.find((period) => period.period === "2024-01");
+    expect(jan?.totals.posted).toBe(3);
+    expect(jan?.totals.awarded).toBe(1);
+    expect(jan?.totals.cancelled).toBe(1);
   });
 });
