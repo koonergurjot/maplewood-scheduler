@@ -34,6 +34,14 @@ import Toast from "./components/ui/Toast";
 import Button from "./components/ui/Button";
 import FilterBar from "./components/ui/FilterBar";
 import Modal from "./components/ui/Modal";
+import useDeadlineMonitor from "./hooks/useDeadlineMonitor";
+import useNotificationPrefs, {
+  NotificationPreferences,
+  NotificationChannel,
+  NotificationLeadTimePreference,
+  QuietHoursPreference,
+} from "./state/useNotificationPrefs";
+import type { DeadlineNotification } from "./types/notifications";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -402,6 +410,14 @@ export default function App() {
     tabOrder: mergedOrder,
   });
 
+  const {
+    notificationPrefs,
+    toggleChannel: toggleNotificationChannel,
+    updateChannel: updateNotificationChannel,
+    updateLeadTime: updateNotificationLeadTime,
+    setQuietHours: setNotificationQuietHours,
+  } = useNotificationPrefs(persisted?.notificationPrefs);
+
   const [filterWing, setFilterWing] = useState<string>("");
   const [filterClass, setFilterClass] = useState<Classification | "">("");
   const [filterShift, setFilterShift] = useState<string>("");
@@ -418,6 +434,26 @@ export default function App() {
     return () => clearInterval(t);
   }, []);
 
+  const {
+    notifications,
+    latestNotification,
+    unreadCount,
+    acknowledgeNotification,
+    acknowledgeAll,
+  } = useDeadlineMonitor({
+    vacancies,
+    settings,
+    notificationPrefs,
+    now,
+    formatVacancy: displayVacancyLabel,
+  });
+
+  useEffect(() => {
+    if (tab === "alerts") {
+      acknowledgeAll();
+    }
+  }, [tab, acknowledgeAll]);
+
   useEffect(() => {
     if (
       !saveState({
@@ -427,11 +463,20 @@ export default function App() {
         bids,
         archivedBids,
         settings,
+        notificationPrefs,
       })
     ) {
       // localStorage unavailable; state persistence disabled
     }
-  }, [employees, vacations, vacancies, bids, archivedBids, settings]);
+  }, [
+    employees,
+    vacations,
+    vacancies,
+    bids,
+    archivedBids,
+    settings,
+    notificationPrefs,
+  ]);
 
   const employeesById = useMemo(
     () => Object.fromEntries(employees.map((e) => [e.id, e])),
@@ -1217,7 +1262,15 @@ export default function App() {
                 const blob = new Blob(
                   [
                     JSON.stringify(
-                      { employees, vacations, vacancies, bids, settings },
+                      {
+                        employees,
+                        vacations,
+                        vacancies,
+                        bids,
+                        archivedBids,
+                        settings,
+                        notificationPrefs,
+                      },
                       null,
                       2,
                     ),
@@ -1255,6 +1308,18 @@ export default function App() {
               onClick={() => setTab(k as any)}
             >
               {k[0].toUpperCase() + k.slice(1)}
+              {k === "alerts" && unreadCount > 0 && (
+                <span
+                  className="pill"
+                  style={{
+                    marginLeft: 6,
+                    background: "var(--bad)",
+                    color: "#fff",
+                  }}
+                >
+                  {unreadCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -1824,11 +1889,80 @@ export default function App() {
                 </div>
               </div>
             </div>
+            <div className="card">
+              <div className="card-h" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                Deadline Notifications
+                {unreadCount > 0 && (
+                  <span
+                    className="pill"
+                    style={{ background: "var(--bad)", color: "#fff" }}
+                  >
+                    {unreadCount} unread
+                  </span>
+                )}
+              </div>
+              <div className="card-c">
+                {notifications.length === 0 ? (
+                  <div className="subtitle">No deadline alerts right now.</div>
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 12,
+                        gap: 12,
+                      }}
+                    >
+                      <div className="subtitle">
+                        Showing {notifications.length} notification
+                        {notifications.length === 1 ? "" : "s"}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={acknowledgeAll}
+                        disabled={!notifications.some((n) => !n.read)}
+                      >
+                        Mark all read
+                      </Button>
+                    </div>
+                    <ul
+                      style={{
+                        listStyle: "none",
+                        margin: 0,
+                        padding: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                      }}
+                    >
+                      {notifications.map((notification) => (
+                        <DeadlineNotificationRow
+                          key={notification.id}
+                          notification={notification}
+                          onAcknowledge={acknowledgeNotification}
+                        />
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
         {tab === "settings" && (
-          <SettingsPage settings={settings} setSettings={setSettings} />
+          <SettingsPage
+            settings={settings}
+            setSettings={setSettings}
+            notificationPrefs={notificationPrefs}
+            toggleChannel={toggleNotificationChannel}
+            updateChannel={updateNotificationChannel}
+            updateLeadTime={updateNotificationLeadTime}
+            setQuietHours={setNotificationQuietHours}
+          />
         )}
         {coverageOpen && (
           <CoverageDaysModal
@@ -1935,6 +2069,61 @@ export default function App() {
             setBulkAwardOpen(false);
           }}
         />
+        {latestNotification && (
+          <div
+            role="status"
+            style={{
+              position: "fixed",
+              top: 96,
+              right: 24,
+              zIndex: 30,
+              background: "var(--card)",
+              color: "var(--text)",
+              border: "1px solid var(--stroke)",
+              borderRadius: 12,
+              padding: "14px 16px",
+              maxWidth: 360,
+              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>
+              {latestNotification.severity === "critical"
+                ? "Deadline passed"
+                : latestNotification.severity === "warning"
+                ? "Deadline approaching"
+                : "Upcoming deadline"}
+            </div>
+            <div style={{ fontSize: 14, lineHeight: 1.4 }}>
+              {latestNotification.message}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 8,
+                marginTop: 12,
+              }}
+            >
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => acknowledgeNotification(latestNotification.id)}
+              >
+                Dismiss
+              </Button>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => {
+                  acknowledgeNotification(latestNotification.id);
+                  setTab("alerts");
+                }}
+              >
+                View alerts
+              </Button>
+            </div>
+          </div>
+        )}
         <Toast
           open={!!stagedDelete}
           message={stagedDelete?.message || ""}
@@ -2263,12 +2452,131 @@ export function ArchivePage({
   );
 }
 
+function DeadlineNotificationRow({
+  notification,
+  onAcknowledge,
+}: {
+  notification: DeadlineNotification;
+  onAcknowledge: (id: string) => void;
+}) {
+  const severityStyles = {
+    info: { background: "var(--brand)", color: "#fff" },
+    warning: { background: "#f5a623", color: "#1c1c1c" },
+    critical: { background: "var(--bad)", color: "#fff" },
+  } as const;
+  const severityLabels = {
+    info: "Info",
+    warning: "Warning",
+    critical: "Critical",
+  } as const;
+  const deadlineDate = new Date(notification.deadlineAt);
+  const triggeredDate = new Date(notification.triggeredAt);
+  const suppressed = notification.suppressedChannels.filter(
+    (channel) => !notification.channels.includes(channel),
+  );
+  return (
+    <li
+      style={{
+        border: "1px solid var(--stroke)",
+        borderRadius: 12,
+        padding: "12px 16px",
+        background: "var(--cardAlt)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
+          <span
+            style={{
+              ...severityStyles[notification.severity],
+              borderRadius: 999,
+              padding: "2px 10px",
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: "uppercase",
+            }}
+          >
+            {severityLabels[notification.severity]}
+          </span>
+          {notification.resolved && (
+            <span
+              className="pill"
+              style={{ background: "#1a7f37", color: "#fff" }}
+            >
+              Resolved
+            </span>
+          )}
+          {!notification.read && (
+            <span
+              className="pill"
+              style={{ background: "var(--brand)", color: "#fff" }}
+            >
+              Unread
+            </span>
+          )}
+        </div>
+        {!notification.read && (
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => onAcknowledge(notification.id)}
+          >
+            Mark read
+          </Button>
+        )}
+      </div>
+      <div style={{ fontWeight: 600, marginTop: 8 }}>{notification.message}</div>
+      <div className="subtitle" style={{ marginTop: 4 }}>
+        Deadline: {deadlineDate.toLocaleString()} • Triggered: {" "}
+        {triggeredDate.toLocaleString()}
+      </div>
+      <div className="subtitle" style={{ marginTop: 4 }}>
+        Channels: {notification.channels.length ? notification.channels.join(", ") : "None"}
+        {suppressed.length > 0 && (
+          <span>
+            {" "}• Quiet hours suppressed: {suppressed.join(", ")}
+          </span>
+        )}
+      </div>
+      {notification.resolved && notification.resolvedAt && (
+        <div className="subtitle" style={{ marginTop: 4 }}>
+          Resolved at {new Date(notification.resolvedAt).toLocaleString()}
+        </div>
+      )}
+    </li>
+  );
+}
+
 function SettingsPage({
   settings,
   setSettings,
+  notificationPrefs,
+  toggleChannel,
+  updateChannel,
+  updateLeadTime,
+  setQuietHours,
 }: {
   settings: Settings;
   setSettings: (u: any) => void;
+  notificationPrefs: NotificationPreferences;
+  toggleChannel: ReturnType<typeof useNotificationPrefs>["toggleChannel"];
+  updateChannel: ReturnType<typeof useNotificationPrefs>["updateChannel"];
+  updateLeadTime: ReturnType<typeof useNotificationPrefs>["updateLeadTime"];
+  setQuietHours: ReturnType<typeof useNotificationPrefs>["setQuietHours"];
 }) {
   return (
     <div className="grid">
@@ -2308,6 +2616,191 @@ function SettingsPage({
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-h">Notifications</div>
+        <div className="card-c" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div>
+            <div className="subtitle" style={{ marginBottom: 8 }}>
+              Channels
+            </div>
+            <div className="row cols3" style={{ gap: 16 }}>
+              {(
+                [
+                  {
+                    key: "inApp" as NotificationChannel,
+                    label: "In-app",
+                    description: "Show alerts inside Maplewood Scheduler.",
+                  },
+                  {
+                    key: "email" as NotificationChannel,
+                    label: "Email",
+                    description: "Send notification emails when deadlines approach.",
+                    placeholder: "alerts@example.com",
+                    inputType: "email",
+                  },
+                  {
+                    key: "sms" as NotificationChannel,
+                    label: "SMS",
+                    description: "Send a text message for urgent deadlines.",
+                    placeholder: "555-123-4567",
+                    inputType: "tel",
+                  },
+                ]
+              ).map((channel) => {
+                const channelConfig = notificationPrefs.channels[channel.key];
+                const isEmail = channel.key === "email";
+                const isSms = channel.key === "sms";
+                return (
+                  <div
+                    key={channel.key}
+                    style={{
+                      border: "1px solid var(--stroke)",
+                      borderRadius: 12,
+                      padding: "12px 14px",
+                      background: "var(--cardAlt)",
+                    }}
+                  >
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600 }}>
+                      <input
+                        type="checkbox"
+                        checked={channelConfig.enabled}
+                        onChange={(e) => toggleChannel(channel.key, e.target.checked)}
+                      />
+                      {channel.label}
+                    </label>
+                    <div className="subtitle" style={{ marginTop: 4 }}>
+                      {channel.description}
+                    </div>
+                    {isEmail && (
+                      <input
+                        type={channel.inputType}
+                        value={notificationPrefs.channels.email.address}
+                        placeholder={channel.placeholder}
+                        onChange={(e) => updateChannel("email", { address: e.target.value })}
+                        style={{ marginTop: 8, width: "100%" }}
+                      />
+                    )}
+                    {isSms && (
+                      <input
+                        type={channel.inputType}
+                        value={notificationPrefs.channels.sms.number}
+                        placeholder={channel.placeholder}
+                        onChange={(e) => updateChannel("sms", { number: e.target.value })}
+                        style={{ marginTop: 8, width: "100%" }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <div className="subtitle" style={{ marginBottom: 8 }}>
+              Lead times
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {notificationPrefs.leadTimes.map((lt) => (
+                <div
+                  key={lt.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "8px 12px",
+                    border: "1px solid var(--stroke)",
+                    borderRadius: 12,
+                    background: "var(--cardAlt)",
+                  }}
+                >
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+                    <input
+                      type="checkbox"
+                      checked={lt.enabled}
+                      onChange={(e) => updateLeadTime(lt.id, { enabled: e.target.checked })}
+                    />
+                    <span>{lt.label}</span>
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={lt.minutes}
+                    onChange={(e) => updateLeadTime(lt.id, { minutes: Number(e.target.value) })}
+                    style={{ width: 90 }}
+                  />
+                  <span className="subtitle">minutes</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="subtitle" style={{ marginBottom: 8 }}>
+              Quiet hours
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={notificationPrefs.quietHours.enabled}
+                onChange={(e) => setQuietHours({ enabled: e.target.checked })}
+              />
+              Enable quiet hours
+            </label>
+            <div className="row cols3" style={{ marginTop: 12 }}>
+              <div>
+                <label>Start</label>
+                <input
+                  type="time"
+                  value={notificationPrefs.quietHours.start}
+                  onChange={(e) => setQuietHours({ start: e.target.value })}
+                />
+              </div>
+              <div>
+                <label>End</label>
+                <input
+                  type="time"
+                  value={notificationPrefs.quietHours.end}
+                  onChange={(e) => setQuietHours({ end: e.target.value })}
+                />
+              </div>
+              <div>
+                <label>Timezone</label>
+                <input
+                  type="text"
+                  value={notificationPrefs.quietHours.timezone}
+                  placeholder="America/Chicago"
+                  onChange={(e) => setQuietHours({ timezone: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="subtitle" style={{ marginTop: 12 }}>
+              Suppress during quiet hours
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 8 }}>
+              {(["email", "sms", "inApp"] as NotificationChannel[]).map((channel) => {
+                const checked = notificationPrefs.quietHours.suppress.includes(channel);
+                return (
+                  <label key={channel} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        const current = notificationPrefs.quietHours.suppress;
+                        const next = e.target.checked
+                          ? Array.from(new Set([...current, channel]))
+                          : current.filter((c) => c !== channel);
+                        setQuietHours({ suppress: next });
+                      }}
+                    />
+                    {channel === "inApp" ? "In-app" : channel.toUpperCase()}
+                  </label>
+                );
+              })}
             </div>
           </div>
         </div>
