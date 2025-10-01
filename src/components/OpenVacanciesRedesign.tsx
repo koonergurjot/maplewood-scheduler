@@ -87,6 +87,8 @@ export default function OpenVacanciesRedesign(props: Props) {
       list = list.filter((v) => v.classification === filters!.classification);
     if (bundleMode === "bundles") list = list.filter((v) => v.bundleId);
     if (bundleMode === "singles") list = list.filter((v) => !v.bundleId);
+    if (filters?.bundlesOnly) list = list.filter((v) => v.bundleId);
+    if (filters?.singlesOnly) list = list.filter((v) => !v.bundleId);
     return list;
   }, [vacancies, search, filterClass, start, end, filters, vacNameById, bundleMode]);
 
