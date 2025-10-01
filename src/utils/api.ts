@@ -20,6 +20,15 @@ export function setToken(token: string) {
   }
 }
 
+export function getApiBaseUrl(): string {
+  const metaEnv = (import.meta as unknown as {
+    env?: Record<string, string | undefined>;
+  }).env;
+  const raw = (metaEnv?.VITE_API_BASE_URL ?? "").trim();
+  if (!raw) return "";
+  return raw.replace(/\/$/, "");
+}
+
 export async function authFetch(input: RequestInfo, init: RequestInit = {}) {
   const token = getToken();
   const headers = new Headers(init.headers);
