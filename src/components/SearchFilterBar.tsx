@@ -1,4 +1,5 @@
 import { ChangeEvent } from "react";
+import { CLASSIFICATIONS } from "../types";
 import type { Classification } from "../types";
 
 type BundleMode = "all" | "bundles" | "singles";
@@ -16,8 +17,6 @@ interface Props {
   onBundleModeChange: (value: BundleMode) => void;
   onClear?: () => void;
 }
-
-const CLASSIFICATIONS: Classification[] = ["RCA", "LPN", "RN"];
 
 export default function SearchFilterBar({
   query,

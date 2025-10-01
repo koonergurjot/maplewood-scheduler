@@ -96,12 +96,16 @@ describe("validateClassification", () => {
     expect(validateClassification("RCA").isValid).toBe(true);
     expect(validateClassification("LPN").isValid).toBe(true);
     expect(validateClassification("RN").isValid).toBe(true);
+    expect(validateClassification("Rec").isValid).toBe(true);
+    expect(validateClassification("Receptionist").isValid).toBe(true);
   });
 
   it("should reject invalid classifications", () => {
     const result = validateClassification("INVALID");
     expect(result.isValid).toBe(false);
-    expect(result.error).toBe("Classification must be RCA, LPN, or RN");
+    expect(result.error).toBe(
+      "Classification must be one of: RCA, LPN, RN, Rec, Receptionist",
+    );
   });
 
   it("should reject empty classification", () => {

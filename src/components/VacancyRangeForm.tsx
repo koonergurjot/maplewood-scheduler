@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { CLASSIFICATIONS } from "../types";
 import type { VacancyRange, Classification, Vacancy } from "../types";
 import CoverageDaysModal from "./CoverageDaysModal";
 import { getDatesInRange, formatCoverageSummary } from "../utils/date";
@@ -26,7 +27,7 @@ export default function VacancyRangeForm({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [classification, setClassification] = useState<Classification>(
-    defaultClassification ?? "RCA",
+    defaultClassification ?? CLASSIFICATIONS[0],
   );
   const [wing, setWing] = useState<string>(defaultWing ?? "");
   const [shiftStart, setShiftStart] = useState("06:30");
@@ -136,7 +137,11 @@ export default function VacancyRangeForm({
               className="border rounded-md px-2 py-1"
               disabled={!!defaultClassification}
             >
-              <option>RCA</option><option>LPN</option><option>RN</option>
+              {CLASSIFICATIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
             </select>
           </label>
           <label className="flex flex-col gap-1">
