@@ -2121,7 +2121,25 @@ export function ArchivePage({
   vacancies: Vacancy[];
   archivedBids: Record<string, Bid[]>;
 }) {
-  const archived = vacancies.filter((v) => v.archived);
+  const archived = useMemo(() => {
+    const getTimestamp = (v: Vacancy) => {
+      if (v.archivedAt) {
+        return new Date(v.archivedAt).getTime();
+      }
+      if (v.shiftDate && v.shiftStart) {
+        return combineDateTime(v.shiftDate, v.shiftStart).getTime();
+      }
+      if (v.shiftDate) {
+        return new Date(`${v.shiftDate}T00:00:00`).getTime();
+      }
+      return 0;
+    };
+
+    return vacancies
+      .filter((v) => v.archived)
+      .slice()
+      .sort((a, b) => getTimestamp(b) - getTimestamp(a));
+  }, [vacancies]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   return (
     <div className="grid">
