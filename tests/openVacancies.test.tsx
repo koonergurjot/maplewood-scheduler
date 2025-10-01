@@ -212,7 +212,6 @@ describe("OpenVacancies", () => {
     }
 
     const { container } = render(<Wrapper />);
-    fireEvent.click(screen.getAllByLabelText("Group by bundle")[0]);
     const buttons = container.querySelectorAll('[data-testid^="vacancy-delete-"]');
     expect(buttons.length).toBe(1);
   });
