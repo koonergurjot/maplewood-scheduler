@@ -54,11 +54,41 @@ function BodyScrollLock() {
   return null;
 }
 
+function shallowEqualBooleanMap(a: Record<string, boolean>, b: Record<string, boolean>) {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const key of aKeys) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
+function shallowEqualTimesMap(a: Record<string, Times>, b: Record<string, Times>) {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const key of aKeys) {
+    const aVal = a[key];
+    const bVal = b[key];
+    if (!bVal || aVal.start !== bVal.start || aVal.end !== bVal.end) return false;
+  }
+  return true;
+}
+
+function shallowEqualStringMap(a: Record<string, string>, b: Record<string, string>) {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const key of aKeys) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
 export default function CoverageDaysModal({
   open, startDate, endDate, defaultStart, defaultEnd, classification, initial, onSave, onClose
 }: Props) {
-  if (!open) return null;
-
   // Build a week-grid (calendar) that fully covers the range
   const grid = useMemo(() => {
     const start = startOfWeekISO(startDate);
@@ -78,31 +108,55 @@ export default function CoverageDaysModal({
     return set;
   }, [startDate, endDate]);
 
+  const inRangeDates = useMemo(() => Array.from(inRangeSet), [inRangeSet]);
+
   // Selection + overrides
   const [selected, setSelected] = useState<Record<string, boolean>>(() => {
-    // default: all in range selected
     const seed: Record<string, boolean> = {};
-    grid.flat().forEach(d => { seed[d] = inRangeSet.has(d) ? true : false; });
+    inRangeDates.forEach(d => { seed[d] = true; });
     if (initial?.selectedDates?.length) {
       const chosen = new Set(initial.selectedDates);
-      grid.flat().forEach(d => { seed[d] = chosen.has(d); });
+      inRangeDates.forEach(d => { seed[d] = chosen.has(d); });
     }
     return seed;
   });
 
   const [perDayTimes, setPerDayTimes] = useState<Record<string, Times>>(() => {
     const t: Record<string, Times> = {};
-    grid.flat().forEach(d => {
-      t[d] = initial?.perDayTimes?.[d] ?? { start: defaultStart, end: defaultEnd };
+    inRangeDates.forEach(d => {
+      const override = initial?.perDayTimes?.[d];
+      t[d] = override ? { ...override } : { start: defaultStart, end: defaultEnd };
     });
     return t;
   });
 
   const [perDayWing, setPerDayWing] = useState<Record<string, string>>(() => {
     const w: Record<string, string> = {};
-    grid.flat().forEach(d => { w[d] = initial?.perDayWing?.[d] ?? ""; });
+    inRangeDates.forEach(d => { w[d] = initial?.perDayWing?.[d] ?? ""; });
     return w;
   });
+
+  useEffect(() => {
+    const nextSelected: Record<string, boolean> = {};
+    inRangeDates.forEach(d => { nextSelected[d] = true; });
+    if (initial?.selectedDates?.length) {
+      const chosen = new Set(initial.selectedDates);
+      inRangeDates.forEach(d => { nextSelected[d] = chosen.has(d); });
+    }
+
+    const nextTimes: Record<string, Times> = {};
+    inRangeDates.forEach(d => {
+      const override = initial?.perDayTimes?.[d];
+      nextTimes[d] = override ? { ...override } : { start: defaultStart, end: defaultEnd };
+    });
+
+    const nextWings: Record<string, string> = {};
+    inRangeDates.forEach(d => { nextWings[d] = initial?.perDayWing?.[d] ?? ""; });
+
+    setSelected(prev => shallowEqualBooleanMap(prev, nextSelected) ? prev : nextSelected);
+    setPerDayTimes(prev => shallowEqualTimesMap(prev, nextTimes) ? prev : nextTimes);
+    setPerDayWing(prev => shallowEqualStringMap(prev, nextWings) ? prev : nextWings);
+  }, [open, startDate, endDate, defaultStart, defaultEnd, initial, inRangeDates]);
 
   const toggle = (d: string) => {
     if (!inRangeSet.has(d)) return;
@@ -146,6 +200,8 @@ export default function CoverageDaysModal({
       perDayWing:  Object.fromEntries(chosen.map(d => [d, perDayWing[d] ?? ""])),
     });
   };
+
+  if (!open) return null;
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
