@@ -1,3 +1,5 @@
+import { CLASSIFICATIONS } from "../types";
+
 /**
  * Validation utilities for form inputs
  */
@@ -90,14 +92,19 @@ export function validateTimeRange(startTime: string, endTime: string): Validatio
  * Validate classification
  */
 export function validateClassification(classification: string): ValidationResult {
-  const validClassifications = ["RCA", "LPN", "RN"];
-  
   if (!classification) {
     return { isValid: false, error: "Classification is required" };
   }
 
-  if (!validClassifications.includes(classification)) {
-    return { isValid: false, error: "Classification must be RCA, LPN, or RN" };
+  const isKnownClass = CLASSIFICATIONS.some(
+    (option) => option === classification,
+  );
+
+  if (!isKnownClass) {
+    return {
+      isValid: false,
+      error: `Classification must be one of: ${CLASSIFICATIONS.join(", ")}`,
+    };
   }
 
   return { isValid: true };

@@ -5,7 +5,7 @@ import Toast from "./ui/Toast";
 import { TrashIcon } from "./ui/Icon";
 import CoverageChip from "./ui/CoverageChip";
 import FilterBar from "./ui/FilterBar";
-import { WINGS, SHIFT_PRESETS } from "../types";
+import { WINGS, SHIFT_PRESETS, CLASSIFICATIONS } from "../types";
 import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
 import { minutesBetween } from "../lib/dates";
 
@@ -168,9 +168,7 @@ export default function OpenVacancies({
             key: "class",
             options: [
               { value: "", label: "All Classes" },
-              { value: "RCA", label: "RCA" },
-              { value: "LPN", label: "LPN" },
-              { value: "RN", label: "RN" },
+              ...CLASSIFICATIONS.map((c) => ({ value: c, label: c })),
             ],
           },
           {

@@ -25,6 +25,7 @@ import VacancyDetail from "./components/VacancyDetail";
 import OpenVacanciesRedesign from "./components/OpenVacanciesRedesign";
 import SearchFilterBar from "./components/SearchFilterBar";
 import { appConfig } from "./config";
+import { CLASSIFICATIONS } from "./types";
 import type { VacancyRange, VacancyStatus, BundleMode } from "./types";
 export { OVERRIDE_REASONS } from "./types";
 import { createVacanciesFromRange, bundleContiguousVacanciesByRef } from "./lib/bundles";
@@ -42,12 +43,12 @@ import Modal from "./components/ui/Modal";
  * ✔ Sticky table header for Open Vacancies + scrollable panel; highlight the row that’s “due next”
  * ✔ Theme toggle (Dark/Light) + text size slider (great for wall displays)
  * ✔ Reason codes required when you override the recommendation (audit‑friendly trail)
- * ✔ Eligibility gate: block awards outside vacancy class (RCA/LPN/RN) unless “Allow class override” is checked
+ * ✔ Eligibility gate: block awards outside vacancy class (RCA/LPN/RN/Rec/Receptionist) unless “Allow class override” is checked
  * ✔ Open Vacancies layout reformatted to take most of the page and avoid cut‑off
  */
 
 // ---------- Types ----------
-export type Classification = "RCA" | "LPN" | "RN";
+export type Classification = (typeof CLASSIFICATIONS)[number];
 export type Status = "FT" | "PT" | "Casual";
 
 export type Employee = {
@@ -1288,7 +1289,7 @@ export default function App() {
                               : "",
                           classification: (e?.classification ??
                             v.classification ??
-                            "RCA") as Classification,
+                            CLASSIFICATIONS[0]) as Classification,
                         }));
                       }}
                     />
@@ -1297,7 +1298,7 @@ export default function App() {
                     <div>
                       <label>Classification</label>
                       <select
-                        value={newVacay.classification ?? "RCA"}
+                        value={newVacay.classification ?? CLASSIFICATIONS[0]}
                         onChange={(e) =>
                           setNewVacay((v) => ({
                             ...v,
@@ -1305,9 +1306,11 @@ export default function App() {
                           }))
                         }
                       >
-                        <option value="RCA">RCA</option>
-                        <option value="LPN">LPN</option>
-                        <option value="RN">RN</option>
+                        {CLASSIFICATIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   )}
@@ -1633,9 +1636,10 @@ export default function App() {
                         key: "class",
                         options: [
                           { value: "", label: "All Classes" },
-                          { value: "RCA", label: "RCA" },
-                          { value: "LPN", label: "LPN" },
-                          { value: "RN", label: "RN" },
+                          ...CLASSIFICATIONS.map((c) => ({
+                            value: c,
+                            label: c,
+                          })),
                         ],
                       },
                       {
@@ -1976,33 +1980,38 @@ function EmployeesPage({
                 await (window as any).appShowAlert?.("Failed to parse CSV");
                 return;
               }
-              const out: Employee[] = rows.map((r: any, i: number) => ({
-                id: String(r.id ?? r.EmployeeID ?? `emp_${i}`),
-                firstName: String(r.firstName ?? r.name ?? ""),
-                lastName: String(r.lastName ?? ""),
-                classification: (["RCA", "LPN", "RN"].includes(
-                  String(r.classification),
-                )
-                  ? r.classification
-                  : "RCA") as Classification,
-                status: (["FT", "PT", "Casual"].includes(String(r.status))
-                  ? r.status
-                  : "FT") as Status,
-                homeWing: String(r.homeWing ?? ""),
-                startDate: String(r.startDate ?? ""),
-                seniorityHours: Number(r.seniorityHours ?? 0),
-                seniorityRank: Number(r.seniorityRank ?? i + 1),
-                active: String(r.active ?? "Yes")
-                  .toLowerCase()
-                  .startsWith("y"),
-              }));
+              const out: Employee[] = rows.map((r: any, i: number) => {
+                const rawClass = String(r.classification ?? "").trim();
+                const normalizedClass =
+                  CLASSIFICATIONS.find(
+                    (option) =>
+                      option.toLowerCase() === rawClass.toLowerCase(),
+                  ) ?? CLASSIFICATIONS[0];
+
+                return {
+                  id: String(r.id ?? r.EmployeeID ?? `emp_${i}`),
+                  firstName: String(r.firstName ?? r.name ?? ""),
+                  lastName: String(r.lastName ?? ""),
+                  classification: normalizedClass as Classification,
+                  status: (["FT", "PT", "Casual"].includes(String(r.status))
+                    ? r.status
+                    : "FT") as Status,
+                  homeWing: String(r.homeWing ?? ""),
+                  startDate: String(r.startDate ?? ""),
+                  seniorityHours: Number(r.seniorityHours ?? 0),
+                  seniorityRank: Number(r.seniorityRank ?? i + 1),
+                  active: String(r.active ?? "Yes")
+                    .toLowerCase()
+                    .startsWith("y"),
+                };
+              });
               setEmployees(out.filter((e) => !!e.id));
             }}
           />
           <div className="subtitle">
-            Columns: id, firstName, lastName, classification (RCA/LPN/RN),
-            status (FT/PT/Casual), homeWing, startDate, seniorityHours,
-            seniorityRank, active (Yes/No)
+            Columns: id, firstName, lastName, classification (RCA/LPN/RN/Rec/
+            Receptionist), status (FT/PT/Casual), homeWing, startDate,
+            seniorityHours, seniorityRank, active (Yes/No)
           </div>
         </div>
       </div>
@@ -2051,9 +2060,11 @@ function EmployeesPage({
               <div>
                 <label>Class</label>
                 <select name="classification">
-                  <option value="RCA">RCA</option>
-                  <option value="LPN">LPN</option>
-                  <option value="RN">RN</option>
+                  {CLASSIFICATIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -2747,7 +2758,7 @@ export function BidsPage({
                       bidderName: newBid.bidderName ?? "",
                       bidderStatus: (newBid.bidderStatus ?? "Casual") as Status,
                       bidderClassification: (newBid.bidderClassification ??
-                        "RCA") as Classification,
+                        CLASSIFICATIONS[0]) as Classification,
                       bidTimestamp: ts,
                       notes: newBid.notes ?? "",
                     })),
@@ -2792,9 +2803,7 @@ export function BidsPage({
                   key: "class",
                   options: [
                     { value: "", label: "All Classes" },
-                    { value: "RCA", label: "RCA" },
-                    { value: "LPN", label: "LPN" },
-                    { value: "RN", label: "RN" },
+                    ...CLASSIFICATIONS.map((c) => ({ value: c, label: c })),
                   ],
                 },
                 {

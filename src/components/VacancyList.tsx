@@ -3,7 +3,7 @@ import type { Vacancy, Employee, Settings } from "../types";
 import type { Recommendation } from "../recommend";
 import VacancyRow from "./VacancyRow";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
-import { WINGS, SHIFT_PRESETS } from "../types";
+import { WINGS, SHIFT_PRESETS, CLASSIFICATIONS } from "../types";
 import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
 import { minutesBetween } from "../lib/dates";
 import { List, type RowComponentProps } from "react-window";
@@ -171,7 +171,7 @@ export default function VacancyList({
             </select>
             <select value={filterClass} onChange={(e) => setFilterClass(e.target.value as any)}>
               <option value="">All Classes</option>
-              {["RCA", "LPN", "RN"].map((c) => (
+              {CLASSIFICATIONS.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>

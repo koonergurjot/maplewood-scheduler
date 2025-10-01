@@ -1,4 +1,12 @@
-export type Classification = "RCA" | "LPN" | "RN";
+export const CLASSIFICATIONS = [
+  "RCA",
+  "LPN",
+  "RN",
+  "Rec",
+  "Receptionist",
+] as const;
+
+export type Classification = (typeof CLASSIFICATIONS)[number];
 export type Status = "FT" | "PT" | "Casual";
 
 export type Employee = {
