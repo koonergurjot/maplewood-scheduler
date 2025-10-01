@@ -27,6 +27,22 @@ type Props = {
 
 type Day = { date: Date; inMonth: boolean };
 
+type EventSummary = {
+  all: Vacancy[];
+  visible: Vacancy[];
+  open: number;
+  awarded: number;
+  filled: number;
+};
+
+const EMPTY_SUMMARY: EventSummary = {
+  all: [],
+  visible: [],
+  open: 0,
+  awarded: 0,
+  filled: 0,
+};
+
 function monthLabel(y: number, m: number) {
   return new Date(y, m, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
@@ -72,18 +88,31 @@ export default function CalendarView({
     return map;
   }, [filteredVacancies]);
 
+  const eventSummaries = React.useMemo<Record<string, EventSummary>>(() => {
+    const summaries: Record<string, EventSummary> = {};
+    for (const [iso, allEvents] of Object.entries(eventsByDate)) {
+      const summary = allEvents.reduce(
+        (acc, event: Vacancy) => {
+          const status = (event as any).status || "Open";
+          if (status === "Open") {
+            acc.open++;
+            acc.visible.push(event);
+          } else if (status === "Awarded") acc.awarded++;
+          else if (status === "Filled") acc.filled++;
+          return acc;
+        },
+        { open: 0, awarded: 0, filled: 0, visible: [] as Vacancy[] },
+      );
+      summaries[iso] = { ...summary, all: allEvents };
+    }
+    return summaries;
+  }, [eventsByDate]);
+
   const todayIso = isoDate(today);
-  const todaysEvents = eventsByDate[todayIso] || [];
-  const visibleToday = todaysEvents.filter(
-    (e: any) => (e as any).status === "Open",
-  );
-  const openToday = visibleToday.length;
-  const awardedToday = todaysEvents.filter(
-    (e: any) => (e as any).status === "Awarded",
-  ).length;
-  const filledToday = todaysEvents.filter(
-    (e: any) => (e as any).status === "Filled",
-  ).length;
+  const todaySummary = eventSummaries[todayIso];
+  const openToday = todaySummary?.open ?? 0;
+  const awardedToday = todaySummary?.awarded ?? 0;
+  const filledToday = todaySummary?.filled ?? 0;
 
   const weekdayShort = new Intl.DateTimeFormat(undefined, { weekday: "short" });
 
@@ -137,30 +166,9 @@ export default function CalendarView({
       <div className={"calendar-grid" + (showHeatmap ? " heatmap" : "") }>
         {days.map((d) => {
             const iso = isoDate(d.date);
-            const allEvents = React.useMemo<Vacancy[]>(
-              () => eventsByDate[iso] || [],
-              // eslint-disable-next-line react-hooks/exhaustive-deps
-              [eventsByDate, iso],
-            );
+            const summary = eventSummaries[iso] ?? EMPTY_SUMMARY;
 
-            const { open, awarded, filled, visible } = React.useMemo(
-              () =>
-                allEvents.reduce(
-                  (acc, e: Vacancy) => {
-                    const status = (e as any).status || "Open";
-                    if (status === "Open") {
-                      acc.open++;
-                      acc.visible.push(e);
-                    } else if (status === "Awarded") acc.awarded++;
-                    else if (status === "Filled") acc.filled++;
-                    return acc;
-                  },
-                  { open: 0, awarded: 0, filled: 0, visible: [] as Vacancy[] },
-                ),
-              [allEvents],
-            );
-
-          const events = showFilled ? allEvents : visible;
+            const events = showFilled ? summary.all : summary.visible;
           return (
             <div
               key={iso}
@@ -171,9 +179,9 @@ export default function CalendarView({
               <div className="day-head">
                 <div>{d.date.getDate()}</div>
                 <div style={{ display: "flex", gap: 6 }}>
-                  {open ? <span className="badge badge-open" title="Open">{open}</span> : null}
-                  {awarded ? <span className="badge badge-awarded" title="Awarded">{awarded}</span> : null}
-                  {filled ? <span className="badge badge-filled" title="Filled">{filled}</span> : null}
+                  {summary.open ? <span className="badge badge-open" title="Open">{summary.open}</span> : null}
+                  {summary.awarded ? <span className="badge badge-awarded" title="Awarded">{summary.awarded}</span> : null}
+                  {summary.filled ? <span className="badge badge-filled" title="Filled">{summary.filled}</span> : null}
                 </div>
               </div>
               <div className="events">
