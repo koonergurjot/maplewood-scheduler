@@ -23,6 +23,7 @@ import CoverageDaysModal from "./components/CoverageDaysModal";
 import VacancyRow from "./components/VacancyRow";
 import VacancyDetail from "./components/VacancyDetail";
 import OpenVacanciesRedesign from "./components/OpenVacanciesRedesign";
+import SearchFilterBar from "./components/SearchFilterBar";
 import { appConfig } from "./config";
 import type { VacancyRange, VacancyStatus, BundleMode } from "./types";
 export { OVERRIDE_REASONS } from "./types";
@@ -2141,14 +2142,64 @@ export function ArchivePage({
       .sort((a, b) => getTimestamp(b) - getTimestamp(a));
   }, [vacancies]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [query, setQuery] = useState("");
+  const [classification, setClassification] = useState<Classification | "">("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [bundleMode, setBundleMode] = useState<"all" | "bundles" | "singles">("all");
+
+  const filteredArchived = useMemo(() => {
+    const search = query.trim();
+    return archived.filter((v) => {
+      if (search && !matchText(search, `${displayVacancyLabel(v)} ${v.reason ?? ""}`)) {
+        return false;
+      }
+      if (classification && v.classification !== classification) {
+        return false;
+      }
+      if (startDate && (!v.shiftDate || v.shiftDate < startDate)) {
+        return false;
+      }
+      if (endDate && (!v.shiftDate || v.shiftDate > endDate)) {
+        return false;
+      }
+      if (bundleMode === "bundles" && !v.bundleId) {
+        return false;
+      }
+      if (bundleMode === "singles" && v.bundleId) {
+        return false;
+      }
+      return true;
+    });
+  }, [archived, bundleMode, classification, endDate, query, startDate]);
+
   return (
     <div className="grid">
       <div className="card">
         <div className="card-h">Archived Vacancies</div>
         <div className="card-c">
+          <SearchFilterBar
+            query={query}
+            startDate={startDate}
+            endDate={endDate}
+            category={classification}
+            bundleMode={bundleMode}
+            onQueryChange={setQuery}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            onCategoryChange={setClassification}
+            onBundleModeChange={setBundleMode}
+            onClear={() => {
+              setQuery("");
+              setStartDate("");
+              setEndDate("");
+              setClassification("");
+              setBundleMode("all");
+            }}
+          />
           <table className="responsive-table">
             <tbody>
-              {archived.map((v) => (
+              {filteredArchived.map((v) => (
                 <Fragment key={v.id}>
                   <tr
                     onClick={() =>
@@ -2187,7 +2238,7 @@ export function ArchivePage({
                   )}
                 </Fragment>
               ))}
-              {!archived.length && (
+              {!filteredArchived.length && (
                 <tr>
                   <td>No archived vacancies</td>
                 </tr>
