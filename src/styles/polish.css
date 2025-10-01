@@ -17,7 +17,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  flex-wrap: wrap;
+  column-gap: 16px;
+  row-gap: 12px;
+  align-content: flex-start;
   background: linear-gradient(90deg, var(--brand), var(--accent));
   color: #fff;
   padding: 12px 16px;
@@ -61,6 +64,27 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+@media (max-width: 720px) {
+  .topnav {
+    align-items: flex-start;
+  }
+
+  .topnav .brand {
+    order: 1;
+    flex: 1 1 100%;
+  }
+
+  .topnav .navlinks {
+    order: 2;
+    flex: 1 1 100%;
+  }
+
+  .topnav .right {
+    order: 3;
+    margin-left: auto;
+  }
 }
 
 /* Theme toggle */
