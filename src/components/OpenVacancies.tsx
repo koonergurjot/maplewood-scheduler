@@ -147,7 +147,7 @@ export default function OpenVacancies({
           <input
             type="checkbox"
             checked={groupByBundle}
-            onChange={() => setGroupByBundle(true)}
+            onChange={(event) => setGroupByBundle(event.target.checked)}
           />
           Group by bundle
         </label>
