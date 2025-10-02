@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import type { Vacancy, Employee, Settings } from "../types";
+import { useMemo, useState } from "react";
+import type { Vacancy, Employee, Settings, Classification } from "../types";
 import type { Recommendation } from "../recommend";
 import VacancyRow from "./VacancyRow";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
@@ -50,27 +50,42 @@ export default function VacancyList({
   deleteVacancy = () => {},
 }: Props) {
   const {
-    filterWing,
-    setFilterWing,
-    filterClass,
-    setFilterClass,
+    selectedWings,
+    setSelectedWings,
+    selectedPositions,
+    setSelectedPositions,
     filterShift,
     setFilterShift,
-    filterCountdown,
-    setFilterCountdown,
     start,
     setStart,
     end,
     setEnd,
     filtersOpen,
     setFiltersOpen,
+    resetFilters,
   } = useVacancyFilters();
+  const [filterCountdown, setFilterCountdown] = useState("");
+
+  const toggleWing = (wing: string) => {
+    setSelectedWings((prev) =>
+      prev.includes(wing) ? prev.filter((w) => w !== wing) : [...prev, wing],
+    );
+  };
+
+  const togglePosition = (classification: Classification) => {
+    setSelectedPositions((prev) =>
+      prev.includes(classification)
+        ? prev.filter((c) => c !== classification)
+        : [...prev, classification],
+    );
+  };
 
   const filteredVacancies = useMemo(() => {
     return vacancies.filter((v) => {
       if (v.status === "Filled" || v.status === "Awarded") return false;
-      if (filterWing && v.wing !== filterWing) return false;
-      if (filterClass && v.classification !== filterClass) return false;
+      const vacancyWing = v.wing ?? "";
+      if (selectedWings.length > 0 && (!vacancyWing || !selectedWings.includes(vacancyWing))) return false;
+      if (selectedPositions.length > 0 && (!v.classification || !selectedPositions.includes(v.classification))) return false;
       if (filterShift) {
         const preset = SHIFT_PRESETS.find((p) => p.label === filterShift);
         if (preset && (v.shiftStart !== preset.start || v.shiftEnd !== preset.end)) return false;
@@ -91,8 +106,8 @@ export default function VacancyList({
     });
   }, [
     vacancies,
-    filterWing,
-    filterClass,
+    selectedWings,
+    selectedPositions,
     filterShift,
     filterCountdown,
     start,
@@ -161,22 +176,52 @@ export default function VacancyList({
         </div>
         {filtersOpen && (
           <div className="toolbar" style={{ marginBottom: 8 }}>
-            <select value={filterWing} onChange={(e) => setFilterWing(e.target.value)}>
-              <option value="">All Wings</option>
-              {WINGS.map((w) => (
-                <option key={w} value={w}>
-                  {w}
-                </option>
-              ))}
-            </select>
-            <select value={filterClass} onChange={(e) => setFilterClass(e.target.value as any)}>
-              <option value="">All Classes</option>
-              {CLASSIFICATIONS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            <div
+              className="filter-group"
+              style={{ display: "flex", flexDirection: "column", gap: 4 }}
+            >
+              <span className="filter-group__label" style={{ fontWeight: 600 }}>
+                Wings
+              </span>
+              <div
+                className="filter-group__options"
+                style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
+              >
+                {WINGS.map((w) => (
+                  <label key={w} className="filter-group__option" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedWings.includes(w)}
+                      onChange={() => toggleWing(w)}
+                    />
+                    {w}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div
+              className="filter-group"
+              style={{ display: "flex", flexDirection: "column", gap: 4 }}
+            >
+              <span className="filter-group__label" style={{ fontWeight: 600 }}>
+                Classifications
+              </span>
+              <div
+                className="filter-group__options"
+                style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
+              >
+                {CLASSIFICATIONS.map((c) => (
+                  <label key={c} className="filter-group__option" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedPositions.includes(c)}
+                      onChange={() => togglePosition(c)}
+                    />
+                    {c}
+                  </label>
+                ))}
+              </div>
+            </div>
             <select value={filterShift} onChange={(e) => setFilterShift(e.target.value)}>
               <option value="">All Shifts</option>
               {SHIFT_PRESETS.map((s) => (
@@ -196,12 +241,8 @@ export default function VacancyList({
             <button
               className="btn"
               onClick={() => {
-                setFilterWing("");
-                setFilterClass("");
-                setFilterShift("");
+                resetFilters();
                 setFilterCountdown("");
-                setStart("");
-                setEnd("");
               }}
             >
               Clear
