@@ -17,7 +17,7 @@ type MultiSelectDropdownProps<T extends string> = {
   onChange: (next: T[]) => void;
 };
 
-function MultiSelectDropdown<T extends string>({
+export function MultiSelectDropdown<T extends string>({
   label,
   namePrefix,
   options,

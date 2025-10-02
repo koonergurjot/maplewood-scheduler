@@ -1,17 +1,12 @@
 import { useState, useMemo, Fragment } from "react";
-import type { Vacancy, Vacation, Classification, Settings } from "../types";
+import type { Vacancy, Vacation, Classification } from "../types";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import Toast from "./ui/Toast";
 import { TrashIcon } from "./ui/Icon";
 import CoverageChip from "./ui/CoverageChip";
-import FilterBar from "./ui/FilterBar";
 import { WINGS, SHIFT_PRESETS, CLASSIFICATIONS } from "../types";
-import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
-import { minutesBetween } from "../lib/dates";
-
-const defaultSettings: Settings = {
-  responseWindows: { lt2h: 7, h2to4: 15, h4to24: 30, h24to72: 120, gt72: 1440 },
-};
+import { useVacancyFilters } from "../hooks/useVacancyFilters";
+import { MultiSelectDropdown } from "./SearchFilterBar";
 
 interface Props {
   vacancies: Vacancy[];
@@ -36,12 +31,19 @@ export default function OpenVacancies({
 }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, setPending] = useState<string[] | null>(null);
-  const [filterWing, setFilterWing] = useState<string>("");
-  const [filterClass, setFilterClass] = useState<Classification | "">("");
-  const [filterShift, setFilterShift] = useState<string>("");
-  const [filterCountdown, setFilterCountdown] = useState<string>("");
-  const [filterStart, setFilterStart] = useState<string>("");
-  const [filterEnd, setFilterEnd] = useState<string>("");
+  const {
+    selectedWings,
+    setSelectedWings,
+    selectedPositions,
+    setSelectedPositions,
+    filterShift,
+    setFilterShift,
+    start,
+    setStart,
+    end,
+    setEnd,
+    resetFilters,
+  } = useVacancyFilters();
 
   const vacNameById = useMemo(() => {
     const m: Record<string, string> = {};
@@ -61,35 +63,25 @@ export default function OpenVacancies({
 
   const filteredVacancies = useMemo(() => {
     return openVacancies.filter((v) => {
-      if (filterWing && v.wing !== filterWing) return false;
-      if (filterClass && v.classification !== filterClass) return false;
+      if (selectedWings.length && !selectedWings.includes(v.wing || "")) return false;
+      if (selectedPositions.length && !selectedPositions.includes(v.classification))
+        return false;
       if (filterShift) {
         const preset = SHIFT_PRESETS.find((p) => p.label === filterShift);
         if (preset && (v.shiftStart !== preset.start || v.shiftEnd !== preset.end))
           return false;
       }
-      if (filterCountdown) {
-        const msLeft = deadlineFor(v, defaultSettings).getTime() - Date.now();
-        const winMin = pickWindowMinutes(v, defaultSettings);
-        const sinceKnownMin = minutesBetween(new Date(), new Date(v.knownAt));
-        const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin));
-        let cdClass: string = "green";
-        if (msLeft <= 0) cdClass = "red";
-        else if (pct < 0.25) cdClass = "yellow";
-        if (filterCountdown !== cdClass) return false;
-      }
-      if (filterStart && v.shiftDate < filterStart) return false;
-      if (filterEnd && v.shiftDate > filterEnd) return false;
+      if (start && v.shiftDate < start) return false;
+      if (end && v.shiftDate > end) return false;
       return true;
     });
   }, [
     openVacancies,
-    filterWing,
-    filterClass,
+    selectedWings,
+    selectedPositions,
     filterShift,
-    filterCountdown,
-    filterStart,
-    filterEnd,
+    start,
+    end,
   ]);
 
   const [groupByBundle, setGroupByBundle] = useState(true);
@@ -152,71 +144,61 @@ export default function OpenVacancies({
           Group by bundle
         </label>
       </div>
-      <FilterBar
-        style={{ marginBottom: 8 }}
-        items={[
-          {
-            type: "select",
-            key: "wing",
-            options: [
-              { value: "", label: "All Wings" },
-              ...WINGS.map((w) => ({ value: w, label: w })),
-            ],
-          },
-          {
-            type: "select",
-            key: "class",
-            options: [
-              { value: "", label: "All Classes" },
-              ...CLASSIFICATIONS.map((c) => ({ value: c, label: c })),
-            ],
-          },
-          {
-            type: "select",
-            key: "shift",
-            options: [
-              { value: "", label: "All Shifts" },
-              ...SHIFT_PRESETS.map((s) => ({ value: s.label, label: s.label })),
-            ],
-          },
-          {
-            type: "select",
-            key: "countdown",
-            options: [
-              { value: "", label: "All Countdowns" },
-              { value: "green", label: "Green" },
-              { value: "yellow", label: "Yellow" },
-              { value: "red", label: "Red" },
-            ],
-          },
-          { type: "date", key: "start" },
-          { type: "date", key: "end" },
-        ]}
-        values={{
-          wing: filterWing,
-          class: filterClass,
-          shift: filterShift,
-          countdown: filterCountdown,
-          start: filterStart,
-          end: filterEnd,
-        }}
-        onChange={(key, value) => {
-          if (key === "wing") setFilterWing(value);
-          else if (key === "class") setFilterClass(value as Classification);
-          else if (key === "shift") setFilterShift(value);
-          else if (key === "countdown") setFilterCountdown(value);
-          else if (key === "start") setFilterStart(value);
-          else if (key === "end") setFilterEnd(value);
-        }}
-        onClear={() => {
-          setFilterWing("");
-          setFilterClass("");
-          setFilterShift("");
-          setFilterCountdown("");
-          setFilterStart("");
-          setFilterEnd("");
-        }}
-      />
+      <div className="toolbar" style={{ marginBottom: 8, gap: 8 }}>
+        <MultiSelectDropdown
+          label="Wings"
+          namePrefix="open-vacancies-wings"
+          options={WINGS.map((wing) => ({ value: wing, label: wing }))}
+          selected={selectedWings}
+          onChange={setSelectedWings}
+        />
+        <MultiSelectDropdown<Classification>
+          label="Positions"
+          namePrefix="open-vacancies-positions"
+          options={CLASSIFICATIONS.map((classification) => ({
+            value: classification,
+            label: classification,
+          }))}
+          selected={selectedPositions}
+          onChange={setSelectedPositions}
+        />
+        <label className="sr-only" htmlFor="open-vacancies-shift-select">
+          Filter by shift
+        </label>
+        <select
+          id="open-vacancies-shift-select"
+          value={filterShift}
+          onChange={(event) => setFilterShift(event.target.value)}
+        >
+          <option value="">All Shifts</option>
+          {SHIFT_PRESETS.map((preset) => (
+            <option key={preset.label} value={preset.label}>
+              {preset.label}
+            </option>
+          ))}
+        </select>
+        <label className="sr-only" htmlFor="open-vacancies-start-date">
+          Filter start date
+        </label>
+        <input
+          id="open-vacancies-start-date"
+          type="date"
+          value={start}
+          onChange={(event) => setStart(event.target.value)}
+        />
+        <label className="sr-only" htmlFor="open-vacancies-end-date">
+          Filter end date
+        </label>
+        <input
+          id="open-vacancies-end-date"
+          type="date"
+          value={end}
+          onChange={(event) => setEnd(event.target.value)}
+        />
+        <button className="btn" onClick={resetFilters}>
+          Clear
+        </button>
+      </div>
       {!readOnly && selected.length > 0 && (
         <div
           style={{

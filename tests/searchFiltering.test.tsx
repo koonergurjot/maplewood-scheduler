@@ -91,12 +91,14 @@ function renderComponent() {
 }
 
 beforeEach(() => {
+  window.localStorage.clear();
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2024-01-01T12:00:00.000Z"));
 });
 
 afterEach(() => {
   cleanup();
+  window.localStorage.clear();
   vi.useRealTimers();
 });
 
@@ -112,8 +114,10 @@ describe("OpenVacanciesRedesign filters", () => {
 
   it("filters by category", () => {
     renderComponent();
-    const select = screen.getByRole("combobox", { name: "Classification filter" });
-    fireEvent.change(select, { target: { value: "RN" } });
+    const summary = screen.getByText("Classifications").closest("summary");
+    expect(summary).toBeTruthy();
+    fireEvent.click(summary!);
+    fireEvent.click(screen.getByLabelText("RN"));
     const table = screen.getByRole("table");
     expect(within(table).getByText("Shamrock")).toBeTruthy();
     expect(within(table).getByText("Bluebell")).toBeTruthy();
@@ -135,7 +139,10 @@ describe("OpenVacanciesRedesign filters", () => {
 
   it("filters by wing", () => {
     renderComponent();
-    fireEvent.click(screen.getByRole("button", { name: "Rosewood" }));
+    const summary = screen.getByText("Wings").closest("summary");
+    expect(summary).toBeTruthy();
+    fireEvent.click(summary!);
+    fireEvent.click(screen.getByLabelText("Rosewood"));
     const table = screen.getByRole("table");
     expect(within(table).getByText("Rosewood")).toBeTruthy();
     expect(within(table).queryByText("Shamrock")).toBeNull();
@@ -151,25 +158,11 @@ describe("OpenVacanciesRedesign filters", () => {
     expect(within(table).queryByText("Rosewood")).toBeNull();
   });
 
-  it("filters by countdown status", () => {
+  it("does not render countdown filters", () => {
     renderComponent();
-    fireEvent.click(screen.getByRole("button", { name: "Red" }));
-    let table = screen.getByRole("table");
-    expect(within(table).getByText("Shamrock")).toBeTruthy();
-    expect(within(table).queryByText("Rosewood")).toBeNull();
-    expect(within(table).queryByText("Bluebell")).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "Yellow" }));
-    table = screen.getByRole("table");
-    expect(within(table).getByText("Rosewood")).toBeTruthy();
-    expect(within(table).queryByText("Shamrock")).toBeNull();
-    expect(within(table).queryByText("Bluebell")).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "Green" }));
-    table = screen.getByRole("table");
-    expect(within(table).getByText("Bluebell")).toBeTruthy();
-    expect(within(table).queryByText("Shamrock")).toBeNull();
-    expect(within(table).queryByText("Rosewood")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Red" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Yellow" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Green" })).toBeNull();
   });
 });
 

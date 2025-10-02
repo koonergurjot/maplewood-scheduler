@@ -1,11 +1,10 @@
 import { useMemo } from "react";
-import type { Vacancy, Employee, Settings } from "../types";
+import type { Vacancy, Employee, Settings, Classification } from "../types";
 import type { Recommendation } from "../recommend";
 import VacancyRow from "./VacancyRow";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
 import { WINGS, SHIFT_PRESETS, CLASSIFICATIONS } from "../types";
-import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
-import { minutesBetween } from "../lib/dates";
+import { MultiSelectDropdown } from "./SearchFilterBar";
 import { List, type RowComponentProps } from "react-window";
 
 const ROW_HEIGHT = 220;
@@ -50,56 +49,36 @@ export default function VacancyList({
   deleteVacancy = () => {},
 }: Props) {
   const {
-    filterWing,
-    setFilterWing,
-    filterClass,
-    setFilterClass,
+    selectedWings,
+    setSelectedWings,
+    selectedPositions,
+    setSelectedPositions,
     filterShift,
     setFilterShift,
-    filterCountdown,
-    setFilterCountdown,
     start,
     setStart,
     end,
     setEnd,
     filtersOpen,
     setFiltersOpen,
+    resetFilters,
   } = useVacancyFilters();
 
   const filteredVacancies = useMemo(() => {
     return vacancies.filter((v) => {
       if (v.status === "Filled" || v.status === "Awarded") return false;
-      if (filterWing && v.wing !== filterWing) return false;
-      if (filterClass && v.classification !== filterClass) return false;
+      if (selectedWings.length && !selectedWings.includes(v.wing || "")) return false;
+      if (selectedPositions.length && !selectedPositions.includes(v.classification))
+        return false;
       if (filterShift) {
         const preset = SHIFT_PRESETS.find((p) => p.label === filterShift);
         if (preset && (v.shiftStart !== preset.start || v.shiftEnd !== preset.end)) return false;
-      }
-      if (filterCountdown) {
-        const msLeft = deadlineFor(v, settings).getTime() - now;
-        const winMin = pickWindowMinutes(v, settings);
-        const sinceKnownMin = minutesBetween(new Date(), new Date(v.knownAt));
-        const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin));
-        let cdClass: string = "green";
-        if (msLeft <= 0) cdClass = "red";
-        else if (pct < 0.25) cdClass = "yellow";
-        if (filterCountdown !== cdClass) return false;
       }
       if (start && v.shiftDate < start) return false;
       if (end && v.shiftDate > end) return false;
       return true;
     });
-  }, [
-    vacancies,
-    filterWing,
-    filterClass,
-    filterShift,
-    filterCountdown,
-    start,
-    end,
-    now,
-    settings,
-  ]);
+  }, [vacancies, selectedWings, selectedPositions, filterShift, start, end, now]);
 
   const toggleAllVacancies = (checked: boolean) => {
     setSelectedVacancyIds(checked ? filteredVacancies.map((v) => v.id) : []);
@@ -161,22 +140,23 @@ export default function VacancyList({
         </div>
         {filtersOpen && (
           <div className="toolbar" style={{ marginBottom: 8 }}>
-            <select value={filterWing} onChange={(e) => setFilterWing(e.target.value)}>
-              <option value="">All Wings</option>
-              {WINGS.map((w) => (
-                <option key={w} value={w}>
-                  {w}
-                </option>
-              ))}
-            </select>
-            <select value={filterClass} onChange={(e) => setFilterClass(e.target.value as any)}>
-              <option value="">All Classes</option>
-              {CLASSIFICATIONS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            <MultiSelectDropdown
+              label="Wings"
+              namePrefix="vacancy-list-wings"
+              options={WINGS.map((wing) => ({ value: wing, label: wing }))}
+              selected={selectedWings}
+              onChange={setSelectedWings}
+            />
+            <MultiSelectDropdown<Classification>
+              label="Positions"
+              namePrefix="vacancy-list-positions"
+              options={CLASSIFICATIONS.map((classification) => ({
+                value: classification,
+                label: classification,
+              }))}
+              selected={selectedPositions}
+              onChange={setSelectedPositions}
+            />
             <select value={filterShift} onChange={(e) => setFilterShift(e.target.value)}>
               <option value="">All Shifts</option>
               {SHIFT_PRESETS.map((s) => (
@@ -185,24 +165,11 @@ export default function VacancyList({
                 </option>
               ))}
             </select>
-            <select value={filterCountdown} onChange={(e) => setFilterCountdown(e.target.value)}>
-              <option value="">All Countdowns</option>
-              <option value="green">Green</option>
-              <option value="yellow">Yellow</option>
-              <option value="red">Red</option>
-            </select>
             <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
             <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
             <button
               className="btn"
-              onClick={() => {
-                setFilterWing("");
-                setFilterClass("");
-                setFilterShift("");
-                setFilterCountdown("");
-                setStart("");
-                setEnd("");
-              }}
+              onClick={resetFilters}
             >
               Clear
             </button>
