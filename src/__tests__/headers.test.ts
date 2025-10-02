@@ -66,6 +66,7 @@ describe("mapRowToEmployee", () => {
     expect(employee?.classification).toBe("RCA");
     expect(employee?.status).toBe("PT");
     expect(employee?.active).toBe(false);
+    expect(employee?.activeLabel).toBe("On Leave");
     expect(employee?.homeWing).toBe("Shamrock");
     expect(employee?.startDate).toBe("2021-05-01");
     expect(employee?.seniorityRank).toBe(7);
@@ -90,6 +91,7 @@ describe("mapRowToEmployee", () => {
     expect(employee?.status).toBe("FT");
     expect(employee?.seniorityRank).toBe(5);
     expect(employee?.active).toBe(true);
+    expect(employee?.activeLabel).toBe("Active");
   });
 
   it("returns null for rows without ids or names", () => {

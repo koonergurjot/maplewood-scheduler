@@ -14,8 +14,10 @@ const defaultSettings: Settings = {
   responseWindows: { lt2h: 7, h2to4: 15, h4to24: 30, h24to72: 120, gt72: 1440 },
 };
 
+type StoredEmployee = Employee & { activeLabel?: string };
+
 type PersistedState = {
-  employees?: Employee[];
+  employees?: StoredEmployee[];
   vacations?: Vacation[];
   vacancies?: Vacancy[];
   bids?: Bid[];
@@ -27,7 +29,15 @@ type PersistedState = {
 export function useSchedulerState() {
   const persisted: PersistedState | null = loadState();
 
-  const [employees, setEmployees] = useState<Employee[]>(persisted?.employees ?? []);
+  const hydrateEmployees = (list: StoredEmployee[] | undefined): Employee[] =>
+    (list ?? []).map((emp) => ({
+      ...emp,
+      activeLabel: emp.activeLabel ?? (emp.active ? "Active" : "Inactive"),
+    }));
+
+  const [employees, setEmployees] = useState<Employee[]>(
+    hydrateEmployees(persisted?.employees),
+  );
   const [vacations, setVacations] = useState<Vacation[]>(persisted?.vacations ?? []);
   const seededVacancies = bundleContiguousVacanciesByRef(
     persisted?.vacancies

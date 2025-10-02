@@ -49,6 +49,7 @@ import Toast from "./components/ui/Toast";
 import Button from "./components/ui/Button";
 import FilterBar from "./components/ui/FilterBar";
 import Modal from "./components/ui/Modal";
+import StatusPill from "./components/ui/StatusPill";
 import useDeadlineMonitor from "./hooks/useDeadlineMonitor";
 import { useSchedulerState } from "./hooks/useSchedulerState";
 import useNotificationPrefs, {
@@ -89,6 +90,7 @@ export type Employee = {
   seniorityHours?: number;
   seniorityRank: number; // 1 = most senior
   active: boolean;
+  activeLabel: string;
 };
 
 export type Vacation = {
@@ -214,7 +216,7 @@ type StagedDeleteSnapshot = {
 };
 
 type PersistedState = {
-  employees?: Employee[];
+  employees?: (Employee & { activeLabel?: string })[];
   vacations?: Vacation[];
   vacancies?: Vacancy[];
   bids?: Bid[];
@@ -393,6 +395,66 @@ export function mapRowToEmployee(
   const seniorityRankValue = parseNumber(seniorityRankRaw);
   const seniorityHoursValue = parseNumber(seniorityHoursRaw);
 
+  const active = normalizeActive(activeRaw ?? statusRaw);
+
+  const deriveActiveLabel = (): string => {
+    const primaryRaw =
+      typeof activeRaw === "string" && activeRaw.trim() ? activeRaw.trim() : "";
+    const fallbackRaw =
+      !primaryRaw && !active && typeof statusRaw === "string" && statusRaw.trim()
+        ? statusRaw.trim()
+        : "";
+    const source = primaryRaw || fallbackRaw;
+    if (!source) {
+      return active ? "Active" : "Inactive";
+    }
+
+    const lower = source.toLowerCase();
+    const squashed = lower.replace(/\s+/g, "");
+
+    if (lower.includes("leave") || squashed === "loa") {
+      return "On Leave";
+    }
+
+    if (["yes", "y", "true", "1", "active", "available"].includes(squashed)) {
+      return "Active";
+    }
+
+    if (
+      [
+        "no",
+        "n",
+        "false",
+        "0",
+        "inactive",
+        "notactive",
+        "terminated",
+        "retired",
+        "suspended",
+        "off",
+      ].includes(squashed)
+    ) {
+      return "Inactive";
+    }
+
+    if (lower.includes("suspend")) return "Suspended";
+    if (lower.includes("retire")) return "Retired";
+    if (lower.includes("term")) return "Terminated";
+
+    const words = source.split(/\s+/).filter(Boolean);
+    if (!words.length) {
+      return active ? "Active" : "Inactive";
+    }
+
+    return words
+      .map((word) =>
+        word.length <= 3
+          ? word.toUpperCase()
+          : `${word.charAt(0).toUpperCase()}${word.slice(1).toLowerCase()}`,
+      )
+      .join(" ");
+  };
+
   const employee: Employee = {
     id: id || `emp_${index}`,
     firstName,
@@ -409,7 +471,8 @@ export function mapRowToEmployee(
         : undefined,
     seniorityHours: seniorityHoursValue,
     seniorityRank: seniorityRankValue ?? index + 1,
-    active: normalizeActive(activeRaw ?? statusRaw),
+    active,
+    activeLabel: deriveActiveLabel(),
   };
 
   return employee;
@@ -2594,6 +2657,7 @@ function EmployeesPage({
                 status,
                 seniorityRank: rank || employees.length + 1,
                 active: true,
+                activeLabel: "Active",
               };
               const sorted = [...employees, newEmp].sort(
                 (a, b) => (a.seniorityRank ?? 99999) - (b.seniorityRank ?? 99999),
@@ -2665,7 +2729,9 @@ function EmployeesPage({
                   <td>{e.classification}</td>
                   <td>{e.status}</td>
                   <td>{e.seniorityRank}</td>
-                  <td>{e.active ? "Yes" : "No"}</td>
+                  <td>
+                    <StatusPill active={e.active} label={e.activeLabel} />
+                  </td>
                 </tr>
               ))}
             </tbody>
