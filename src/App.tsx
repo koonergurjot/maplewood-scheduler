@@ -15,7 +15,7 @@ import {
 import { groupVacanciesByDate } from "./lib/vacancy";
 import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
-import { loadState, saveState } from "./utils/storage";
+import { loadState, saveState, LS_KEY } from "./utils/storage";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
 import VacancyRangeForm from "./components/VacancyRangeForm";

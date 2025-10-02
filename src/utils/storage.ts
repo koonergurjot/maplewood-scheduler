@@ -1,7 +1,7 @@
 import { appConfig } from "../config";
 import migrateCoverageDates from "../../migrations/2025-coverage-dates";
 
-const LS_KEY = "maplewood-scheduler-v3";
+export const LS_KEY = "maplewood-scheduler-v3";
 
 export function loadState<T = any>(): T | null {
   try {
