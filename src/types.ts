@@ -167,4 +167,5 @@ export type VacancyRange = {
   status: VacancyStatus | "Pending Award";
   awardedTo?: string;
   awardedAt?: string;
+  awardAsBlock?: boolean;
 };
