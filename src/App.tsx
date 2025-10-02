@@ -9,6 +9,7 @@ import {
 import { Link } from "react-router-dom";
 import { recommend, Recommendation } from "./recommend";
 import type { OfferingTier } from "./offering/offeringMachine";
+import type { SSF$DateCode } from "xlsx";
 import {
   isoDate,
   combineDateTime,
@@ -327,6 +328,10 @@ const SENIORITY_RANK_HEADERS = [
   "Seniority Ranking",
 ];
 
+const HEADER_SANITIZE_REGEX = /[^a-z0-9]/gi;
+const sanitizeHeaderKey = (header: string) =>
+  header.replace(HEADER_SANITIZE_REGEX, "").toLowerCase();
+
 export function mapRowToEmployee(
   row: Record<string, unknown>,
   index = 0,
@@ -405,6 +410,163 @@ export function mapRowToEmployee(
   };
 
   return employee;
+}
+
+const DATE_HEADER_HINTS = new Set(
+  [
+    ...START_DATE_HEADERS,
+    "End Date",
+    "Date Hired",
+    "Birth Date",
+    "DOB",
+    "Effective Date",
+    "Date",
+  ].map(sanitizeHeaderKey),
+);
+
+const DATETIME_HEADER_HINTS = new Set(
+  [
+    "Known At",
+    "Archived At",
+    "Awarded At",
+    "Created At",
+    "Updated At",
+    "Bid Timestamp",
+  ].map(sanitizeHeaderKey),
+);
+
+const EXCEL_EXTENSIONS = [".xlsx", ".xlsm", ".xlsb", ".xls"];
+const EXCEL_MIME_SUBSTRINGS = ["spreadsheetml", "ms-excel"];
+
+const excelSerialToDate = (
+  serial: number,
+  xlsx: typeof import("xlsx"),
+): Date | null => {
+  if (!Number.isFinite(serial)) return null;
+
+  const parsed = xlsx.SSF.parse_date_code(serial) as SSF$DateCode | Date | null;
+  if (!parsed) return null;
+
+  if (parsed instanceof Date) {
+    return parsed;
+  }
+
+  const { y, m, d, H, M, S, u } = parsed;
+  if (typeof y !== "number" || typeof m !== "number" || typeof d !== "number") {
+    return null;
+  }
+
+  const seconds = typeof S === "number" ? Math.floor(S) : 0;
+  const fractionalSeconds = typeof S === "number" ? S - seconds : 0;
+  const millisFromSeconds = Math.round(fractionalSeconds * 1000);
+  const extraMillis = typeof u === "number" ? Math.round(u / 1000) : 0;
+
+  const date = new Date(
+    Date.UTC(y, (m ?? 1) - 1, d ?? 1, H ?? 0, M ?? 0, seconds, millisFromSeconds),
+  );
+  if (!Number.isNaN(date.getTime()) && extraMillis) {
+    date.setUTCMilliseconds(date.getUTCMilliseconds() + extraMillis);
+  }
+
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const shouldHandleAsDateLike = (normalized: string) =>
+  DATE_HEADER_HINTS.has(normalized) ||
+  DATETIME_HEADER_HINTS.has(normalized) ||
+  normalized.startsWith("date") ||
+  normalized.endsWith("date");
+
+const shouldFormatAsDateTime = (normalized: string) =>
+  DATETIME_HEADER_HINTS.has(normalized) ||
+  normalized.includes("time") ||
+  normalized.includes("timestamp") ||
+  normalized.endsWith("at");
+
+const formatDateValue = (date: Date, normalized: string) =>
+  shouldFormatAsDateTime(normalized)
+    ? date.toISOString()
+    : date.toISOString().slice(0, 10);
+
+const normalizeExcelRowDates = (
+  row: Record<string, unknown>,
+  xlsx: typeof import("xlsx"),
+): Record<string, unknown> => {
+  const normalizedEntries = Object.entries(row).map(([key, value]) => {
+    const normalizedKey = sanitizeHeaderKey(key);
+    if (!shouldHandleAsDateLike(normalizedKey)) {
+      return [key, value];
+    }
+
+    if (value instanceof Date) {
+      return [key, formatDateValue(value, normalizedKey)];
+    }
+
+    if (typeof value === "number") {
+      const converted = excelSerialToDate(value, xlsx);
+      if (converted) {
+        return [key, formatDateValue(converted, normalizedKey)];
+      }
+    }
+
+    return [key, value];
+  });
+
+  return Object.fromEntries(normalizedEntries);
+};
+
+const blobToArrayBuffer = async (blob: Blob): Promise<ArrayBuffer> => {
+  if (typeof blob.arrayBuffer === "function") {
+    return blob.arrayBuffer();
+  }
+
+  if (typeof FileReader !== "undefined") {
+    return new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = () => reject(reader.error ?? new Error("Failed to read file"));
+      reader.readAsArrayBuffer(blob);
+    });
+  }
+
+  if (typeof Response !== "undefined") {
+    return new Response(blob).arrayBuffer();
+  }
+
+  throw new Error("Unable to convert blob to ArrayBuffer");
+};
+
+export async function parseFile(
+  file: File,
+): Promise<Record<string, unknown>[]> {
+  const lowerName = file.name?.toLowerCase() ?? "";
+  const mime = file.type?.toLowerCase?.() ?? "";
+
+  const isExcel =
+    EXCEL_EXTENSIONS.some((ext) => lowerName.endsWith(ext)) ||
+    EXCEL_MIME_SUBSTRINGS.some((substr) => mime.includes(substr));
+
+  if (isExcel) {
+    const XLSX = await import("xlsx");
+    const arrayBuffer = await blobToArrayBuffer(file);
+    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: "array" });
+    const firstSheetName = workbook.SheetNames[0];
+    if (!firstSheetName) return [];
+
+    const sheet = workbook.Sheets[firstSheetName];
+    if (!sheet) return [];
+
+    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+      defval: "",
+      cellDates: true,
+    });
+
+    return rawRows.map((row) => normalizeExcelRowDates(row, XLSX));
+  }
+
+  const text = await file.text();
+  const { parseCSV } = await import("./utils/csv");
+  return parseCSV(text);
 }
 
 function pickWindowMinutes(v: Vacancy, settings: Settings) {
@@ -2345,18 +2507,17 @@ function EmployeesPage({
         <div className="card-c">
           <input
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx,.xls,.xlsm,.xlsb"
             onChange={async (e) => {
               const f = e.target.files?.[0];
               if (!f) return;
-              const text = await f.text();
-              const { parseCSV } = await import("./utils/csv");
-              let rows: Record<string, string>[] = [];
+              let rows: Record<string, unknown>[] = [];
               try {
-                rows = parseCSV(text);
+                rows = await parseFile(f);
               } catch (err) {
                 console.error(err);
-                showImportHeadersToast([], "Failed to parse CSV.");
+                showImportHeadersToast([], "Failed to parse file.");
+                e.target.value = "";
                 return;
               }
               const mapped = rows
