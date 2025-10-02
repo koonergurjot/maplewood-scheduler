@@ -509,36 +509,57 @@ const EXCEL_SHEET_TO_JSON_OPTIONS: Sheet2JSONOpts = {
   raw: false,
 };
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const EXCEL_SERIAL_EPOCH_MS = Date.UTC(1899, 11, 30);
+
 const excelSerialToDate = (
   serial: number,
-  xlsx: typeof import("xlsx"),
+  xlsx?: typeof import("xlsx"),
 ): Date | null => {
   if (!Number.isFinite(serial)) return null;
 
-  const parsed = xlsx.SSF.parse_date_code(serial) as SSF$DateCode | Date | null;
-  if (!parsed) return null;
+  if (xlsx) {
+    const parsed = xlsx.SSF.parse_date_code(serial) as SSF$DateCode | Date | null;
+    if (parsed) {
+      if (parsed instanceof Date) {
+        return parsed;
+      }
 
-  if (parsed instanceof Date) {
-    return parsed;
+      const { y, m, d, H, M, S, u } = parsed;
+      if (
+        typeof y === "number" &&
+        typeof m === "number" &&
+        typeof d === "number"
+      ) {
+        const seconds = typeof S === "number" ? Math.floor(S) : 0;
+        const fractionalSeconds = typeof S === "number" ? S - seconds : 0;
+        const millisFromSeconds = Math.round(fractionalSeconds * 1000);
+        const extraMillis = typeof u === "number" ? Math.round(u / 1000) : 0;
+
+        const date = new Date(
+          Date.UTC(
+            y,
+            (m ?? 1) - 1,
+            d ?? 1,
+            H ?? 0,
+            M ?? 0,
+            seconds,
+            millisFromSeconds,
+          ),
+        );
+        if (!Number.isNaN(date.getTime()) && extraMillis) {
+          date.setUTCMilliseconds(date.getUTCMilliseconds() + extraMillis);
+        }
+
+        if (!Number.isNaN(date.getTime())) {
+          return date;
+        }
+      }
+    }
   }
 
-  const { y, m, d, H, M, S, u } = parsed;
-  if (typeof y !== "number" || typeof m !== "number" || typeof d !== "number") {
-    return null;
-  }
-
-  const seconds = typeof S === "number" ? Math.floor(S) : 0;
-  const fractionalSeconds = typeof S === "number" ? S - seconds : 0;
-  const millisFromSeconds = Math.round(fractionalSeconds * 1000);
-  const extraMillis = typeof u === "number" ? Math.round(u / 1000) : 0;
-
-  const date = new Date(
-    Date.UTC(y, (m ?? 1) - 1, d ?? 1, H ?? 0, M ?? 0, seconds, millisFromSeconds),
-  );
-  if (!Number.isNaN(date.getTime()) && extraMillis) {
-    date.setUTCMilliseconds(date.getUTCMilliseconds() + extraMillis);
-  }
-
+  const millis = Math.round(serial * MS_PER_DAY);
+  const date = new Date(EXCEL_SERIAL_EPOCH_MS + millis);
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
@@ -562,7 +583,7 @@ const formatDateValue = (date: Date, normalized: string) =>
 const coerceExcelDateValue = (
   value: unknown,
   normalizedKey: string,
-  xlsx: typeof import("xlsx"),
+  xlsx?: typeof import("xlsx"),
 ): string | undefined => {
   if (value instanceof Date) {
     return formatDateValue(value, normalizedKey);
@@ -585,9 +606,9 @@ const coerceExcelDateValue = (
   return undefined;
 };
 
-const normalizeExcelRowDates = (
+const normalizeRowDateValues = (
   row: Record<string, unknown>,
-  xlsx: typeof import("xlsx"),
+  xlsx?: typeof import("xlsx"),
 ): Record<string, unknown> => {
   const normalizedEntries = Object.entries(row).map(([key, value]) => {
     const normalizedKey = sanitizeHeaderKey(key);
@@ -601,6 +622,14 @@ const normalizeExcelRowDates = (
 
   return Object.fromEntries(normalizedEntries);
 };
+
+const normalizeExcelRowDates = (
+  row: Record<string, unknown>,
+  xlsx: typeof import("xlsx"),
+) => normalizeRowDateValues(row, xlsx);
+
+const normalizeRowDates = (row: Record<string, unknown>) =>
+  normalizeRowDateValues(row);
 
 const blobToArrayBuffer = async (blob: Blob): Promise<ArrayBuffer> => {
   if (typeof blob.arrayBuffer === "function") {
@@ -2652,7 +2681,8 @@ function EmployeesPage({
                 e.target.value = "";
                 return;
               }
-              const mapped = rows
+              const normalizedRows = rows.map((row) => normalizeRowDates(row));
+              const mapped = normalizedRows
                 .map((r, i) => mapRowToEmployee(r, i))
                 .filter((emp): emp is Employee => !!emp);
 
