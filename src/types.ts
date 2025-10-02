@@ -22,6 +22,7 @@ export type Employee = {
   seniorityHours?: number;
   seniorityRank: number;
   active: boolean;
+  activeLabel: string;
 };
 
 export type Vacation = {

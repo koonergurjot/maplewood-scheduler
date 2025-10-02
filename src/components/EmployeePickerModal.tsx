@@ -4,6 +4,7 @@ import { useFocusTrap } from "../hooks/useFocusTrap";
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Employee, Classification } from "../types";
+import StatusPill from "./ui/StatusPill";
 
 type Props = {
   open: boolean;
@@ -41,8 +42,35 @@ export default function EmployeePickerModal({ open, employees, classification, o
         />
         <div style={{ maxHeight: 360, overflow: "auto" }}>
           {list.map(e => (
-            <button key={e.id} className="btn row" onClick={() => onSelect(e.id)}>
-              {e.firstName} {e.lastName} • {e.classification} • Rank #{e.seniorityRank}
+            <button
+              key={e.id}
+              className="btn row"
+              onClick={() => onSelect(e.id)}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                textAlign: "left",
+              }}
+            >
+              <span
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  alignItems: "baseline",
+                }}
+              >
+                <span style={{ fontWeight: 700 }}>
+                  {e.firstName} {e.lastName}
+                </span>
+                <span style={{ color: "var(--muted)", fontSize: 13 }}>
+                  • {e.classification} • Rank #{e.seniorityRank}
+                </span>
+              </span>
+              <StatusPill active={e.active} label={e.activeLabel} />
             </button>
           ))}
         </div>
