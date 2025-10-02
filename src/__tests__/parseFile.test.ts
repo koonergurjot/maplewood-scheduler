@@ -31,5 +31,7 @@ describe("parseFile", () => {
 
     expect(employees).toHaveLength(1);
     expect(employees[0]?.startDate).toBe("2024-01-15");
+    expect(typeof employees[0]?.startDate).toBe("string");
+    expect(employees[0]?.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

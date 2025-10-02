@@ -9,7 +9,7 @@ import {
 import { Link } from "react-router-dom";
 import { recommend, Recommendation } from "./recommend";
 import type { OfferingTier } from "./offering/offeringMachine";
-import type { SSF$DateCode } from "xlsx";
+import type { SSF$DateCode, Sheet2JSONOpts } from "xlsx";
 import {
   isoDate,
   combineDateTime,
@@ -503,6 +503,11 @@ const DATETIME_HEADER_HINTS = new Set(
 
 const EXCEL_EXTENSIONS = [".xlsx", ".xlsm", ".xlsb", ".xls"];
 const EXCEL_MIME_SUBSTRINGS = ["spreadsheetml", "ms-excel"];
+const EXCEL_SHEET_TO_JSON_OPTIONS: Sheet2JSONOpts = {
+  defval: "",
+  cellDates: true,
+  raw: false,
+};
 
 const excelSerialToDate = (
   serial: number,
@@ -554,6 +559,32 @@ const formatDateValue = (date: Date, normalized: string) =>
     ? date.toISOString()
     : date.toISOString().slice(0, 10);
 
+const coerceExcelDateValue = (
+  value: unknown,
+  normalizedKey: string,
+  xlsx: typeof import("xlsx"),
+): string | undefined => {
+  if (value instanceof Date) {
+    return formatDateValue(value, normalizedKey);
+  }
+
+  if (typeof value === "number") {
+    const converted = excelSerialToDate(value, xlsx);
+    if (converted) {
+      return formatDateValue(converted, normalizedKey);
+    }
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return formatDateValue(parsed, normalizedKey);
+    }
+  }
+
+  return undefined;
+};
+
 const normalizeExcelRowDates = (
   row: Record<string, unknown>,
   xlsx: typeof import("xlsx"),
@@ -564,25 +595,8 @@ const normalizeExcelRowDates = (
       return [key, value];
     }
 
-    if (value instanceof Date) {
-      return [key, formatDateValue(value, normalizedKey)];
-    }
-
-    if (typeof value === "number") {
-      const converted = excelSerialToDate(value, xlsx);
-      if (converted) {
-        return [key, formatDateValue(converted, normalizedKey)];
-      }
-    }
-
-    if (typeof value === "string" && value.trim()) {
-      const parsed = new Date(value);
-      if (!Number.isNaN(parsed.getTime())) {
-        return [key, formatDateValue(parsed, normalizedKey)];
-      }
-    }
-
-    return [key, value];
+    const coerced = coerceExcelDateValue(value, normalizedKey, xlsx);
+    return coerced ? [key, coerced] : [key, value];
   });
 
   return Object.fromEntries(normalizedEntries);
@@ -629,11 +643,10 @@ export async function parseFile(
     const sheet = workbook.Sheets[firstSheetName];
     if (!sheet) return [];
 
-    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-      defval: "",
-      cellDates: true,
-      raw: false,
-    });
+    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+      sheet,
+      EXCEL_SHEET_TO_JSON_OPTIONS,
+    );
 
     return rawRows.map((row) => normalizeExcelRowDates(row, XLSX));
   }
