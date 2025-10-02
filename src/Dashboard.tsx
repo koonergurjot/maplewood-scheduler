@@ -11,33 +11,21 @@ import type { Vacancy, VacancyRange } from "./types";
 import type { Tag } from "./models/tag";
 import useVacancies from "./state/useVacancies";
 import "./styles/branding.css";
-
-const LS_KEY = "maplewood-scheduler-v3";
-const loadState = () => {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (err) {
-    console.error("Failed to parse saved state", err);
-    if (typeof window !== "undefined" && typeof window.alert === "function") {
-      window.alert("Stored data was corrupted and has been reset.");
-    }
-    try {
-      localStorage.removeItem(LS_KEY);
-    } catch (removeErr) {
-      console.error("Failed to reset localStorage", removeErr);
-    }
-    return null;
-  }
-};
+import { loadState } from "./utils/storage";
 
 type State = {
   employees: Employee[];
   vacations: Vacation[];
 };
 
+type PersistedDashboardState = Partial<State>;
+
 export default function Dashboard() {
-  const data: State = loadState() || { employees: [], vacations: [] };
+  const persisted = loadState<PersistedDashboardState>() ?? {};
+  const data: State = {
+    employees: persisted.employees ?? [],
+    vacations: persisted.vacations ?? [],
+  };
   const { employees, vacations } = data;
   const {
     vacancies,

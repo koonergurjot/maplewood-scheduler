@@ -3,11 +3,11 @@ import migrateCoverageDates from "../../migrations/2025-coverage-dates";
 
 const LS_KEY = "maplewood-scheduler-v3";
 
-export function loadState() {
+export function loadState<T = any>(): T | null {
   try {
     const raw = localStorage.getItem(LS_KEY);
-    const data = raw ? JSON.parse(raw) : null;
-    if (data) migrateCoverageDates(data);
+    const data = (raw ? JSON.parse(raw) : null) as T | null;
+    if (data) migrateCoverageDates(data as any);
     return data;
   } catch {
     return null;

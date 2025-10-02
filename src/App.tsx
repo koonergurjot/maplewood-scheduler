@@ -15,6 +15,7 @@ import {
 import { groupVacanciesByDate } from "./lib/vacancy";
 import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
+import { loadState, saveState } from "./utils/storage";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
 import VacancyRangeForm from "./components/VacancyRangeForm";
@@ -186,35 +187,6 @@ const SHIFT_PRESETS = [
 
 const VACANT_EMPLOYEE_ID = "__vacant__";
 
-// ---------- Local Storage ----------
-const LS_KEY = "maplewood-scheduler-v3";
-const loadState = () => {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (err) {
-    console.error("Failed to parse saved state", err);
-    if (typeof window !== "undefined" && typeof window.alert === "function") {
-      window.alert("Stored data was corrupted and has been reset.");
-    }
-    try {
-      localStorage.removeItem(LS_KEY);
-    } catch (removeErr) {
-      console.error("Failed to reset localStorage", removeErr);
-    }
-    return null;
-  }
-};
-const saveState = (state: any): boolean => {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(state));
-    return true;
-  } catch (err) {
-    console.warn("Unable to access localStorage. State not persisted.", err);
-    return false;
-  }
-};
-
 type StagedDeleteSnapshot = {
   previousVacancies: Vacancy[];
   previousBids: Bid[];
@@ -222,6 +194,16 @@ type StagedDeleteSnapshot = {
   previousSelectedIds: string[];
   message: string;
   timeout: ReturnType<typeof setTimeout>;
+};
+
+type PersistedState = {
+  employees?: Employee[];
+  vacations?: Vacation[];
+  vacancies?: Vacancy[];
+  bids?: Bid[];
+  archivedBids?: Record<string, Bid[]>;
+  settings?: Partial<Settings>;
+  notificationPrefs?: NotificationPreferences;
 };
 
 // ---------- Utils ----------
@@ -304,7 +286,7 @@ export const archiveBidsForVacancy = (
 
 // ---------- Main App ----------
 export default function App() {
-  const persisted = loadState();
+  const persisted = loadState<PersistedState>() ?? null;
   const [tab, setTab] = useState<typeof TAB_KEYS[number]>("coverage");
 
   const [employees, setEmployees] = useState<Employee[]>(
@@ -398,7 +380,7 @@ export default function App() {
   (window as any).appShowConfirm = showConfirm;
   (window as any).appShowPrompt = showPrompt;
   (window as any).appShowAlert = showAlert;
-  const persistedSettings = persisted?.settings ?? {};
+  const persistedSettings: Partial<Settings> = persisted?.settings ?? {};
   const storedOrder: string[] = persistedSettings.tabOrder || [];
   const mergedOrder = [
     ...storedOrder,
