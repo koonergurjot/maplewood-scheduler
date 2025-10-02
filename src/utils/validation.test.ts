@@ -5,8 +5,9 @@ import {
   validateTime,
   validateTimeRange,
   validateClassification,
-  validateSelection
+  validateSelection,
 } from "./validation";
+import { CLASSIFICATIONS } from "../types";
 
 describe("validateDateRange", () => {
   it("should validate valid date range", () => {
@@ -93,18 +94,24 @@ describe("validateTimeRange", () => {
 
 describe("validateClassification", () => {
   it("should validate valid classifications", () => {
-    expect(validateClassification("RCA").isValid).toBe(true);
-    expect(validateClassification("LPN").isValid).toBe(true);
-    expect(validateClassification("RN").isValid).toBe(true);
-    expect(validateClassification("Rec").isValid).toBe(true);
-    expect(validateClassification("Receptionist").isValid).toBe(true);
+    for (const classification of CLASSIFICATIONS) {
+      expect(validateClassification(classification).isValid).toBe(true);
+    }
   });
 
   it("should reject invalid classifications", () => {
     const result = validateClassification("INVALID");
     expect(result.isValid).toBe(false);
     expect(result.error).toBe(
-      "Classification must be one of: RCA, LPN, RN, Rec, Receptionist",
+      `Classification must be one of: ${CLASSIFICATIONS.join(", ")}`,
+    );
+  });
+
+  it("should reject legacy classifications", () => {
+    const result = validateClassification("Rec");
+    expect(result.isValid).toBe(false);
+    expect(result.error).toBe(
+      `Classification must be one of: ${CLASSIFICATIONS.join(", ")}`,
     );
   });
 
