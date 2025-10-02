@@ -1,4 +1,4 @@
-import { ChangeEvent } from "react";
+import { ChangeEvent, useId } from "react";
 import { CLASSIFICATIONS, WINGS, SHIFT_PRESETS } from "../types";
 import type { Classification } from "../types";
 
@@ -24,6 +24,7 @@ function MultiSelectDropdown<T extends string>({
   selected,
   onChange,
 }: MultiSelectDropdownProps<T>) {
+  const dropdownId = useId();
   const toggleValue = (value: T) => {
     if (selected.includes(value)) {
       onChange(selected.filter((item) => item !== value));
@@ -44,9 +45,10 @@ function MultiSelectDropdown<T extends string>({
       </summary>
       <div role="group" aria-label={label} className="filter-dropdown__list">
         {options.map((option) => {
-          const id = `${namePrefix}-${option.value
+          const safeValue = option.value
             .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")}`;
+            .replace(/[^a-z0-9]+/g, "-");
+          const id = `${dropdownId}-${namePrefix}-${safeValue}`;
           const checked = selected.includes(option.value);
           return (
             <label key={option.value} htmlFor={id} className="filter-dropdown__option">
@@ -105,6 +107,9 @@ export default function SearchFilterBar({
   onShiftPresetChange,
   onClear,
 }: Props) {
+  const searchInputId = useId();
+  const startDateId = useId();
+  const endDateId = useId();
   const clear = () => {
     if (onClear) {
       onClear();
@@ -189,64 +194,86 @@ export default function SearchFilterBar({
   }
 
   return (
-    <div className="toolbar smart-filter-bar search-filter-bar">
-      <div style={{ minWidth: 180, flexShrink: 0 }}>
-        <label className="sr-only" htmlFor="vacancy-search-input">
+    <section
+      className="toolbar search-filter-bar"
+      aria-label="Search and filter vacancies"
+    >
+      <div className="search-filter-bar__field">
+        <label className="sr-only" htmlFor={searchInputId}>
           Search vacancies
         </label>
         <input
-          id="vacancy-search-input"
+          id={searchInputId}
           type="text"
           placeholder="Search..."
           value={query}
           onChange={(e: ChangeEvent<HTMLInputElement>) => onQueryChange(e.target.value)}
         />
       </div>
-      <MultiSelectDropdown
-        label="Classifications"
-        namePrefix="classification"
-        options={CLASSIFICATIONS.map((classification) => ({
-          value: classification,
-          label: classification,
-        }))}
-        selected={selectedPositions}
-        onChange={onPositionsChange}
-      />
-      <MultiSelectDropdown
-        label="Wings"
-        namePrefix="wing"
-        options={WINGS.map((wing) => ({ value: wing, label: wing }))}
-        selected={selectedWings}
-        onChange={onWingsChange}
-      />
-      <div className="date-range" aria-label="Date range filters">
-        <input
-          aria-label="Filter from date"
-          type="date"
-          value={startDate}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => onStartDateChange(e.target.value)}
-        />
-        <input
-          aria-label="Filter to date"
-          type="date"
-          value={endDate}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => onEndDateChange(e.target.value)}
+      <div className="search-filter-bar__field">
+        <MultiSelectDropdown
+          label="Classifications"
+          namePrefix="classification"
+          options={CLASSIFICATIONS.map((classification) => ({
+            value: classification,
+            label: classification,
+          }))}
+          selected={selectedPositions}
+          onChange={onPositionsChange}
         />
       </div>
+      <div className="search-filter-bar__field">
+        <MultiSelectDropdown
+          label="Wings"
+          namePrefix="wing"
+          options={WINGS.map((wing) => ({ value: wing, label: wing }))}
+          selected={selectedWings}
+          onChange={onWingsChange}
+        />
+      </div>
+      <div className="search-filter-bar__field">
+        <span className="search-filter-bar__label" aria-hidden="true">
+          Dates
+        </span>
+        <div className="search-filter-bar__date-range" aria-label="Date range filters">
+          <label className="sr-only" htmlFor={startDateId}>
+            Filter from date
+          </label>
+          <input
+            id={startDateId}
+            type="date"
+            value={startDate}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => onStartDateChange(e.target.value)}
+          />
+          <label className="sr-only" htmlFor={endDateId}>
+            Filter to date
+          </label>
+          <input
+            id={endDateId}
+            type="date"
+            value={endDate}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => onEndDateChange(e.target.value)}
+          />
+        </div>
+      </div>
       {onShiftPresetChange && (
-        <div className="chip-group" aria-label="Shift filters">
-          {SHIFT_PRESETS.map((preset) => (
-            <button
-              key={preset.label}
-              type="button"
-              className="pill pill-toggle"
-              data-active={shiftPreset === preset.label}
-              aria-pressed={shiftPreset === preset.label}
-              onClick={() => toggleShiftPreset(preset.label)}
-            >
-              {preset.label}
-            </button>
-          ))}
+        <div className="search-filter-bar__segmented" role="group" aria-label="Shift filters">
+          <span className="search-filter-bar__label" aria-hidden="true">
+            Shifts
+          </span>
+          <div className="search-filter-bar__segmented-buttons">
+            {SHIFT_PRESETS.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                data-active={shiftPreset === preset.label}
+                aria-pressed={shiftPreset === preset.label}
+                onClick={() => toggleShiftPreset(preset.label)}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
       {onShiftPresetChange && (
@@ -276,45 +303,49 @@ export default function SearchFilterBar({
           ))}
         </select>
       )}
-      <div className="chip-group" aria-label="Bundle filters">
-        <button
-          type="button"
-          className="pill pill-toggle"
-          data-active={bundleMode === "all"}
-          aria-pressed={bundleMode === "all"}
-          onClick={() => toggleBundleMode("all")}
-        >
-          All
-        </button>
-        <button
-          type="button"
-          className="pill pill-toggle"
-          data-active={bundleMode === "bundles"}
-          aria-pressed={bundleMode === "bundles"}
-          onClick={() => toggleBundleMode("bundles")}
-        >
-          Bundles only
-        </button>
-        <button
-          type="button"
-          className="pill pill-toggle"
-          data-active={bundleMode === "singles"}
-          aria-pressed={bundleMode === "singles"}
-          onClick={() => toggleBundleMode("singles")}
-        >
-          Singles only
+      <div className="search-filter-bar__segmented" role="group" aria-label="Bundle filters">
+        <span className="search-filter-bar__label" aria-hidden="true">
+          Bundle mode
+        </span>
+        <div className="search-filter-bar__segmented-buttons">
+          <button
+            type="button"
+            data-active={bundleMode === "all"}
+            aria-pressed={bundleMode === "all"}
+            onClick={() => toggleBundleMode("all")}
+          >
+            All
+          </button>
+          <button
+            type="button"
+            data-active={bundleMode === "bundles"}
+            aria-pressed={bundleMode === "bundles"}
+            onClick={() => toggleBundleMode("bundles")}
+          >
+            Bundles only
+          </button>
+          <button
+            type="button"
+            data-active={bundleMode === "singles"}
+            aria-pressed={bundleMode === "singles"}
+            onClick={() => toggleBundleMode("singles")}
+          >
+            Singles only
+          </button>
+        </div>
+      </div>
+      <div className="search-filter-bar__field search-filter-bar__action">
+        <button className="btn" onClick={clear} type="button">
+          Clear
         </button>
       </div>
-      <button className="btn" onClick={clear} type="button">
-        Clear
-      </button>
       {activeFilters.length > 0 && (
-        <div className="active-filter-chips">
+        <div className="search-filter-bar__chips-row" aria-label="Active filters">
           {activeFilters.map((chip) => (
             <button
               key={chip.key}
               type="button"
-              className="pill active-filter-chip"
+              className="active-filter-chip"
               onClick={chip.onRemove}
               aria-label={`Remove ${chip.label}`}
             >
@@ -324,6 +355,6 @@ export default function SearchFilterBar({
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }
