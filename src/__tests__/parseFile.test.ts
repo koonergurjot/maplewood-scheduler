@@ -18,25 +18,10 @@ describe("parseFile", () => {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
 
-    const xlsxModule = await import("xlsx");
-    const workbook = xlsxModule.read(bytes, { type: "array" });
-    expect(workbook.SheetNames).toHaveLength(1);
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    expect(sheet).toBeTruthy();
-    const rawRows = xlsxModule.utils.sheet_to_json<Record<string, unknown>>(sheet!, {
-      defval: "",
-      cellDates: true,
-    });
-    expect(rawRows).toHaveLength(1);
-    expect(typeof rawRows[0]["Start Date"]).toBe("number");
-    const serial = rawRows[0]["Start Date"] as number;
-    const baseDate = new Date(Date.UTC(1899, 11, 30));
-    const debugDate = new Date(baseDate.getTime() + Math.round(serial * 86_400_000));
-    expect(debugDate.toISOString().slice(0, 10)).toBe("2024-01-15");
-
     const rows = await parseFile(file);
     expect(rows).toHaveLength(1);
     expect(rows[0]["Start Date"]).toBe("2024-01-15");
+    expect(typeof rows[0]["Start Date"]).toBe("string");
 
     const employees = rows
       .map((row, index) => mapRowToEmployee(row, index))
