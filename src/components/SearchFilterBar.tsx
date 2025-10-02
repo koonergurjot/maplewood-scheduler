@@ -141,7 +141,11 @@ export default function SearchFilterBar({
   return (
     <div className="toolbar smart-filter-bar search-filter-bar">
       <div style={{ minWidth: 180, flexShrink: 0 }}>
+        <label className="sr-only" htmlFor="vacancy-search-input">
+          Search vacancies
+        </label>
         <input
+          id="vacancy-search-input"
           type="text"
           placeholder="Search..."
           value={query}
@@ -230,11 +234,13 @@ export default function SearchFilterBar({
       )}
       <div className="date-range" aria-label="Date range filters">
         <input
+          aria-label="Filter from date"
           type="date"
           value={startDate}
           onChange={(e: ChangeEvent<HTMLInputElement>) => onStartDateChange(e.target.value)}
         />
         <input
+          aria-label="Filter to date"
           type="date"
           value={endDate}
           onChange={(e: ChangeEvent<HTMLInputElement>) => onEndDateChange(e.target.value)}
