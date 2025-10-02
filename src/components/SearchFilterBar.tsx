@@ -71,7 +71,7 @@ export default function SearchFilterBar({
 
   const quickWings = WINGS.slice(0, 4);
   const overflowWings = WINGS.slice(4);
-  const overflowWingValue = overflowWings.includes(wing) ? wing : "";
+  const overflowWingValue = overflowWings.some((w) => w === wing) ? wing : "";
 
   const toggleShiftPreset = (value: string) => {
     if (!onShiftPresetChange) return;
