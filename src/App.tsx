@@ -49,7 +49,7 @@ import Toast from "./components/ui/Toast";
 import Button from "./components/ui/Button";
 import FilterBar from "./components/ui/FilterBar";
 import Modal from "./components/ui/Modal";
-import StatusPill from "./components/ui/StatusPill";
+import EmployeeRow from "./components/EmployeeRow";
 import useDeadlineMonitor from "./hooks/useDeadlineMonitor";
 import { useSchedulerState } from "./hooks/useSchedulerState";
 import useNotificationPrefs, {
@@ -2579,6 +2579,50 @@ function EmployeesPage({
   setEmployees: (u: any) => void;
   showImportHeadersToast: (headers: string[], prefix?: string) => void;
 }) {
+  const [saveToast, setSaveToast] = useState<
+    { message: string; timeout: ReturnType<typeof setTimeout> } | null
+  >(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveToast?.timeout) {
+        clearTimeout(saveToast.timeout);
+      }
+    };
+  }, [saveToast]);
+
+  const showSaveToast = (employee: Employee) => {
+    setSaveToast((prev) => {
+      if (prev?.timeout) {
+        clearTimeout(prev.timeout);
+      }
+      const name = [employee.firstName, employee.lastName]
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0)
+        .join(" ");
+      const message = name ? `${name} saved` : "Employee updated";
+      const timeout = setTimeout(() => {
+        setSaveToast((current) =>
+          current?.timeout === timeout ? null : current,
+        );
+      }, 2500);
+      return { message, timeout };
+    });
+  };
+
+  const handleEmployeeChange = (updated: Employee) => {
+    setEmployees((prev: Employee[]) => {
+      const next = prev.map((employee) =>
+        employee.id === updated.id ? updated : employee,
+      );
+      next.sort(
+        (a, b) => (a.seniorityRank ?? 99999) - (b.seniorityRank ?? 99999),
+      );
+      return next;
+    });
+    showSaveToast(updated);
+  };
+
   return (
     <div className="grid">
       <div className="card">
@@ -2718,26 +2762,18 @@ function EmployeesPage({
               </tr>
             </thead>
             <tbody>
-              {employees.map((e) => (
-                <tr key={e.id}>
-                  <td></td>
-                  <td>
-                    {e.firstName} {e.lastName}
-                  </td>
-                  <td></td>
-                  <td></td>
-                  <td>{e.classification}</td>
-                  <td>{e.status}</td>
-                  <td>{e.seniorityRank}</td>
-                  <td>
-                    <StatusPill active={e.active} label={e.activeLabel} />
-                  </td>
-                </tr>
+              {employees.map((employee) => (
+                <EmployeeRow
+                  key={employee.id}
+                  employee={employee}
+                  onChange={handleEmployeeChange}
+                />
               ))}
             </tbody>
           </table>
         </div>
       </div>
+      <Toast open={!!saveToast} message={saveToast?.message ?? ""} />
     </div>
   );
 }
