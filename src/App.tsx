@@ -1,4 +1,11 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { Link } from "react-router-dom";
 import { recommend, Recommendation } from "./recommend";
 import type { OfferingTier } from "./offering/offeringMachine";
@@ -552,7 +559,7 @@ export default function App() {
   const vacDateRef = useRef<HTMLInputElement>(null);
   const vacStartRef = useRef<HTMLInputElement>(null);
   const vacEndRef = useRef<HTMLInputElement>(null);
-  const handleDateFieldClick = (ref: React.RefObject<HTMLInputElement>) => {
+  const handleDateFieldClick = (ref: RefObject<HTMLInputElement>) => {
     ref.current?.focus();
     ref.current?.showPicker();
   };
