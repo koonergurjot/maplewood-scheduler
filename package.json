@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "start": "node server/index.js",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:ci": "tsc -p tsconfig.ci.json && vite build",
