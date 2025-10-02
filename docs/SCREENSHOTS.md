@@ -8,6 +8,7 @@ placeholders below with your own captures.
 | ![Home](./media/screenshot-1.png) | Home screen |
 | ![Analytics](./media/screenshot-2.png) | Analytics dashboard |
 | ![Mobile](./media/screenshot-3.gif) | Mobile demo |
+| ![Search filters restored](./media/search-filters.png) | Wing, shift, and countdown filters on the Open Vacancies toolbar |
 
 Tips:
 - Use consistent window sizes.

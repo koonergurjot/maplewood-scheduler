@@ -23,3 +23,9 @@ sequenceDiagram
   API-->>UI: JSON
   UI-->>U: Render schedule
 ```
+
+## Open Vacancies filters
+
+The redesigned Open Vacancies list restores the full set of toolbar filters. Admins can now
+combine keyword search, wing, classification, shift preset, countdown status, bundle mode,
+and date range chips to quickly zero in on the vacancies they need to manage.
