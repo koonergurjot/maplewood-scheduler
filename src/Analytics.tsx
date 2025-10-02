@@ -35,6 +35,7 @@ export default function Analytics() {
   const [rows, setRows] = useState<AnalyticsRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [overtimeThreshold, setOvertimeThreshold] = useState(8);
 
   const [palette, setPalette] = useState({
     brand: "#047857",
@@ -51,6 +52,10 @@ export default function Analytics() {
     return token;
   }, []);
 
+  const clampOvertimeThreshold = useCallback((value: number) => {
+    return Math.min(24, Math.max(0, Math.round(value)));
+  }, []);
+
   const loadData = useCallback(async () => {
     controllerRef.current?.abort();
     const controller = new AbortController();
@@ -61,7 +66,10 @@ export default function Analytics() {
     const maxRetries = 3;
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        const response = await authFetch("/api/analytics", {
+        const params = new URLSearchParams({
+          overtimeThreshold: String(overtimeThreshold),
+        });
+        const response = await authFetch(`/api/analytics?${params}`, {
           signal: controller.signal,
         });
         const data = await response.json();
@@ -89,13 +97,15 @@ export default function Analytics() {
         }
       }
     }
-  }, [promptForToken]);
+  }, [overtimeThreshold, promptForToken]);
 
   const handleExport = async (format: string) => {
     try {
-      const response = await authFetch(
-        `/api/analytics/export?format=${format}`,
-      );
+      const params = new URLSearchParams({
+        format,
+        overtimeThreshold: String(overtimeThreshold),
+      });
+      const response = await authFetch(`/api/analytics/export?${params}`);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -188,6 +198,38 @@ export default function Analytics() {
       >
         Set API Token
       </button>
+      <div style={{ marginBottom: 20 }}>
+        <label
+          htmlFor="overtime-threshold"
+          style={{ display: "block", marginBottom: 4 }}
+        >
+          Overtime threshold (hours)
+        </label>
+        <input
+          id="overtime-threshold"
+          type="number"
+          min={0}
+          max={24}
+          value={overtimeThreshold}
+          onChange={(event) => {
+            const nextValue = Number(event.target.value);
+            setOvertimeThreshold(
+              clampOvertimeThreshold(
+                Number.isNaN(nextValue) ? overtimeThreshold : nextValue,
+              ),
+            );
+          }}
+          onBlur={(event) => {
+            const nextValue = Number(event.target.value);
+            setOvertimeThreshold((current) =>
+              clampOvertimeThreshold(
+                Number.isNaN(nextValue) ? current : nextValue,
+              ),
+            );
+          }}
+          style={{ padding: "6px 8px", width: 120 }}
+        />
+      </div>
       <div style={{ width: 600 }}>
         <Bar
           data={{
