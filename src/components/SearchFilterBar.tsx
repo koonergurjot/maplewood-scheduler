@@ -1,5 +1,5 @@
 import { ChangeEvent } from "react";
-import { CLASSIFICATIONS } from "../types";
+import { CLASSIFICATIONS, WINGS, SHIFT_PRESETS } from "../types";
 import type { Classification } from "../types";
 
 type BundleMode = "all" | "bundles" | "singles";
@@ -10,11 +10,17 @@ interface Props {
   endDate: string;
   category: Classification | "";
   bundleMode: BundleMode;
+  wing?: string;
+  shiftPreset?: string;
+  countdown?: string;
   onQueryChange: (value: string) => void;
   onStartDateChange: (value: string) => void;
   onEndDateChange: (value: string) => void;
   onCategoryChange: (value: Classification | "") => void;
   onBundleModeChange: (value: BundleMode) => void;
+  onWingChange?: (value: string) => void;
+  onShiftPresetChange?: (value: string) => void;
+  onCountdownChange?: (value: string) => void;
   onClear?: () => void;
 }
 
@@ -24,11 +30,17 @@ export default function SearchFilterBar({
   endDate,
   category,
   bundleMode,
+  wing = "",
+  shiftPreset = "",
+  countdown = "",
   onQueryChange,
   onStartDateChange,
   onEndDateChange,
   onCategoryChange,
   onBundleModeChange,
+  onWingChange,
+  onShiftPresetChange,
+  onCountdownChange,
   onClear,
 }: Props) {
   const clear = () => {
@@ -37,6 +49,9 @@ export default function SearchFilterBar({
     onEndDateChange("");
     onCategoryChange("");
     onBundleModeChange("all");
+    onWingChange?.("");
+    onShiftPresetChange?.("");
+    onCountdownChange?.("");
     onClear?.();
   };
 
@@ -46,6 +61,24 @@ export default function SearchFilterBar({
     } else {
       onCategoryChange(value);
     }
+  };
+
+  const toggleWing = (value: string) => {
+    if (!onWingChange) return;
+    if (wing === value) onWingChange("");
+    else onWingChange(value);
+  };
+
+  const toggleShiftPreset = (value: string) => {
+    if (!onShiftPresetChange) return;
+    if (shiftPreset === value) onShiftPresetChange("");
+    else onShiftPresetChange(value);
+  };
+
+  const toggleCountdown = (value: string) => {
+    if (!onCountdownChange) return;
+    if (countdown === value) onCountdownChange("");
+    else onCountdownChange(value);
   };
 
   const toggleBundleMode = (value: BundleMode) => {
@@ -66,6 +99,24 @@ export default function SearchFilterBar({
   }
   if (category) {
     activeFilters.push({ key: "category", label: `Class: ${category}`, onRemove: () => onCategoryChange("") });
+  }
+  if (wing && onWingChange) {
+    activeFilters.push({ key: "wing", label: `Wing: ${wing}`, onRemove: () => onWingChange("") });
+  }
+  if (shiftPreset && onShiftPresetChange) {
+    activeFilters.push({
+      key: "shift",
+      label: `Shift: ${shiftPreset}`,
+      onRemove: () => onShiftPresetChange(""),
+    });
+  }
+  if (countdown && onCountdownChange) {
+    const label = countdown.charAt(0).toUpperCase() + countdown.slice(1);
+    activeFilters.push({
+      key: "countdown",
+      label: `Countdown: ${label}`,
+      onRemove: () => onCountdownChange(""),
+    });
   }
   if (startDate || endDate) {
     const startLabel = startDate || "Any";
@@ -136,6 +187,47 @@ export default function SearchFilterBar({
           </option>
         ))}
       </select>
+      {onWingChange && (
+        <div className="chip-group" aria-label="Wing filters">
+          {WINGS.map((w) => (
+            <button
+              key={w}
+              type="button"
+              className="pill pill-toggle"
+              data-active={wing === w}
+              aria-pressed={wing === w}
+              onClick={() => toggleWing(w)}
+            >
+              {w}
+            </button>
+          ))}
+        </div>
+      )}
+      {onWingChange && (
+        <select
+          aria-label="Wing filter"
+          value={wing}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) => onWingChange(event.target.value)}
+          style={{
+            position: "absolute",
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: "hidden",
+            clip: "rect(0 0 0 0)",
+            whiteSpace: "nowrap",
+            border: 0,
+          }}
+        >
+          <option value="">All Wings</option>
+          {WINGS.map((w) => (
+            <option key={w} value={w}>
+              {w}
+            </option>
+          ))}
+        </select>
+      )}
       <div className="date-range" aria-label="Date range filters">
         <input
           type="date"
@@ -148,6 +240,90 @@ export default function SearchFilterBar({
           onChange={(e: ChangeEvent<HTMLInputElement>) => onEndDateChange(e.target.value)}
         />
       </div>
+      {onShiftPresetChange && (
+        <div className="chip-group" aria-label="Shift filters">
+          {SHIFT_PRESETS.map((preset) => (
+            <button
+              key={preset.label}
+              type="button"
+              className="pill pill-toggle"
+              data-active={shiftPreset === preset.label}
+              aria-pressed={shiftPreset === preset.label}
+              onClick={() => toggleShiftPreset(preset.label)}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {onShiftPresetChange && (
+        <select
+          aria-label="Shift preset filter"
+          value={shiftPreset}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+            onShiftPresetChange(event.target.value)
+          }
+          style={{
+            position: "absolute",
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: "hidden",
+            clip: "rect(0 0 0 0)",
+            whiteSpace: "nowrap",
+            border: 0,
+          }}
+        >
+          <option value="">All Shifts</option>
+          {SHIFT_PRESETS.map((preset) => (
+            <option key={preset.label} value={preset.label}>
+              {preset.label}
+            </option>
+          ))}
+        </select>
+      )}
+      {onCountdownChange && (
+        <div className="chip-group" aria-label="Countdown filters">
+          {["green", "yellow", "red"].map((value) => (
+            <button
+              key={value}
+              type="button"
+              className="pill pill-toggle"
+              data-active={countdown === value}
+              aria-pressed={countdown === value}
+              onClick={() => toggleCountdown(value)}
+            >
+              {value.charAt(0).toUpperCase() + value.slice(1)}
+            </button>
+          ))}
+        </div>
+      )}
+      {onCountdownChange && (
+        <select
+          aria-label="Countdown filter"
+          value={countdown}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+            onCountdownChange(event.target.value)
+          }
+          style={{
+            position: "absolute",
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: "hidden",
+            clip: "rect(0 0 0 0)",
+            whiteSpace: "nowrap",
+            border: 0,
+          }}
+        >
+          <option value="">All Countdowns</option>
+          <option value="green">Green</option>
+          <option value="yellow">Yellow</option>
+          <option value="red">Red</option>
+        </select>
+      )}
       <div className="chip-group" aria-label="Bundle filters">
         <button
           type="button"

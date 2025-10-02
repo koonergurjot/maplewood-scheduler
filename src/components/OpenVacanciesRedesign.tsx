@@ -1,11 +1,13 @@
 import React, { useMemo } from "react";
 import type { Vacancy, Employee, Settings, Vacation } from "../types";
+import { SHIFT_PRESETS } from "../types";
 import type { Recommendation } from "../recommend";
 import BundleRow from "./BundleRow";
 import VacancyRow from "./VacancyRow";
-import { combineDateTime } from "../lib/dates";
+import { combineDateTime, minutesBetween } from "../lib/dates";
 import SearchFilterBar from "./SearchFilterBar";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
+import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
 
 type Props = {
   vacancies: Vacancy[];
@@ -46,6 +48,12 @@ export default function OpenVacanciesRedesign(props: Props) {
     setEnd,
     filterClass,
     setFilterClass,
+    filterWing,
+    setFilterWing,
+    filterShift,
+    setFilterShift,
+    filterCountdown,
+    setFilterCountdown,
     bundleMode,
     setBundleMode,
   } = useVacancyFilters();
@@ -79,7 +87,28 @@ export default function OpenVacanciesRedesign(props: Props) {
         );
       });
     }
+    if (filterWing) list = list.filter((v) => (v.wing || "") === filterWing);
     if (filterClass) list = list.filter((v) => v.classification === filterClass);
+    if (filterShift) {
+      const preset = SHIFT_PRESETS.find((p) => p.label === filterShift);
+      if (preset)
+        list = list.filter(
+          (v) => v.shiftStart === preset.start && v.shiftEnd === preset.end,
+        );
+    }
+    if (filterCountdown) {
+      list = list.filter((v) => {
+        const msLeft = deadlineFor(v, settings).getTime() - Date.now();
+        const winMin = pickWindowMinutes(v, settings);
+        const sinceKnownMin = minutesBetween(new Date(), new Date(v.knownAt));
+        const ratio = winMin > 0 ? (winMin - sinceKnownMin) / winMin : 0;
+        const pct = Math.max(0, Math.min(1, ratio));
+        let cdClass: "green" | "yellow" | "red" = "green";
+        if (msLeft <= 0) cdClass = "red";
+        else if (pct < 0.25) cdClass = "yellow";
+        return cdClass === filterCountdown;
+      });
+    }
     if (start) list = list.filter((v) => v.shiftDate >= start);
     if (end) list = list.filter((v) => v.shiftDate <= end);
     if (filters?.wing) list = list.filter((v) => (v.wing || "") === filters!.wing);
@@ -90,7 +119,20 @@ export default function OpenVacanciesRedesign(props: Props) {
     if (filters?.bundlesOnly) list = list.filter((v) => v.bundleId);
     if (filters?.singlesOnly) list = list.filter((v) => !v.bundleId);
     return list;
-  }, [vacancies, search, filterClass, start, end, filters, vacNameById, bundleMode]);
+  }, [
+    vacancies,
+    search,
+    filterClass,
+    filterWing,
+    filterShift,
+    filterCountdown,
+    start,
+    end,
+    filters,
+    vacNameById,
+    bundleMode,
+    settings,
+  ]);
 
   // Cross-day bundle groups so multi-day vacancies render as ONE row
   const bundleGroups = useMemo(() => {
@@ -150,10 +192,16 @@ export default function OpenVacanciesRedesign(props: Props) {
         startDate={start}
         endDate={end}
         category={filterClass}
+        wing={filterWing}
+        shiftPreset={filterShift}
+        countdown={filterCountdown}
         onQueryChange={setSearch}
         onStartDateChange={setStart}
         onEndDateChange={setEnd}
         onCategoryChange={(value) => setFilterClass(value)}
+        onWingChange={setFilterWing}
+        onShiftPresetChange={setFilterShift}
+        onCountdownChange={setFilterCountdown}
         bundleMode={bundleMode}
         onBundleModeChange={(mode) => setBundleMode(mode)}
         onClear={() => {
@@ -161,6 +209,9 @@ export default function OpenVacanciesRedesign(props: Props) {
           setStart("");
           setEnd("");
           setFilterClass("");
+          setFilterWing("");
+          setFilterShift("");
+          setFilterCountdown("");
           setBundleMode("all");
         }}
       />
