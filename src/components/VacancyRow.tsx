@@ -163,9 +163,7 @@ export default function VacancyRow({
       <CellDetails
         component={cellComponent}
         title={
-          <div
-            style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}
-          >
+          <div className="vacancy-stack vacancy-row__headline">
             <span>
               <span className="pill">{formatDowShort(v.shiftDate)}</span>{" "}
               {formatDateLong(v.shiftDate)} • {v.shiftStart}-{v.shiftEnd}
@@ -180,25 +178,22 @@ export default function VacancyRow({
           </div>
         }
         subtitle={
-          <div
-            style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}
-          >
+          <div className="vacancy-stack vacancy-row__meta">
             {v.wing && <span className="pill">{v.wing}</span>}
             <span className="pill">{v.classification}</span>
             <span className="pill">{v.offeringStep}</span>
           </div>
         }
         rightTag={
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <div className="vacancy-stack vacancy-row__tagline">
             <span className="subtitle truncate" title={recName}>
               {recName}
             </span>
             {hasCandidates && candidates.length > 1 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <div className="vacancy-row__pager">
                 <button
                   type="button"
                   className="btn btn-sm"
-                  style={{ padding: "2px 6px" }}
                   onClick={() => cycle(-1)}
                   aria-label="Previous recommendation"
                 >
@@ -210,7 +205,6 @@ export default function VacancyRow({
                 <button
                   type="button"
                   className="btn btn-sm"
-                  style={{ padding: "2px 6px" }}
                   onClick={() => cycle(1)}
                   aria-label="Next recommendation"
                 >
@@ -293,7 +287,7 @@ export default function VacancyRow({
                     setChoiceManual(true);
                   }}
                 />
-                <div style={{ whiteSpace: "nowrap" }}>
+                <div className="vacancy-row__toggle">
                   <input
                     id={`override-toggle-${v.id}`}
                     className="toggle-input"
@@ -369,7 +363,7 @@ function SelectEmployee({
     .slice(0, 50);
   const curr = employees.find((e) => e.id === value);
   return (
-    <div className="dropdown">
+    <div className="dropdown vacancy-dropdown">
       <input
         placeholder={curr ? `${curr.firstName} ${curr.lastName} (${curr.id})` : "Type name or ID…"}
         value={q}
@@ -380,7 +374,7 @@ function SelectEmployee({
         onFocus={() => setOpen(true)}
       />
       {open && (
-        <div className="menu" style={{ maxHeight: 320, overflow: "auto" }}>
+        <div className="menu vacancy-dropdown__menu vacancy-dropdown__menu--tall">
           {allowEmpty && (
             <div
               className="item"
@@ -404,12 +398,14 @@ function SelectEmployee({
               }}
             >
               {e.firstName} {e.lastName}{" "}
-              <span className="pill" style={{ marginLeft: 6 }}>
+              <span className="pill vacancy-dropdown__chip">
                 {e.classification} {e.status}
               </span>
             </div>
           ))}
-          {!list.length && <div className="item" style={{ opacity: 0.7 }}>No matches</div>}
+          {!list.length && (
+            <div className="item vacancy-dropdown__empty">No matches</div>
+          )}
         </div>
       )}
     </div>
