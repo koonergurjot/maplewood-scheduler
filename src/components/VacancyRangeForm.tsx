@@ -106,6 +106,7 @@ export default function VacancyRangeForm({
       shiftEnd,
       offeringStep: "Casuals",
       status: "Open",
+      awardAsBlock,
     };
     onSave(range, awardAsBlock);
     onClose();

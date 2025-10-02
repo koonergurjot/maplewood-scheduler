@@ -58,7 +58,8 @@ export function bundleContiguousVacanciesByRef(vacs: Vacancy[]): Vacancy[] {
  * Automatically assigns a single bundleId when the range spans two or more days.
  */
 export function createVacanciesFromRange(range: VacancyRange): Vacancy[] {
-  return expandRangeToVacancies(range, true);
+  const shouldBundle = range.awardAsBlock !== false;
+  return expandRangeToVacancies(range, shouldBundle);
 }
 
 /** Award every vacancy within a bundle to the given employee. */

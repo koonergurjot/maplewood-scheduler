@@ -29,7 +29,7 @@ import {
   normalizeStatus,
   splitName,
 } from "./utils/headers";
-import { loadState, saveState, LS_KEY } from "./utils/storage";
+import { loadState, LS_KEY } from "./utils/storage";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
 import VacancyRangeForm from "./components/VacancyRangeForm";
@@ -44,12 +44,12 @@ import { appConfig } from "./config";
 import { CLASSIFICATIONS } from "./types";
 import type { VacancyRange, VacancyStatus, BundleMode } from "./types";
 export { OVERRIDE_REASONS } from "./types";
-import { createVacanciesFromRange, bundleContiguousVacanciesByRef } from "./lib/bundles";
 import Toast from "./components/ui/Toast";
 import Button from "./components/ui/Button";
 import FilterBar from "./components/ui/FilterBar";
 import Modal from "./components/ui/Modal";
 import useDeadlineMonitor from "./hooks/useDeadlineMonitor";
+import { useSchedulerState } from "./hooks/useSchedulerState";
 import useNotificationPrefs, {
   NotificationPreferences,
   NotificationChannel,
@@ -57,6 +57,8 @@ import useNotificationPrefs, {
   QuietHoursPreference,
 } from "./state/useNotificationPrefs";
 import type { DeadlineNotification } from "./types/notifications";
+import RangeBidDialog from "./components/RangeBidDialog";
+import { awardVacancyRange } from "./lib/vacancy-range-award";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -218,6 +220,7 @@ type PersistedState = {
   archivedBids?: Record<string, Bid[]>;
   settings?: Partial<Settings>;
   notificationPrefs?: NotificationPreferences;
+  vacancyRanges?: VacancyRange[];
 };
 
 // ---------- Utils ----------
@@ -480,28 +483,23 @@ export default function App() {
   const persisted = loadState<PersistedState>() ?? null;
   const [tab, setTab] = useState<typeof TAB_KEYS[number]>("coverage");
 
-  const [employees, setEmployees] = useState<Employee[]>(
-    persisted?.employees ?? [],
-  );
-  const [vacations, setVacations] = useState<Vacation[]>(
-    persisted?.vacations ?? [],
-  );
-  const [vacancies, setVacancies] = useState<Vacancy[]>(
-    bundleContiguousVacanciesByRef(
-      (persisted?.vacancies ?? []).map((v: any) => ({
-        offeringTier: "CASUALS",
-        offeringRoundStartedAt:
-          v.offeringRoundStartedAt ?? new Date().toISOString(),
-        offeringRoundMinutes: v.offeringRoundMinutes ?? 120,
-        offeringAutoProgress: v.offeringAutoProgress ?? true,
-        ...v,
-      })),
-    ),
-  );
-  const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
-  const [archivedBids, setArchivedBids] = useState<Record<string, Bid[]>>(
-    persisted?.archivedBids ?? {},
-  );
+  const {
+    employees,
+    setEmployees,
+    vacations,
+    setVacations,
+    vacancies,
+    setVacancies,
+    bids,
+    setBids,
+    archivedBids,
+    setArchivedBids,
+    settings: schedulerSettings,
+    setSettings,
+    employeesById,
+    vacancyRanges,
+    setVacancyRanges,
+  } = useSchedulerState();
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
   const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
   const [bundleUndo, setBundleUndo] = useState<{
@@ -517,6 +515,7 @@ export default function App() {
   >(null);
   const [activeVacancyId, setActiveVacancyId] = useState<string | null>(null);
   const [showRangeForm, setShowRangeForm] = useState(false);
+  const [activeRangeBid, setActiveRangeBid] = useState<VacancyRange | null>(null);
   // Modal system (confirm/prompt/alert)
   const [confirmState, setConfirmState] = useState<
     | { open: true; title: string; body: string; resolve: (ok: boolean) => void }
@@ -610,17 +609,22 @@ export default function App() {
   (window as any).appShowConfirm = showConfirm;
   (window as any).appShowPrompt = showPrompt;
   (window as any).appShowAlert = showAlert;
-  const persistedSettings: Partial<Settings> = persisted?.settings ?? {};
-  const storedOrder: string[] = persistedSettings.tabOrder || [];
-  const mergedOrder = [
-    ...storedOrder,
-    ...TAB_KEYS.filter((k) => !storedOrder.includes(k)),
-  ];
-  const [settings, setSettings] = useState<Settings>({
-    ...defaultSettings,
-    ...persistedSettings,
-    tabOrder: mergedOrder,
-  });
+  const storedOrder = schedulerSettings.tabOrder ?? [];
+  const mergedOrder = useMemo(
+    () => [
+      ...storedOrder,
+      ...TAB_KEYS.filter((k) => !storedOrder.includes(k)),
+    ],
+    [storedOrder],
+  );
+  const settings = useMemo<Settings>(
+    () => ({
+      ...defaultSettings,
+      ...schedulerSettings,
+      tabOrder: mergedOrder,
+    }),
+    [schedulerSettings, mergedOrder],
+  );
 
   const {
     notificationPrefs,
@@ -666,34 +670,6 @@ export default function App() {
     }
   }, [tab, acknowledgeAll]);
 
-  useEffect(() => {
-    if (
-      !saveState({
-        employees,
-        vacations,
-        vacancies,
-        bids,
-        archivedBids,
-        settings,
-        notificationPrefs,
-      })
-    ) {
-      // localStorage unavailable; state persistence disabled
-    }
-  }, [
-    employees,
-    vacations,
-    vacancies,
-    bids,
-    archivedBids,
-    settings,
-    notificationPrefs,
-  ]);
-
-  const employeesById = useMemo(
-    () => Object.fromEntries(employees.map((e) => [e.id, e])),
-    [employees],
-  );
   const activeVacancy = useMemo(
     () => vacancies.find((v) => v.id === activeVacancyId) ?? null,
     [vacancies, activeVacancyId],
@@ -901,9 +877,37 @@ export default function App() {
     setMultiDay(false);
   };
 
-  const handleSaveRange = (range: VacancyRange, _awardAsBlock: boolean) => {
-    const vxs = createVacanciesFromRange(range);
-    setVacancies((prev) => [...vxs, ...prev]);
+  const handleSaveRange = (range: VacancyRange, awardAsBlock: boolean) => {
+    setVacancyRanges((prev) => [...prev, { ...range, awardAsBlock }]);
+  };
+
+  const handleSubmitRangeBid = (bid: Bid) => {
+    setBids((prev) => [...prev, bid]);
+  };
+
+  const handleAwardRange = async (rangeId: string) => {
+    const range = vacancyRanges.find((r) => r.id === rangeId);
+    if (!range) return;
+    const rangeBids = bids.filter((b) => b.vacancyId === rangeId);
+    if (!rangeBids.length) {
+      const ok = await showConfirm(
+        "No bids recorded for this range. Create vacancies anyway?",
+        "No bids on range",
+      );
+      if (!ok) return;
+    }
+    const outcome = awardVacancyRange(range, rangeBids, employees);
+    if (outcome.vacancies.length) {
+      setVacancies((prev) => [...outcome.vacancies, ...prev]);
+    }
+    setVacancyRanges((prev) => prev.filter((r) => r.id !== rangeId));
+    if (outcome.archivedBids.length) {
+      setArchivedBids((prev) => ({
+        ...prev,
+        [rangeId]: [...(prev[rangeId] ?? []), ...outcome.archivedBids],
+      }));
+      setBids((prev) => prev.filter((b) => b.vacancyId !== rangeId));
+    }
   };
 
   const archiveBids = (vacancyIds: string[]) => {
@@ -1508,10 +1512,13 @@ export default function App() {
 
         {tab === "coverage" && (
           <>
-
-          
-          <CoverageRangesPanel />
-          <div className="grid">
+            <CoverageRangesPanel
+              ranges={vacancyRanges}
+              bids={bids}
+              onBid={(range) => setActiveRangeBid(range)}
+              onAward={handleAwardRange}
+            />
+            <div className="grid">
             <div className="card">
               <div className="card-h">
                 Add Vacation (auto-creates daily vacancies)
@@ -2172,6 +2179,15 @@ export default function App() {
             onClose={() => setShowRangeForm(false)}
             onSave={handleSaveRange}
             existingVacancies={vacancies}
+          />
+        )}
+        {activeRangeBid && (
+          <RangeBidDialog
+            open
+            range={activeRangeBid}
+            onClose={() => setActiveRangeBid(null)}
+            employees={employees}
+            onSubmit={handleSubmitRangeBid}
           />
         )}
         <Modal
