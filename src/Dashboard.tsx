@@ -157,11 +157,16 @@ export default function Dashboard() {
       </header>
 
       <nav className="dashboard-nav">
-        <button onClick={() => setView("list")} disabled={view === "list"}>
+        <button
+          onClick={() => setView("list")}
+          className={view === "list" ? "active" : undefined}
+          disabled={view === "list"}
+        >
           List View
         </button>
         <button
           onClick={() => setView("calendar")}
+          className={view === "calendar" ? "active" : undefined}
           disabled={view === "calendar"}
         >
           Calendar View
