@@ -48,12 +48,25 @@ td.cell-actions { width:1%; text-align:right; padding:10px 12px; }
 .vacancy-row__pager .btn { padding:2px 6px; }
 .vacancy-row__toggle { white-space:nowrap; }
 
-.bundle-expand { display:grid; gap:var(--space-1); }
-.bundle-expand__row { display:grid; grid-template-columns:minmax(160px, 1fr) repeat(2, minmax(100px, max-content)); gap:var(--space-2); padding:var(--space-1) 0; }
-.bundle-expand__row + .bundle-expand__row { border-top:1px solid var(--stroke); }
-.bundle-expand__cell { min-width:0; }
-.bundle-expand__cell--date { min-width:160px; }
-.bundle-expand__cell--time, .bundle-expand__cell--wing { min-width:100px; }
+.bundle-expand {
+  display: grid;
+  grid-template-columns: minmax(200px, 2fr) repeat(2, minmax(120px, max-content));
+  column-gap: var(--space-3);
+  row-gap: 0;
+}
+.bundle-expand__row { display: contents; }
+.bundle-expand__row + .bundle-expand__row .bundle-expand__cell {
+  border-top: 1px solid var(--stroke);
+}
+.bundle-expand__cell {
+  min-width: 0;
+  padding: var(--space-1) 0;
+  justify-self: start;
+}
+.bundle-expand__cell--time,
+.bundle-expand__cell--wing {
+  white-space: nowrap;
+}
 
 .vacancy-dropdown { width:100%; }
 .vacancy-dropdown input { width:100%; }
