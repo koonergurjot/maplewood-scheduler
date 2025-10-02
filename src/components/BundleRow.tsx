@@ -117,7 +117,7 @@ export default function BundleRow({
         />
         <CellDetails
           title={
-            <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div className="vacancy-stack bundle-row__headline">
               <span className="pill">{items.length} days</span>
               <span className="pill" title="First day">{formatDateLong(primary.shiftDate)}</span>
               <span>
@@ -127,19 +127,12 @@ export default function BundleRow({
             </div>
           }
           subtitle={
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                flexWrap: "wrap",
-              }}
-            >
+            <div className="vacancy-stack bundle-row__subtitle">
               <span className="subtitle">{rangeLabel}</span>
             </div>
           }
           rightTag={
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div className="vacancy-stack bundle-row__tagline">
               {recId ? (
                 <button
                   type="button"
@@ -156,11 +149,10 @@ export default function BundleRow({
                 <span className="subtitle">—</span>
               )}
               {hasCandidates && candidates.length > 1 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <div className="vacancy-row__pager">
                   <button
                     type="button"
                     className="btn btn-sm"
-                    style={{ padding: "2px 6px" }}
                     onClick={() => cycle(-1)}
                     aria-label="Previous bundle recommendation"
                   >
@@ -172,7 +164,6 @@ export default function BundleRow({
                   <button
                     type="button"
                     className="btn btn-sm"
-                    style={{ padding: "2px 6px" }}
                     onClick={() => cycle(1)}
                     aria-label="Next bundle recommendation"
                   >
@@ -259,21 +250,17 @@ export default function BundleRow({
           <td />
           <td colSpan={3}>
             <div className="bundle-expand">
-              {sorted.map((v, i) => (
-                <div
-                  key={v.id}
-                  style={{
-                    display: "flex",
-                    gap: 8,
-                    padding: "4px 0",
-                    borderTop: i === 0 ? undefined : "1px solid var(--stroke)",
-                  }}
-                >
-                  <div style={{ minWidth: 160 }}>{formatDateLong(v.shiftDate)}</div>
-                  <div style={{ minWidth: 100 }}>
+              {sorted.map((v) => (
+                <div key={v.id} className="bundle-expand__row">
+                  <div className="bundle-expand__cell bundle-expand__cell--date">
+                    {formatDateLong(v.shiftDate)}
+                  </div>
+                  <div className="bundle-expand__cell bundle-expand__cell--time">
                     {v.shiftStart}–{v.shiftEnd}
                   </div>
-                  <div style={{ minWidth: 100 }}>{v.wing ?? "-"}</div>
+                  <div className="bundle-expand__cell bundle-expand__cell--wing">
+                    {v.wing ?? "-"}
+                  </div>
                 </div>
               ))}
             </div>
@@ -314,14 +301,14 @@ function InlineEmployeePicker({
     [employees, q],
   );
   return (
-    <div className="dropdown">
+    <div className="dropdown vacancy-dropdown">
       <input
         placeholder={placeholder || "Type name…"}
         value={q}
         onChange={(e)=> setQ(e.target.value)}
         onFocus={()=>{}}
       />
-      <div className="menu" style={{ maxHeight: 240, overflow: "auto" }}>
+      <div className="menu vacancy-dropdown__menu">
         {list.map((e) => (
           <button
             type="button"
@@ -335,7 +322,9 @@ function InlineEmployeePicker({
             {e.firstName} {e.lastName}
           </button>
         ))}
-        {!list.length && <div className="item" style={{ opacity:.7 }}>No matches</div>}
+        {!list.length && (
+          <div className="item vacancy-dropdown__empty">No matches</div>
+        )}
       </div>
     </div>
   );
