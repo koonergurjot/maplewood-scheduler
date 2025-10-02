@@ -308,7 +308,7 @@ function InlineEmployeePicker({
         onChange={(e)=> setQ(e.target.value)}
         onFocus={()=>{}}
       />
-      <div className="menu vacancy-dropdown__menu">
+      <div className="menu vacancy-row__menu">
         {list.map((e) => (
           <button
             type="button"
@@ -323,7 +323,7 @@ function InlineEmployeePicker({
           </button>
         ))}
         {!list.length && (
-          <div className="item vacancy-dropdown__empty">No matches</div>
+          <div className="item dropdown__empty">No matches</div>
         )}
       </div>
     </div>

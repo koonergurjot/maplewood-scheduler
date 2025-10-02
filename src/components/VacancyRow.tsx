@@ -374,7 +374,7 @@ function SelectEmployee({
         onFocus={() => setOpen(true)}
       />
       {open && (
-        <div className="menu vacancy-dropdown__menu vacancy-dropdown__menu--tall">
+        <div className="menu vacancy-row__menu">
           {allowEmpty && (
             <div
               className="item"
@@ -398,13 +398,13 @@ function SelectEmployee({
               }}
             >
               {e.firstName} {e.lastName}{" "}
-              <span className="pill vacancy-dropdown__chip">
+              <span className="pill vacancy-row__employee-pill">
                 {e.classification} {e.status}
               </span>
             </div>
           ))}
           {!list.length && (
-            <div className="item vacancy-dropdown__empty">No matches</div>
+            <div className="item dropdown__empty">No matches</div>
           )}
         </div>
       )}
