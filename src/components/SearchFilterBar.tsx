@@ -4,23 +4,87 @@ import type { Classification } from "../types";
 
 type BundleMode = "all" | "bundles" | "singles";
 
+type MultiSelectOption<T extends string> = {
+  value: T;
+  label: string;
+};
+
+type MultiSelectDropdownProps<T extends string> = {
+  label: string;
+  namePrefix: string;
+  options: MultiSelectOption<T>[];
+  selected: T[];
+  onChange: (next: T[]) => void;
+};
+
+function MultiSelectDropdown<T extends string>({
+  label,
+  namePrefix,
+  options,
+  selected,
+  onChange,
+}: MultiSelectDropdownProps<T>) {
+  const toggleValue = (value: T) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter((item) => item !== value));
+    } else {
+      onChange([...selected, value]);
+    }
+  };
+
+  return (
+    <details className="filter-dropdown">
+      <summary aria-haspopup="listbox">
+        <span>{label}</span>
+        {selected.length > 0 && (
+          <span className="filter-dropdown__count" aria-live="polite">
+            {selected.length}
+          </span>
+        )}
+      </summary>
+      <div role="group" aria-label={label} className="filter-dropdown__list">
+        {options.map((option) => {
+          const id = `${namePrefix}-${option.value
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")}`;
+          const checked = selected.includes(option.value);
+          return (
+            <label key={option.value} htmlFor={id} className="filter-dropdown__option">
+              <input
+                id={id}
+                type="checkbox"
+                role="option"
+                aria-selected={checked}
+                checked={checked}
+                onChange={() => toggleValue(option.value)}
+              />
+              <span>{option.label}</span>
+            </label>
+          );
+        })}
+        {options.length === 0 && (
+          <p className="filter-dropdown__empty">No options available.</p>
+        )}
+      </div>
+    </details>
+  );
+}
+
 interface Props {
   query: string;
   startDate: string;
   endDate: string;
-  category: Classification | "";
+  selectedPositions: Classification[];
   bundleMode: BundleMode;
-  wing?: string;
+  selectedWings: string[];
   shiftPreset?: string;
-  countdown?: string;
   onQueryChange: (value: string) => void;
   onStartDateChange: (value: string) => void;
   onEndDateChange: (value: string) => void;
-  onCategoryChange: (value: Classification | "") => void;
+  onPositionsChange: (value: Classification[]) => void;
   onBundleModeChange: (value: BundleMode) => void;
-  onWingChange?: (value: string) => void;
+  onWingsChange: (value: string[]) => void;
   onShiftPresetChange?: (value: string) => void;
-  onCountdownChange?: (value: string) => void;
   onClear?: () => void;
 }
 
@@ -28,61 +92,34 @@ export default function SearchFilterBar({
   query,
   startDate,
   endDate,
-  category,
+  selectedPositions,
   bundleMode,
-  wing = "",
+  selectedWings,
   shiftPreset = "",
-  countdown = "",
   onQueryChange,
   onStartDateChange,
   onEndDateChange,
-  onCategoryChange,
+  onPositionsChange,
   onBundleModeChange,
-  onWingChange,
+  onWingsChange,
   onShiftPresetChange,
-  onCountdownChange,
   onClear,
 }: Props) {
   const clear = () => {
     onQueryChange("");
     onStartDateChange("");
     onEndDateChange("");
-    onCategoryChange("");
+    onPositionsChange([]);
     onBundleModeChange("all");
-    onWingChange?.("");
+    onWingsChange([]);
     onShiftPresetChange?.("");
-    onCountdownChange?.("");
     onClear?.();
   };
-
-  const toggleClassification = (value: Classification) => {
-    if (category === value) {
-      onCategoryChange("");
-    } else {
-      onCategoryChange(value);
-    }
-  };
-
-  const toggleWing = (value: string) => {
-    if (!onWingChange) return;
-    if (wing === value) onWingChange("");
-    else onWingChange(value);
-  };
-
-  const quickWings = WINGS.slice(0, 4);
-  const overflowWings = WINGS.slice(4);
-  const overflowWingValue = overflowWings.some((w) => w === wing) ? wing : "";
 
   const toggleShiftPreset = (value: string) => {
     if (!onShiftPresetChange) return;
     if (shiftPreset === value) onShiftPresetChange("");
     else onShiftPresetChange(value);
-  };
-
-  const toggleCountdown = (value: string) => {
-    if (!onCountdownChange) return;
-    if (countdown === value) onCountdownChange("");
-    else onCountdownChange(value);
   };
 
   const toggleBundleMode = (value: BundleMode) => {
@@ -101,25 +138,30 @@ export default function SearchFilterBar({
   if (query.trim()) {
     activeFilters.push({ key: "search", label: `Search: “${query.trim()}”`, onRemove: () => onQueryChange("") });
   }
-  if (category) {
-    activeFilters.push({ key: "category", label: `Class: ${category}`, onRemove: () => onCategoryChange("") });
+  if (selectedPositions.length) {
+    selectedPositions.forEach((classification) =>
+      activeFilters.push({
+        key: `classification-${classification}`,
+        label: `Class: ${classification}`,
+        onRemove: () =>
+          onPositionsChange(selectedPositions.filter((item) => item !== classification)),
+      }),
+    );
   }
-  if (wing && onWingChange) {
-    activeFilters.push({ key: "wing", label: `Wing: ${wing}`, onRemove: () => onWingChange("") });
+  if (selectedWings.length) {
+    selectedWings.forEach((wing) =>
+      activeFilters.push({
+        key: `wing-${wing}`,
+        label: `Wing: ${wing}`,
+        onRemove: () => onWingsChange(selectedWings.filter((item) => item !== wing)),
+      }),
+    );
   }
   if (shiftPreset && onShiftPresetChange) {
     activeFilters.push({
       key: "shift",
       label: `Shift: ${shiftPreset}`,
       onRemove: () => onShiftPresetChange(""),
-    });
-  }
-  if (countdown && onCountdownChange) {
-    const label = countdown.charAt(0).toUpperCase() + countdown.slice(1);
-    activeFilters.push({
-      key: "countdown",
-      label: `Countdown: ${label}`,
-      onRemove: () => onCountdownChange(""),
     });
   }
   if (startDate || endDate) {
@@ -156,102 +198,23 @@ export default function SearchFilterBar({
           onChange={(e: ChangeEvent<HTMLInputElement>) => onQueryChange(e.target.value)}
         />
       </div>
-      <div className="chip-group" aria-label="Classification filters">
-        {CLASSIFICATIONS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            className="pill pill-toggle"
-            data-active={category === c}
-            aria-pressed={category === c}
-            onClick={() => toggleClassification(c)}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
-      <select
-        aria-label="Classification filter"
-        value={category}
-        onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-          onCategoryChange(event.target.value as Classification | "")
-        }
-        style={{
-          position: "absolute",
-          width: 1,
-          height: 1,
-          padding: 0,
-          margin: -1,
-          overflow: "hidden",
-          clip: "rect(0 0 0 0)",
-          whiteSpace: "nowrap",
-          border: 0,
-        }}
-      >
-        <option value="">All Classes</option>
-        {CLASSIFICATIONS.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
-      {onWingChange && (
-        <div className="chip-group" aria-label="Wing filters">
-          {quickWings.map((w) => (
-            <button
-              key={w}
-              type="button"
-              className="pill pill-toggle"
-              data-active={wing === w}
-              aria-pressed={wing === w}
-              onClick={() => toggleWing(w)}
-            >
-              {w}
-            </button>
-          ))}
-          {overflowWings.length > 0 && (
-            <select
-              className="pill pill-toggle wing-overflow-select"
-              aria-label="More wings"
-              value={overflowWingValue}
-              data-active={Boolean(overflowWingValue)}
-              onChange={(event: ChangeEvent<HTMLSelectElement>) => toggleWing(event.target.value)}
-            >
-              <option value="">More wings…</option>
-              {overflowWings.map((w) => (
-                <option key={w} value={w}>
-                  {w}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-      )}
-      {onWingChange && (
-        <select
-          aria-label="Wing filter"
-          value={wing}
-          onChange={(event: ChangeEvent<HTMLSelectElement>) => onWingChange(event.target.value)}
-          style={{
-            position: "absolute",
-            width: 1,
-            height: 1,
-            padding: 0,
-            margin: -1,
-            overflow: "hidden",
-            clip: "rect(0 0 0 0)",
-            whiteSpace: "nowrap",
-            border: 0,
-          }}
-        >
-          <option value="">All Wings</option>
-          {WINGS.map((w) => (
-            <option key={w} value={w}>
-              {w}
-            </option>
-          ))}
-        </select>
-      )}
+      <MultiSelectDropdown
+        label="Classifications"
+        namePrefix="classification"
+        options={CLASSIFICATIONS.map((classification) => ({
+          value: classification,
+          label: classification,
+        }))}
+        selected={selectedPositions}
+        onChange={onPositionsChange}
+      />
+      <MultiSelectDropdown
+        label="Wings"
+        namePrefix="wing"
+        options={WINGS.map((wing) => ({ value: wing, label: wing }))}
+        selected={selectedWings}
+        onChange={onWingsChange}
+      />
       <div className="date-range" aria-label="Date range filters">
         <input
           aria-label="Filter from date"
@@ -309,47 +272,6 @@ export default function SearchFilterBar({
           ))}
         </select>
       )}
-      {onCountdownChange && (
-        <div className="chip-group" aria-label="Countdown filters">
-          {["green", "yellow", "red"].map((value) => (
-            <button
-              key={value}
-              type="button"
-              className="pill pill-toggle"
-              data-active={countdown === value}
-              aria-pressed={countdown === value}
-              onClick={() => toggleCountdown(value)}
-            >
-              {value.charAt(0).toUpperCase() + value.slice(1)}
-            </button>
-          ))}
-        </div>
-      )}
-      {onCountdownChange && (
-        <select
-          aria-label="Countdown filter"
-          value={countdown}
-          onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-            onCountdownChange(event.target.value)
-          }
-          style={{
-            position: "absolute",
-            width: 1,
-            height: 1,
-            padding: 0,
-            margin: -1,
-            overflow: "hidden",
-            clip: "rect(0 0 0 0)",
-            whiteSpace: "nowrap",
-            border: 0,
-          }}
-        >
-          <option value="">All Countdowns</option>
-          <option value="green">Green</option>
-          <option value="yellow">Yellow</option>
-          <option value="red">Red</option>
-        </select>
-      )}
       <div className="chip-group" aria-label="Bundle filters">
         <button
           type="button"
@@ -401,4 +323,3 @@ export default function SearchFilterBar({
     </div>
   );
 }
-

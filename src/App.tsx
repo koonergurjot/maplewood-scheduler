@@ -2303,7 +2303,8 @@ export function ArchivePage({
   }, [vacancies]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [query, setQuery] = useState("");
-  const [classification, setClassification] = useState<Classification | "">("");
+  const [selectedPositions, setSelectedPositions] = useState<Classification[]>([]);
+  const [selectedWings, setSelectedWings] = useState<string[]>([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [bundleMode, setBundleMode] = useState<"all" | "bundles" | "singles">("all");
@@ -2314,7 +2315,10 @@ export function ArchivePage({
       if (search && !matchText(search, `${displayVacancyLabel(v)} ${v.reason ?? ""}`)) {
         return false;
       }
-      if (classification && v.classification !== classification) {
+      if (selectedPositions.length && !selectedPositions.includes(v.classification)) {
+        return false;
+      }
+      if (selectedWings.length && !selectedWings.includes(v.wing || "")) {
         return false;
       }
       if (startDate && (!v.shiftDate || v.shiftDate < startDate)) {
@@ -2331,7 +2335,15 @@ export function ArchivePage({
       }
       return true;
     });
-  }, [archived, bundleMode, classification, endDate, query, startDate]);
+  }, [
+    archived,
+    bundleMode,
+    endDate,
+    query,
+    selectedPositions,
+    selectedWings,
+    startDate,
+  ]);
 
   return (
     <div className="grid">
@@ -2342,18 +2354,21 @@ export function ArchivePage({
             query={query}
             startDate={startDate}
             endDate={endDate}
-            category={classification}
+            selectedPositions={selectedPositions}
             bundleMode={bundleMode}
+            selectedWings={selectedWings}
             onQueryChange={setQuery}
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
-            onCategoryChange={setClassification}
+            onPositionsChange={setSelectedPositions}
             onBundleModeChange={setBundleMode}
+            onWingsChange={setSelectedWings}
             onClear={() => {
               setQuery("");
               setStartDate("");
               setEndDate("");
-              setClassification("");
+              setSelectedPositions([]);
+              setSelectedWings([]);
               setBundleMode("all");
             }}
           />
@@ -2893,8 +2908,10 @@ export function BidsPage({
     setStart: setVacancyStart,
     end: vacancyEnd,
     setEnd: setVacancyEnd,
-    filterClass: vacancyFilterClass,
-    setFilterClass: setVacancyFilterClass,
+    selectedPositions: vacancySelectedPositions,
+    setSelectedPositions: setVacancySelectedPositions,
+    selectedWings: vacancySelectedWings,
+    setSelectedWings: setVacancySelectedWings,
     bundleMode: vacancyBundleMode,
     setBundleMode: setVacancyBundleMode,
   } = useVacancyFilters();
@@ -2902,7 +2919,8 @@ export function BidsPage({
     setVacancySearch("");
     setVacancyStart("");
     setVacancyEnd("");
-    setVacancyFilterClass("");
+    setVacancySelectedPositions([]);
+    setVacancySelectedWings([]);
     setVacancyBundleMode("all");
   };
 
@@ -2938,8 +2956,10 @@ export function BidsPage({
         );
       });
     }
-    if (vacancyFilterClass)
-      list = list.filter((v) => v.classification === vacancyFilterClass);
+    if (vacancySelectedPositions.length)
+      list = list.filter((v) => vacancySelectedPositions.includes(v.classification));
+    if (vacancySelectedWings.length)
+      list = list.filter((v) => vacancySelectedWings.includes(v.wing || ""));
     if (vacancyStart) list = list.filter((v) => v.shiftDate >= vacancyStart);
     if (vacancyEnd) list = list.filter((v) => v.shiftDate <= vacancyEnd);
     if (vacancyBundleMode === "bundles") list = list.filter((v) => v.bundleId);
@@ -2948,7 +2968,8 @@ export function BidsPage({
   }, [
     openVacancies,
     vacancySearch,
-    vacancyFilterClass,
+    vacancySelectedPositions,
+    vacancySelectedWings,
     vacancyStart,
     vacancyEnd,
     vacancyBundleMode,
@@ -3109,12 +3130,14 @@ export function BidsPage({
                   query={vacancySearch}
                   startDate={vacancyStart}
                   endDate={vacancyEnd}
-                  category={vacancyFilterClass}
+                  selectedPositions={vacancySelectedPositions}
+                  selectedWings={vacancySelectedWings}
                   bundleMode={vacancyBundleMode}
                   onQueryChange={setVacancySearch}
                   onStartDateChange={setVacancyStart}
                   onEndDateChange={setVacancyEnd}
-                  onCategoryChange={setVacancyFilterClass}
+                  onPositionsChange={setVacancySelectedPositions}
+                  onWingsChange={setVacancySelectedWings}
                   onBundleModeChange={setVacancyBundleMode}
                   onClear={resetVacancyFilters}
                 />
