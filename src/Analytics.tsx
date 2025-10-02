@@ -36,6 +36,13 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [palette, setPalette] = useState({
+    brand: "#047857",
+    accent: "#10b981",
+    warn: "#b45309",
+    bad: "#b91c1c",
+  });
+
   const controllerRef = useRef<AbortController | null>(null);
 
   const promptForToken = useCallback(() => {
@@ -111,6 +118,22 @@ export default function Analytics() {
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const rootStyles = getComputedStyle(document.documentElement);
+      setPalette((prev) => {
+        const brand = rootStyles.getPropertyValue("--brand").trim();
+        const accent = rootStyles.getPropertyValue("--accent").trim();
+        const warn = rootStyles.getPropertyValue("--warn").trim();
+        const bad = rootStyles.getPropertyValue("--bad").trim();
+
+        return {
+          brand: brand || prev.brand,
+          accent: accent || prev.accent,
+          warn: warn || prev.warn,
+          bad: bad || prev.bad,
+        };
+      });
+    }
     loadData();
     return () => controllerRef.current?.abort();
   }, [loadData]);
@@ -173,12 +196,12 @@ export default function Analytics() {
               {
                 label: "Posted",
                 data: posted,
-                backgroundColor: "rgba(54,162,235,0.5)",
+                backgroundColor: palette.brand,
               },
               {
                 label: "Filled",
                 data: filled,
-                backgroundColor: "rgba(75,192,192,0.5)",
+                backgroundColor: palette.accent,
               },
             ],
           }}
@@ -192,12 +215,12 @@ export default function Analytics() {
               {
                 label: "Cancellation %",
                 data: cancellationRate,
-                borderColor: "red",
+                borderColor: palette.bad,
               },
               {
                 label: "Overtime Hours",
                 data: overtime,
-                borderColor: "orange",
+                borderColor: palette.warn,
               },
             ],
           }}
