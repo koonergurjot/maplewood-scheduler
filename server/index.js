@@ -19,6 +19,25 @@ const sanitizeChannels = (input) =>
     ? input.filter((channel) => VALID_CHANNELS.has(channel))
     : [];
 
+const coerceDate = (value, label) => {
+  if (value instanceof Date) {
+    return new Date(value);
+  }
+  if (value === undefined || value === null) {
+    return new Date();
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    if (label) {
+      console.warn(
+        `Received invalid ${label} value (${String(value)}); falling back to current time`,
+      );
+    }
+    return new Date();
+  }
+  return date;
+};
+
 const normalizeEvent = (raw) => {
   if (!raw || typeof raw !== "object") return null;
   const vacancyId = typeof raw.vacancyId === "string" ? raw.vacancyId : null;
@@ -29,8 +48,8 @@ const normalizeEvent = (raw) => {
     typeof raw.leadTimeId === "string" && raw.leadTimeId
       ? raw.leadTimeId
       : "custom";
-  const deadlineAt = new Date(raw.deadlineAt ?? Date.now());
-  const triggeredAt = new Date(raw.triggeredAt ?? Date.now());
+  const deadlineAt = coerceDate(raw.deadlineAt, "deadlineAt");
+  const triggeredAt = coerceDate(raw.triggeredAt, "triggeredAt");
   return {
     id: typeof raw.id === "string" && raw.id ? raw.id : undefined,
     vacancyId,
