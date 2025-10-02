@@ -106,6 +106,11 @@ export default function SearchFilterBar({
   onClear,
 }: Props) {
   const clear = () => {
+    if (onClear) {
+      onClear();
+      onShiftPresetChange?.("");
+      return;
+    }
     onQueryChange("");
     onStartDateChange("");
     onEndDateChange("");
@@ -113,7 +118,6 @@ export default function SearchFilterBar({
     onBundleModeChange("all");
     onWingsChange([]);
     onShiftPresetChange?.("");
-    onClear?.();
   };
 
   const toggleShiftPreset = (value: string) => {

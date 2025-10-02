@@ -2914,15 +2914,8 @@ export function BidsPage({
     setSelectedWings: setVacancySelectedWings,
     bundleMode: vacancyBundleMode,
     setBundleMode: setVacancyBundleMode,
+    resetFilters: resetVacancyFilters,
   } = useVacancyFilters();
-  const resetVacancyFilters = () => {
-    setVacancySearch("");
-    setVacancyStart("");
-    setVacancyEnd("");
-    setVacancySelectedPositions([]);
-    setVacancySelectedWings([]);
-    setVacancyBundleMode("all");
-  };
 
   const vacWithCoveredName = (v: Vacancy) => {
     const vac = vacations.find((x) => x.id === v.vacationId);

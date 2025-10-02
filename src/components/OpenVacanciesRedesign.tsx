@@ -53,6 +53,7 @@ export default function OpenVacanciesRedesign(props: Props) {
     setFilterShift,
     bundleMode,
     setBundleMode,
+    resetFilters,
   } = useVacancyFilters();
   const employeesById = useMemo(() => {
     const map: Record<string, Employee> = {};
@@ -186,15 +187,7 @@ export default function OpenVacanciesRedesign(props: Props) {
         onShiftPresetChange={setFilterShift}
         bundleMode={bundleMode}
         onBundleModeChange={(mode) => setBundleMode(mode)}
-        onClear={() => {
-          setSearch("");
-          setStart("");
-          setEnd("");
-          setSelectedPositions([]);
-          setSelectedWings([]);
-          setFilterShift("");
-          setBundleMode("all");
-        }}
+        onClear={resetFilters}
       />
       <table className="vacancies">
         <thead>
