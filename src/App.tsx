@@ -575,6 +575,13 @@ const normalizeExcelRowDates = (
       }
     }
 
+    if (typeof value === "string" && value.trim()) {
+      const parsed = new Date(value);
+      if (!Number.isNaN(parsed.getTime())) {
+        return [key, formatDateValue(parsed, normalizedKey)];
+      }
+    }
+
     return [key, value];
   });
 
@@ -625,6 +632,7 @@ export async function parseFile(
     const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
       defval: "",
       cellDates: true,
+      raw: false,
     });
 
     return rawRows.map((row) => normalizeExcelRowDates(row, XLSX));
