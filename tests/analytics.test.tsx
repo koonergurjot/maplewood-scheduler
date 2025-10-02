@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor } from "@testing-library/react";
-import { vi, expect, test, afterEach } from "vitest";
+import { vi, expect, test, afterEach, beforeEach } from "vitest";
 import Analytics from "../src/Analytics";
+import { ApiAuthProvider } from "../src/state/apiAuth";
 import { minutesBetween } from "../src/lib/dates";
 
 // Mock chart components to avoid canvas requirement
@@ -12,8 +13,13 @@ vi.mock("react-chartjs-2", () => ({
 
 const originalFetch = global.fetch;
 
+beforeEach(() => {
+  localStorage.setItem("apiToken", "test-token");
+});
+
 afterEach(() => {
   global.fetch = originalFetch;
+  localStorage.clear();
 });
 
 test("loading indicator disappears after fetch abort", async () => {
@@ -21,7 +27,11 @@ test("loading indicator disappears after fetch abort", async () => {
     Promise.reject(Object.assign(new Error("Aborted"), { name: "AbortError" })),
   ) as any;
 
-  render(<Analytics />);
+  render(
+    <ApiAuthProvider>
+      <Analytics />
+    </ApiAuthProvider>,
+  );
 
   await waitFor(() => {
     expect(screen.queryByText("Loading...")).toBeNull();

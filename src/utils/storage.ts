@@ -22,6 +22,7 @@ export type VacancyFilterSnapshot = {
   end: string;
   search: string;
   bundleMode: "all" | "bundles" | "singles";
+  countdown: "" | "green" | "yellow" | "red";
 };
 
 export type StoredVacancyFilters = Partial<VacancyFilterSnapshot> | null;

@@ -61,6 +61,7 @@ import useNotificationPrefs, {
 import type { DeadlineNotification } from "./types/notifications";
 import RangeBidDialog from "./components/RangeBidDialog";
 import { awardVacancyRange } from "./lib/vacancy-range-award";
+import { useApiAuth, useApiTokenPrompt } from "./state/apiAuth";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -762,6 +763,40 @@ export default function App() {
   const [activeVacancyId, setActiveVacancyId] = useState<string | null>(null);
   const [showRangeForm, setShowRangeForm] = useState(false);
   const [activeRangeBid, setActiveRangeBid] = useState<VacancyRange | null>(null);
+  const { status: apiAuthStatus, message: apiAuthMessage } = useApiAuth();
+  const promptForApiToken = useApiTokenPrompt();
+  const authBanner = useMemo(() => {
+    if (apiAuthStatus === "ready") return null;
+    const color = apiAuthStatus === "error" ? "var(--bad, #b91c1c)" : "var(--accent, #0f766e)";
+    const background = apiAuthStatus === "error" ? "rgba(185, 28, 28, 0.12)" : "rgba(16, 185, 129, 0.12)";
+    const message =
+      apiAuthStatus === "missing"
+        ? "API token required. Provide a Maplewood API token to enable syncing."
+        : apiAuthMessage || "API token rejected. Please supply a valid token to continue.";
+    return (
+      <div
+        role="alert"
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          padding: "12px 16px",
+          marginBottom: 16,
+          borderRadius: 12,
+          border: `1px solid ${color}`,
+          background,
+          color,
+        }}
+      >
+        <span style={{ fontWeight: 600 }}>{message}</span>
+        <button className="btn" onClick={promptForApiToken} style={{ flexShrink: 0 }}>
+          Set API Token
+        </button>
+      </div>
+    );
+  }, [apiAuthMessage, apiAuthStatus, promptForApiToken]);
   // Modal system (confirm/prompt/alert)
   const [confirmState, setConfirmState] = useState<
     | { open: true; title: string; body: string; resolve: (ok: boolean) => void }
@@ -1731,6 +1766,8 @@ export default function App() {
             </Button>
           </div>
         </div>
+
+        {authBanner}
 
         <div className="tabs">
           {settings.tabOrder.map((k) => (

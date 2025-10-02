@@ -65,6 +65,7 @@ describe("useVacancyFilters localStorage integration", () => {
     expect(result.current.end).toBe(snapshot.end);
     expect(result.current.search).toBe(snapshot.search);
     expect(result.current.bundleMode).toBe(snapshot.bundleMode);
+    expect(result.current.countdown).toBe(snapshot.countdown ?? "");
   });
 
   it("persists changes when filters update", async () => {
@@ -91,6 +92,7 @@ describe("useVacancyFilters localStorage integration", () => {
           end: "2024-02-14",
           search: "evening",
           bundleMode: "singles",
+          countdown: "",
         }),
       );
     });

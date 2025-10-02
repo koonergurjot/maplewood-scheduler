@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Bar, Line } from "react-chartjs-2";
-import { authFetch, setToken } from "./utils/api";
+import { authFetch } from "./utils/api";
+import { useApiAuth, useApiTokenPrompt } from "./state/apiAuth";
 import {
   Chart,
   CategoryScale,
@@ -45,12 +46,8 @@ export default function Analytics() {
   });
 
   const controllerRef = useRef<AbortController | null>(null);
-
-  const promptForToken = useCallback(() => {
-    const token = window.prompt("Enter API token");
-    if (token) setToken(token);
-    return token;
-  }, []);
+  const { waitForValidToken } = useApiAuth();
+  const promptForToken = useApiTokenPrompt();
 
   const clampOvertimeThreshold = useCallback((value: number) => {
     return Math.min(24, Math.max(0, Math.round(value)));
@@ -83,10 +80,14 @@ export default function Analytics() {
           return;
         }
         if (err.status === 401) {
-          if (promptForToken()) {
-            continue;
+          await waitForValidToken();
+          if (controller.signal.aborted) {
+            setLoading(false);
+            controllerRef.current = null;
+            return;
           }
-          err = new Error("Unauthorized");
+          attempt = -1;
+          continue;
         }
         if (attempt < maxRetries - 1) {
           const delay = 500 * 2 ** attempt;
@@ -97,35 +98,35 @@ export default function Analytics() {
         }
       }
     }
-  }, [overtimeThreshold, promptForToken]);
+  }, [overtimeThreshold, waitForValidToken]);
 
-  const handleExport = async (format: string) => {
-    try {
-      const params = new URLSearchParams({
-        format,
-        overtimeThreshold: String(overtimeThreshold),
-      });
-      const response = await authFetch(`/api/analytics/export?${params}`);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `analytics.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (err: any) {
-      if (err.status === 401) {
-        if (promptForToken()) {
+  const handleExport = useCallback(
+    async (format: string) => {
+      try {
+        const params = new URLSearchParams({
+          format,
+          overtimeThreshold: String(overtimeThreshold),
+        });
+        const response = await authFetch(`/api/analytics/export?${params}`);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `analytics.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (err: any) {
+        if (err.status === 401) {
+          await waitForValidToken();
           return handleExport(format);
         }
-        setError("Unauthorized");
-      } else {
         setError(err.message);
       }
-    }
-  };
+    },
+    [overtimeThreshold, waitForValidToken],
+  );
 
   useEffect(() => {
     if (typeof window !== "undefined") {

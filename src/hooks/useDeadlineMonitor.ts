@@ -15,7 +15,8 @@ import type {
   DeadlineEvent,
   DeadlineNotification,
 } from "../types/notifications";
-import { authFetch, getToken, getApiBaseUrl } from "../utils/api";
+import { authFetch, getApiBaseUrl } from "../utils/api";
+import { useApiAuth } from "../state/apiAuth";
 
 const isBrowser = typeof window !== "undefined";
 const isTestEnvironment =
@@ -118,6 +119,8 @@ export function useDeadlineMonitor({
   formatVacancy,
 }: DeadlineMonitorOptions) {
   const serverSyncEnabled = isBrowser && !isTestEnvironment;
+  const { status: authStatus, token: authToken, reportError: dispatchAuthError, waitForValidToken } =
+    useApiAuth();
   const [notifications, setNotifications] = useState<DeadlineNotification[]>([]);
   const notificationsRef = useRef(new Map<string, DeadlineNotification>());
   const triggeredRef = useRef(new Map<string, string>());
@@ -205,12 +208,18 @@ export function useDeadlineMonitor({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ events }),
       });
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Failed to sync deadline events", error);
       pendingRef.current.unshift(...events);
+      if (error?.status === 401) {
+        dispatchAuthError(error?.message ?? "Unauthorized");
+        await waitForValidToken();
+        if (!serverSyncEnabled) return;
+        return flushPending();
+      }
       throw error;
     }
-  }, [apiBase, serverSyncEnabled]);
+  }, [apiBase, serverSyncEnabled, dispatchAuthError, waitForValidToken]);
 
   const scheduleFlush = useCallback(
     (delayMs: number) => {
@@ -365,29 +374,46 @@ export function useDeadlineMonitor({
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let controller: AbortController | null = null;
 
-    const scheduleReconnect = () => {
-      if (cancelled) return;
-      if (retryTimer) return;
-      retryTimer = setTimeout(() => {
-        retryTimer = null;
-        if (!cancelled) connect();
-      }, 5_000);
-    };
-
     const handleEvent = (event: DeadlineEvent) => {
       const compositeKey = `${event.vacancyId}:${event.leadTimeId}`;
       triggeredRef.current.set(compositeKey, event.id);
       upsertNotification(event);
     };
 
+    function scheduleReconnect(delay = 5_000) {
+      if (cancelled || retryTimer) return;
+      retryTimer = setTimeout(async () => {
+        retryTimer = null;
+        if (cancelled) return;
+        if (authStatus !== "ready" || !authToken) {
+          await waitForValidToken();
+          if (cancelled) return;
+        }
+        connect();
+      }, delay);
+    }
+
     const connect = async () => {
       controller = new AbortController();
       try {
-        const token = getToken();
+        let tokenForRequest = authToken;
+        if (!tokenForRequest || authStatus !== "ready") {
+          tokenForRequest = await waitForValidToken();
+          if (cancelled) return;
+        }
         const response = await fetch(resolveApiUrl("/api/deadlines/stream"), {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          headers: tokenForRequest ? { Authorization: `Bearer ${tokenForRequest}` } : undefined,
           signal: controller.signal,
         });
+        if (response.status === 401) {
+          dispatchAuthError("Unauthorized");
+          controller?.abort();
+          if (!cancelled) {
+            await waitForValidToken();
+            if (!cancelled) connect();
+          }
+          return;
+        }
         if (!response.ok) {
           throw new Error(`Stream failed with status ${response.status}`);
         }
@@ -435,7 +461,15 @@ export function useDeadlineMonitor({
         retryTimer = null;
       }
     };
-  }, [apiBase, serverSyncEnabled, upsertNotification]);
+  }, [
+    authStatus,
+    authToken,
+    serverSyncEnabled,
+    upsertNotification,
+    waitForValidToken,
+    dispatchAuthError,
+    resolveApiUrl,
+  ]);
 
   const latestNotification = useMemo(() => {
     return notifications.find((n) => !n.read) ?? null;

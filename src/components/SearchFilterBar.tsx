@@ -34,7 +34,7 @@ function MultiSelectDropdown<T extends string>({
 
   return (
     <details className="filter-dropdown">
-      <summary aria-haspopup="listbox">
+      <summary role="button" aria-haspopup="listbox" tabIndex={0}>
         <span>{label}</span>
         {selected.length > 0 && (
           <span className="filter-dropdown__count" aria-live="polite">
@@ -78,6 +78,7 @@ interface Props {
   bundleMode: BundleMode;
   selectedWings: string[];
   shiftPreset?: string;
+  countdownFilter?: "" | "green" | "yellow" | "red";
   onQueryChange: (value: string) => void;
   onStartDateChange: (value: string) => void;
   onEndDateChange: (value: string) => void;
@@ -85,6 +86,7 @@ interface Props {
   onBundleModeChange: (value: BundleMode) => void;
   onWingsChange: (value: string[]) => void;
   onShiftPresetChange?: (value: string) => void;
+  onCountdownChange?: (value: "" | "green" | "yellow" | "red") => void;
   onClear?: () => void;
 }
 
@@ -96,6 +98,7 @@ export default function SearchFilterBar({
   bundleMode,
   selectedWings,
   shiftPreset = "",
+  countdownFilter = "",
   onQueryChange,
   onStartDateChange,
   onEndDateChange,
@@ -103,12 +106,14 @@ export default function SearchFilterBar({
   onBundleModeChange,
   onWingsChange,
   onShiftPresetChange,
+  onCountdownChange,
   onClear,
 }: Props) {
   const clear = () => {
     if (onClear) {
       onClear();
       onShiftPresetChange?.("");
+      onCountdownChange?.("");
       return;
     }
     onQueryChange("");
@@ -118,12 +123,22 @@ export default function SearchFilterBar({
     onBundleModeChange("all");
     onWingsChange([]);
     onShiftPresetChange?.("");
+    onCountdownChange?.("");
   };
 
   const toggleShiftPreset = (value: string) => {
     if (!onShiftPresetChange) return;
     if (shiftPreset === value) onShiftPresetChange("");
     else onShiftPresetChange(value);
+  };
+
+  const toggleCountdown = (value: "" | "green" | "yellow" | "red") => {
+    if (!onCountdownChange) return;
+    if (countdownFilter === value) {
+      onCountdownChange("");
+    } else {
+      onCountdownChange(value);
+    }
   };
 
   const toggleBundleMode = (value: BundleMode) => {
@@ -185,6 +200,19 @@ export default function SearchFilterBar({
       key: "bundle",
       label: bundleMode === "bundles" ? "Bundles only" : "Singles only",
       onRemove: () => onBundleModeChange("all"),
+    });
+  }
+  if (countdownFilter && onCountdownChange) {
+    const label =
+      countdownFilter === "red"
+        ? "Countdown: Red"
+        : countdownFilter === "yellow"
+        ? "Countdown: Yellow"
+        : "Countdown: Green";
+    activeFilters.push({
+      key: "countdown",
+      label,
+      onRemove: () => onCountdownChange(""),
     });
   }
 
@@ -275,6 +303,46 @@ export default function SearchFilterBar({
             </option>
           ))}
         </select>
+      )}
+      {onCountdownChange && (
+        <div className="chip-group" aria-label="Countdown filters">
+          <button
+            type="button"
+            className="pill pill-toggle"
+            data-active={countdownFilter === ""}
+            aria-pressed={countdownFilter === ""}
+            onClick={() => toggleCountdown("")}
+          >
+            All
+          </button>
+          <button
+            type="button"
+            className="pill pill-toggle"
+            data-active={countdownFilter === "red"}
+            aria-pressed={countdownFilter === "red"}
+            onClick={() => toggleCountdown("red")}
+          >
+            Red
+          </button>
+          <button
+            type="button"
+            className="pill pill-toggle"
+            data-active={countdownFilter === "yellow"}
+            aria-pressed={countdownFilter === "yellow"}
+            onClick={() => toggleCountdown("yellow")}
+          >
+            Yellow
+          </button>
+          <button
+            type="button"
+            className="pill pill-toggle"
+            data-active={countdownFilter === "green"}
+            aria-pressed={countdownFilter === "green"}
+            onClick={() => toggleCountdown("green")}
+          >
+            Green
+          </button>
+        </div>
       )}
       <div className="chip-group" aria-label="Bundle filters">
         <button

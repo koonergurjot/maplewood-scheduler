@@ -6,6 +6,7 @@ import AnalyticsPage from "./Analytics";
 import Dashboard from "./Dashboard";
 import AuditLog from "./AuditLog";
 import { ThemeProvider, Theme } from "./theme";
+import { ApiAuthProvider } from "./state/apiAuth";
 import { Analytics } from "./components/Analytics";
 import "./styles/theme.css";
 import "./styles/responsive.css";
@@ -34,16 +35,18 @@ const shouldLoadAnalytics = Boolean(isProduction && !isPreview && token);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ThemeProvider initialTheme={initialTheme}>
-      {shouldLoadAnalytics && <Analytics token={token} />}
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/audit-log" element={<AuditLog />} />
-        </Routes>
-      </BrowserRouter>
-    </ThemeProvider>
+    <ApiAuthProvider>
+      <ThemeProvider initialTheme={initialTheme}>
+        {shouldLoadAnalytics && <Analytics token={token} />}
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<App />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/audit-log" element={<AuditLog />} />
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
+    </ApiAuthProvider>
   </React.StrictMode>,
 );

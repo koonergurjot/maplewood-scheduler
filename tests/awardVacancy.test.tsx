@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import App, { OVERRIDE_REASONS } from "../src/App";
+import { ApiAuthProvider } from "../src/state/apiAuth";
 
 const LS_KEY = "maplewood-scheduler-v3";
 
@@ -15,6 +16,10 @@ const baseState = {
   bids: [],
   settings: {},
 };
+
+beforeEach(() => {
+  localStorage.setItem("apiToken", "test-token");
+});
 
 afterEach(() => {
   localStorage.clear();
@@ -63,9 +68,11 @@ describe("award vacancy UI", () => {
     );
 
     render(
-      <MemoryRouter>
-        <App />
-      </MemoryRouter>,
+      <ApiAuthProvider>
+        <MemoryRouter>
+          <App />
+        </MemoryRouter>
+      </ApiAuthProvider>,
     );
 
     const rows = screen
@@ -134,9 +141,11 @@ describe("award vacancy UI", () => {
     const alertMock = vi.spyOn(window, "alert").mockImplementation(() => {});
 
     render(
-      <MemoryRouter>
-        <App />
-      </MemoryRouter>,
+      <ApiAuthProvider>
+        <MemoryRouter>
+          <App />
+        </MemoryRouter>
+      </ApiAuthProvider>,
     );
 
     const row = screen

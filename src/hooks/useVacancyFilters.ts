@@ -15,6 +15,7 @@ const DEFAULT_FILTERS: VacancyFilterSnapshot = {
   end: "",
   search: "",
   bundleMode: "all",
+  countdown: "",
 };
 
 export function useVacancyFilters() {
@@ -38,6 +39,9 @@ export function useVacancyFilters() {
   const [bundleMode, setBundleMode] = useState<"all" | "bundles" | "singles">(
     () => persistedFilters?.bundleMode ?? DEFAULT_FILTERS.bundleMode,
   );
+  const [countdown, setCountdown] = useState<VacancyFilterSnapshot["countdown"]>(
+    () => persistedFilters?.countdown ?? DEFAULT_FILTERS.countdown,
+  );
   const [filtersOpen, setFiltersOpen] = useState(false);
   const skipNextPersistRef = useRef(false);
 
@@ -54,6 +58,7 @@ export function useVacancyFilters() {
       end,
       search,
       bundleMode,
+      countdown,
     };
     saveVacancyFilters(snapshot);
   }, [
@@ -64,6 +69,7 @@ export function useVacancyFilters() {
     end,
     search,
     bundleMode,
+    countdown,
   ]);
 
   const resetFilters = () => {
@@ -75,6 +81,7 @@ export function useVacancyFilters() {
     setEnd(DEFAULT_FILTERS.end);
     setSearch(DEFAULT_FILTERS.search);
     setBundleMode(DEFAULT_FILTERS.bundleMode);
+    setCountdown(DEFAULT_FILTERS.countdown);
     clearVacancyFilters();
   };
 
@@ -93,6 +100,8 @@ export function useVacancyFilters() {
     setSearch,
     bundleMode,
     setBundleMode,
+    countdown,
+    setCountdown,
     filtersOpen,
     setFiltersOpen,
     resetFilters,

@@ -1,24 +1,4 @@
-export const TOKEN_KEY = "apiToken";
-
-export function getToken(): string | null {
-  // Prefer token from localStorage if available
-  if (typeof window !== "undefined") {
-    const stored = window.localStorage.getItem(TOKEN_KEY);
-    if (stored) return stored;
-  }
-  // Fallback to environment variable
-  const metaEnv = (import.meta as unknown as {
-    env?: Record<string, string | undefined>;
-  }).env;
-  const envToken = (metaEnv?.VITE_API_TOKEN ?? "").trim();
-  return envToken || null;
-}
-
-export function setToken(token: string) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(TOKEN_KEY, token);
-  }
-}
+import { getApiAuthExternalController, TOKEN_STORAGE_KEY } from "../state/apiAuth";
 
 export function getApiBaseUrl(): string {
   const metaEnv = (import.meta as unknown as {
@@ -27,6 +7,18 @@ export function getApiBaseUrl(): string {
   const raw = (metaEnv?.VITE_API_BASE_URL ?? "").trim();
   if (!raw) return "";
   return raw.replace(/\/$/, "");
+}
+
+function getFallbackToken(): string | null {
+  if (typeof window !== "undefined") {
+    const stored = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (stored) return stored;
+  }
+  const metaEnv = (import.meta as unknown as {
+    env?: Record<string, string | undefined>;
+  }).env;
+  const envToken = (metaEnv?.VITE_API_TOKEN ?? "").trim();
+  return envToken || null;
 }
 
 function resolveRequestInput(input: RequestInfo | URL): RequestInfo | URL {
@@ -51,12 +43,16 @@ function resolveRequestInput(input: RequestInfo | URL): RequestInfo | URL {
 
 export async function authFetch(input: RequestInfo, init: RequestInit = {}) {
   const resolvedInput = resolveRequestInput(input);
-  const token = getToken();
+  const authController = getApiAuthExternalController();
+  const token = authController?.getToken() ?? getFallbackToken();
   const headers = new Headers(init.headers);
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
   const response = await fetch(resolvedInput, { ...init, headers });
+  if (response.status === 401) {
+    authController?.reportAuthError();
+  }
   if (!response.ok) {
     let message = `Request failed with status ${response.status}`;
     try {

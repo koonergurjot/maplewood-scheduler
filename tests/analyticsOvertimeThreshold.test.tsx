@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterAll, beforeAll, beforeEach, expect, test, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, expect, test, vi } from "vitest";
 
 const mockAuthFetch = vi.fn();
 
@@ -16,6 +16,7 @@ vi.mock("react-chartjs-2", () => ({
 
 // Import after mocks so they take effect.
 import Analytics from "../src/Analytics";
+import { ApiAuthProvider } from "../src/state/apiAuth";
 
 const originalCreateObjectURL = URL.createObjectURL;
 const originalRevokeObjectURL = URL.revokeObjectURL;
@@ -47,10 +48,19 @@ beforeEach(() => {
       json: async () => [],
     });
   });
+  localStorage.setItem("apiToken", "test-token");
+});
+
+afterEach(() => {
+  localStorage.clear();
 });
 
 test("forwards overtimeThreshold to analytics requests", async () => {
-  render(<Analytics />);
+  render(
+    <ApiAuthProvider>
+      <Analytics />
+    </ApiAuthProvider>,
+  );
 
   await waitFor(() => expect(mockAuthFetch).toHaveBeenCalledTimes(1));
   expect(mockAuthFetch.mock.calls[0][0]).toContain("overtimeThreshold=8");

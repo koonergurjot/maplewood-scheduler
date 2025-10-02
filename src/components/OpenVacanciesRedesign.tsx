@@ -4,9 +4,10 @@ import { SHIFT_PRESETS } from "../types";
 import type { Recommendation } from "../recommend";
 import BundleRow from "./BundleRow";
 import VacancyRow from "./VacancyRow";
-import { combineDateTime } from "../lib/dates";
+import { combineDateTime, minutesBetween } from "../lib/dates";
 import SearchFilterBar from "./SearchFilterBar";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
+import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
 
 type Props = {
   vacancies: Vacancy[];
@@ -54,6 +55,8 @@ export default function OpenVacanciesRedesign(props: Props) {
     bundleMode,
     setBundleMode,
     resetFilters,
+    countdown,
+    setCountdown,
   } = useVacancyFilters();
   const employeesById = useMemo(() => {
     const map: Record<string, Employee> = {};
@@ -96,6 +99,18 @@ export default function OpenVacanciesRedesign(props: Props) {
           (v) => v.shiftStart === preset.start && v.shiftEnd === preset.end,
         );
     }
+    if (countdown) {
+      const now = Date.now();
+      list = list.filter((v) => {
+        const deadline = deadlineFor(v, settings);
+        const msLeft = deadline.getTime() - now;
+        const winMin = pickWindowMinutes(v, settings);
+        const sinceKnownMin = minutesBetween(new Date(), new Date(v.knownAt));
+        const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin));
+        const status = msLeft <= 0 ? "red" : pct < 0.25 ? "yellow" : "green";
+        return status === countdown;
+      });
+    }
     if (start) list = list.filter((v) => v.shiftDate >= start);
     if (end) list = list.filter((v) => v.shiftDate <= end);
     if (filters?.wing) list = list.filter((v) => (v.wing || "") === filters!.wing);
@@ -112,11 +127,13 @@ export default function OpenVacanciesRedesign(props: Props) {
     selectedPositions,
     selectedWings,
     filterShift,
+    countdown,
     start,
     end,
     filters,
     vacNameById,
     bundleMode,
+    settings,
   ]);
 
   // Cross-day bundle groups so multi-day vacancies render as ONE row
@@ -179,12 +196,14 @@ export default function OpenVacanciesRedesign(props: Props) {
         selectedPositions={selectedPositions}
         selectedWings={selectedWings}
         shiftPreset={filterShift}
+        countdownFilter={countdown}
         onQueryChange={setSearch}
         onStartDateChange={setStart}
         onEndDateChange={setEnd}
         onPositionsChange={setSelectedPositions}
         onWingsChange={setSelectedWings}
         onShiftPresetChange={setFilterShift}
+        onCountdownChange={setCountdown}
         bundleMode={bundleMode}
         onBundleModeChange={(mode) => setBundleMode(mode)}
         onClear={resetFilters}

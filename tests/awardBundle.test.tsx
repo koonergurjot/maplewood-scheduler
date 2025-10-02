@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import App from "../src/App";
+import { ApiAuthProvider } from "../src/state/apiAuth";
 
 const LS_KEY = "maplewood-scheduler-v3";
 
@@ -22,6 +23,10 @@ const baseState = {
   bids: [],
   settings: {},
 };
+
+beforeEach(() => {
+  localStorage.setItem("apiToken", "test-token");
+});
 
 afterEach(() => {
   localStorage.clear();
@@ -74,9 +79,11 @@ describe("bundle award", () => {
     );
 
     render(
-      <MemoryRouter>
-        <App />
-      </MemoryRouter>,
+      <ApiAuthProvider>
+        <MemoryRouter>
+          <App />
+        </MemoryRouter>
+      </ApiAuthProvider>,
     );
 
     const awardBtn = await screen.findByText("Award Bundle");
@@ -167,9 +174,11 @@ describe("bundle award", () => {
     );
 
     render(
-      <MemoryRouter>
-        <App />
-      </MemoryRouter>,
+      <ApiAuthProvider>
+        <MemoryRouter>
+          <App />
+        </MemoryRouter>
+      </ApiAuthProvider>,
     );
 
     const awardBtn = await screen.findByText("Award Bundle");

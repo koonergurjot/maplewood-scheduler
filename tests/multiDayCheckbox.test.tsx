@@ -1,14 +1,21 @@
 // @vitest-environment jsdom
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { expect, test } from "vitest";
+import { beforeEach, expect, test } from "vitest";
 import App from "../src/App";
+import { ApiAuthProvider } from "../src/state/apiAuth";
+
+beforeEach(() => {
+  localStorage.setItem("apiToken", "test-token");
+});
 
 test("multi-day toggle switches between single and range date fields", () => {
   render(
-    <MemoryRouter>
-      <App />
-    </MemoryRouter>,
+    <ApiAuthProvider>
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    </ApiAuthProvider>,
   );
   const dateInput = screen.getByLabelText("Date") as HTMLInputElement;
   fireEvent.change(dateInput, { target: { value: "2024-08-01" } });

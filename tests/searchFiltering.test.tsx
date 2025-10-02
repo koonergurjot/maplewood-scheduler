@@ -93,6 +93,7 @@ function renderComponent() {
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2024-01-01T12:00:00.000Z"));
+  localStorage.removeItem("openVacancyFilters");
 });
 
 afterEach(() => {
@@ -112,8 +113,9 @@ describe("OpenVacanciesRedesign filters", () => {
 
   it("filters by category", () => {
     renderComponent();
-    const select = screen.getByRole("combobox", { name: "Classification filter" });
-    fireEvent.change(select, { target: { value: "RN" } });
+    const dropdown = screen.getByRole("button", { name: "Classifications" });
+    fireEvent.click(dropdown);
+    fireEvent.click(screen.getByRole("option", { name: "RN" }));
     const table = screen.getByRole("table");
     expect(within(table).getByText("Shamrock")).toBeTruthy();
     expect(within(table).getByText("Bluebell")).toBeTruthy();
@@ -135,7 +137,9 @@ describe("OpenVacanciesRedesign filters", () => {
 
   it("filters by wing", () => {
     renderComponent();
-    fireEvent.click(screen.getByRole("button", { name: "Rosewood" }));
+    const dropdown = screen.getByRole("button", { name: "Wings" });
+    fireEvent.click(dropdown);
+    fireEvent.click(screen.getByRole("option", { name: "Rosewood" }));
     const table = screen.getByRole("table");
     expect(within(table).getByText("Rosewood")).toBeTruthy();
     expect(within(table).queryByText("Shamrock")).toBeNull();
