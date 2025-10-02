@@ -35,7 +35,7 @@ function MultiSelectDropdown<T extends string>({
 
   return (
     <details className="filter-dropdown">
-      <summary aria-haspopup="listbox">
+      <summary className="filter-dropdown__summary" aria-haspopup="listbox">
         <span>{label}</span>
         {selected.length > 0 && (
           <span className="filter-dropdown__count" aria-live="polite">
@@ -266,6 +266,7 @@ export default function SearchFilterBar({
               <button
                 key={preset.label}
                 type="button"
+                className="segmented-option"
                 data-active={shiftPreset === preset.label}
                 aria-pressed={shiftPreset === preset.label}
                 onClick={() => toggleShiftPreset(preset.label)}
@@ -310,6 +311,7 @@ export default function SearchFilterBar({
         <div className="search-filter-bar__segmented-buttons">
           <button
             type="button"
+            className="segmented-option"
             data-active={bundleMode === "all"}
             aria-pressed={bundleMode === "all"}
             onClick={() => toggleBundleMode("all")}
@@ -318,6 +320,7 @@ export default function SearchFilterBar({
           </button>
           <button
             type="button"
+            className="segmented-option"
             data-active={bundleMode === "bundles"}
             aria-pressed={bundleMode === "bundles"}
             onClick={() => toggleBundleMode("bundles")}
@@ -326,6 +329,7 @@ export default function SearchFilterBar({
           </button>
           <button
             type="button"
+            className="segmented-option"
             data-active={bundleMode === "singles"}
             aria-pressed={bundleMode === "singles"}
             onClick={() => toggleBundleMode("singles")}

@@ -57,7 +57,6 @@ td.cell-actions { width:1%; text-align:right; padding:10px 12px; }
 
 .vacancy-dropdown { width:100%; }
 .vacancy-dropdown input { width:100%; }
-.vacancy-dropdown__menu { max-height:240px; overflow:auto; }
-.vacancy-dropdown__menu--tall { max-height:320px; }
-.vacancy-dropdown__chip { margin-left:var(--space-1); }
-.vacancy-dropdown__empty { opacity:.7; cursor:default; }
+.vacancy-row__menu { display:grid; gap:var(--space-1); padding:var(--space-1); max-height:320px; overflow:auto; min-width:min(360px, calc(100vw - 48px)); }
+.vacancy-row__menu .item { display:flex; align-items:center; gap:var(--space-2); border-radius:12px; width:100%; border:0; background:transparent; text-align:left; }
+.vacancy-row__employee-pill { margin-left:auto; font-size:11px; flex-shrink:0; }

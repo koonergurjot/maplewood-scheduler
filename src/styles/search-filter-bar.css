@@ -68,7 +68,7 @@
   gap: 6px;
 }
 
-.search-filter-bar__segmented-buttons button {
+.search-filter-bar__segmented-buttons .segmented-option {
   border-radius: 999px;
   border: 1px solid var(--stroke);
   background: var(--chipBg);
@@ -80,29 +80,24 @@
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.search-filter-bar__segmented-buttons button[data-active="true"] {
+.search-filter-bar__segmented-buttons .segmented-option[data-active="true"] {
   background: var(--brand);
   border-color: var(--brand);
   color: var(--button-text-on-brand);
   box-shadow: 0 4px 12px rgba(4, 120, 87, 0.25);
 }
 
-.search-filter-bar__segmented-buttons button:hover,
-.search-filter-bar__segmented-buttons button:focus-visible {
+.search-filter-bar__segmented-buttons .segmented-option:hover,
+.search-filter-bar__segmented-buttons .segmented-option:focus-visible {
   border-color: var(--brand);
   color: var(--brand);
   background: rgba(4, 120, 87, 0.12);
 }
 
-.search-filter-bar__segmented-buttons button[data-active="true"]:hover,
-.search-filter-bar__segmented-buttons button[data-active="true"]:focus-visible {
+.search-filter-bar__segmented-buttons .segmented-option[data-active="true"]:hover,
+.search-filter-bar__segmented-buttons .segmented-option[data-active="true"]:focus-visible {
   color: var(--button-text-on-brand);
   background: var(--brand);
-}
-
-.search-filter-bar__segmented-buttons button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.2);
 }
 
 .search-filter-bar__action {
@@ -150,7 +145,7 @@
   width: 100%;
 }
 
-.filter-dropdown > summary {
+.filter-dropdown__summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -166,15 +161,15 @@
   list-style: none;
 }
 
-.filter-dropdown > summary::-webkit-details-marker {
+.filter-dropdown__summary::-webkit-details-marker {
   display: none;
 }
 
-.filter-dropdown > summary::marker {
+.filter-dropdown__summary::marker {
   display: none;
 }
 
-.filter-dropdown[open] > summary {
+.filter-dropdown[open] > .filter-dropdown__summary {
   border-color: var(--brand);
   box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.18);
 }
