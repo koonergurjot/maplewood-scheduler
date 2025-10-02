@@ -6,7 +6,7 @@ import { TrashIcon } from "./ui/Icon";
 import CoverageChip from "./ui/CoverageChip";
 import { WINGS, SHIFT_PRESETS, CLASSIFICATIONS } from "../types";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
-import { MultiSelectDropdown } from "./SearchFilterBar";
+import MultiSelectDropdown from "./ui/MultiSelectDropdown";
 
 interface Props {
   vacancies: Vacancy[];

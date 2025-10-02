@@ -4,7 +4,7 @@ import type { Recommendation } from "../recommend";
 import VacancyRow from "./VacancyRow";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
 import { WINGS, SHIFT_PRESETS, CLASSIFICATIONS } from "../types";
-import { MultiSelectDropdown } from "./SearchFilterBar";
+import MultiSelectDropdown from "./ui/MultiSelectDropdown";
 import { List, type RowComponentProps } from "react-window";
 
 const ROW_HEIGHT = 220;
