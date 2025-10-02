@@ -23,6 +23,7 @@ import { groupVacanciesByDate } from "./lib/vacancy";
 import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
 import { loadState, saveState, LS_KEY } from "./utils/storage";
+import * as xlsx from "xlsx";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
 import VacancyRangeForm from "./components/VacancyRangeForm";
@@ -193,6 +194,80 @@ const SHIFT_PRESETS = [
 ] as const;
 
 const VACANT_EMPLOYEE_ID = "__vacant__";
+
+type EmployeeRow = Record<string, unknown>;
+
+const getStringValue = (row: EmployeeRow, key: string) => {
+  const value = row[key];
+  return value == null ? "" : String(value);
+};
+
+const getNumberValue = (value: unknown, fallback: number) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const mapRowToEmployee = (row: EmployeeRow, index: number): Employee => {
+  const rawClass = getStringValue(row, "classification").trim();
+  const normalizedClass =
+    CLASSIFICATIONS.find(
+      (option) => option.toLowerCase() === rawClass.toLowerCase(),
+    ) ?? CLASSIFICATIONS[0];
+
+  const statusRaw = getStringValue(row, "status");
+  const activeRaw = getStringValue(row, "active") || "Yes";
+
+  return {
+    id:
+      getStringValue(row, "id") ||
+      getStringValue(row, "EmployeeID") ||
+      `emp_${index}`,
+    firstName:
+      getStringValue(row, "firstName") || getStringValue(row, "name"),
+    lastName: getStringValue(row, "lastName"),
+    classification: normalizedClass as Classification,
+    status: (["FT", "PT", "Casual"].includes(statusRaw)
+      ? statusRaw
+      : "FT") as Status,
+    homeWing: getStringValue(row, "homeWing"),
+    startDate: getStringValue(row, "startDate"),
+    seniorityHours: getNumberValue(row["seniorityHours"], 0),
+    seniorityRank: getNumberValue(row["seniorityRank"], index + 1),
+    active: activeRaw.toLowerCase().startsWith("y"),
+  };
+};
+
+const parseFile = async (file: File): Promise<EmployeeRow[]> => {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  const mime = (file.type || "").toLowerCase();
+
+  if (extension === "csv" || mime.includes("csv")) {
+    const text = await file.text();
+    const { parseCSV } = await import("./utils/csv");
+    return parseCSV(text);
+  }
+
+  if (
+    extension === "xlsx" ||
+    extension === "xls" ||
+    mime.includes("spreadsheet") ||
+    mime.includes("excel")
+  ) {
+    const arrayBuffer = await file.arrayBuffer();
+    const workbook = xlsx.read(new Uint8Array(arrayBuffer), { type: "array" });
+    const [firstSheetName] = workbook.SheetNames;
+    if (!firstSheetName) {
+      return [];
+    }
+    const sheet = workbook.Sheets[firstSheetName];
+    if (!sheet) {
+      return [];
+    }
+    return xlsx.utils.sheet_to_json<EmployeeRow>(sheet, { defval: "" });
+  }
+
+  throw new Error("Unsupported file type");
+};
 
 type StagedDeleteSnapshot = {
   previousVacancies: Vacancy[];
@@ -2111,50 +2186,22 @@ function EmployeesPage({
   return (
     <div className="grid">
       <div className="card">
-        <div className="card-h">Import Staff (CSV)</div>
+        <div className="card-h">Import Staff (CSV/Excel)</div>
         <div className="card-c">
           <input
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx,.xls"
             onChange={async (e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              const text = await f.text();
-              const { parseCSV } = await import("./utils/csv");
-              let rows: Record<string, string>[] = [];
+              const file = e.target.files?.[0];
+              if (!file) return;
               try {
-                rows = parseCSV(text);
+                const rows = await parseFile(file);
+                const out = rows.map((row, i) => mapRowToEmployee(row, i));
+                setEmployees(out.filter((employee) => !!employee.id));
               } catch (err) {
                 console.error(err);
-                await (window as any).appShowAlert?.("Failed to parse CSV");
-                return;
+                await (window as any).appShowAlert?.("Failed to parse file");
               }
-              const out: Employee[] = rows.map((r: any, i: number) => {
-                const rawClass = String(r.classification ?? "").trim();
-                const normalizedClass =
-                  CLASSIFICATIONS.find(
-                    (option) =>
-                      option.toLowerCase() === rawClass.toLowerCase(),
-                  ) ?? CLASSIFICATIONS[0];
-
-                return {
-                  id: String(r.id ?? r.EmployeeID ?? `emp_${i}`),
-                  firstName: String(r.firstName ?? r.name ?? ""),
-                  lastName: String(r.lastName ?? ""),
-                  classification: normalizedClass as Classification,
-                  status: (["FT", "PT", "Casual"].includes(String(r.status))
-                    ? r.status
-                    : "FT") as Status,
-                  homeWing: String(r.homeWing ?? ""),
-                  startDate: String(r.startDate ?? ""),
-                  seniorityHours: Number(r.seniorityHours ?? 0),
-                  seniorityRank: Number(r.seniorityRank ?? i + 1),
-                  active: String(r.active ?? "Yes")
-                    .toLowerCase()
-                    .startsWith("y"),
-                };
-              });
-              setEmployees(out.filter((e) => !!e.id));
             }}
           />
           <div className="subtitle">
