@@ -25,6 +25,7 @@ export default function RangeBidDialog({
     "full" | "some-days" | "partial-day"
   >("full");
   const [selectedDays, setSelectedDays] = useState<string[]>(workingDays);
+  const [coverageError, setCoverageError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -32,7 +33,16 @@ export default function RangeBidDialog({
     setNote("");
     setCoverageType("full");
     setSelectedDays(workingDays);
-  }, [open, workingDays]);
+    setCoverageError(null);
+  }, [open, range.id, workingDays]);
+
+  useEffect(() => {
+    if (coverageType === "full" || selectedDays.length > 0) {
+      setCoverageError(null);
+    } else if (open) {
+      setCoverageError("Select at least one working day.");
+    }
+  }, [coverageType, selectedDays, open]);
 
   const empOpts = useMemo(
     () =>
@@ -50,7 +60,10 @@ export default function RangeBidDialog({
 
   function submit() {
     if (!employeeId) return;
-    if (coverageType !== "full" && selectedDays.length === 0) return;
+    if (coverageType !== "full" && selectedDays.length === 0) {
+      setCoverageError("Select at least one working day.");
+      return;
+    }
     const employee = employees.find((x) => x.id === employeeId);
     const now = new Date().toISOString();
     const bid: Bid = {
@@ -122,6 +135,7 @@ export default function RangeBidDialog({
                 onChange={() => {
                   setCoverageType("full");
                   setSelectedDays(workingDays);
+                  setCoverageError(null);
                 }}
               />
               <span>Entire vacancy (all working days)</span>
@@ -135,6 +149,7 @@ export default function RangeBidDialog({
                   setSelectedDays((days) =>
                     days.length ? days : [...workingDays],
                   );
+                  setCoverageError(null);
                 }}
               />
               <span>Some days only</span>
@@ -148,6 +163,7 @@ export default function RangeBidDialog({
                   setSelectedDays((days) =>
                     days.length ? days : [...workingDays],
                   );
+                  setCoverageError(null);
                 }}
               />
               <span>Partial-day (time differs on specific day)</span>
@@ -166,6 +182,11 @@ export default function RangeBidDialog({
                   </label>
                 ))}
               </div>
+            )}
+            {coverageError && (
+              <p role="alert" className="mt-2 text-sm text-red-600">
+                {coverageError}
+              </p>
             )}
           </fieldset>
 
@@ -188,7 +209,7 @@ export default function RangeBidDialog({
           <button
             onClick={submit}
             className="px-3 py-2 rounded-md bg-black text-white"
-            disabled={!employeeId || (coverageType !== "full" && selectedDays.length === 0)}
+            disabled={!employeeId}
           >
             Submit bid
           </button>
