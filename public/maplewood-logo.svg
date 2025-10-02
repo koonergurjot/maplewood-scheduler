@@ -1,4 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="120" height="40" viewBox="0 0 120 40">
-  <rect width="120" height="40" fill="#2a7a2a" rx="4"/>
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#047857"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="40" fill="url(#logoGradient)" rx="4"/>
   <text x="60" y="25" text-anchor="middle" font-size="20" font-family="Arial" fill="white">Maplewood</text>
 </svg>
