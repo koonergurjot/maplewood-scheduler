@@ -69,6 +69,10 @@ export default function SearchFilterBar({
     else onWingChange(value);
   };
 
+  const quickWings = WINGS.slice(0, 4);
+  const overflowWings = WINGS.slice(4);
+  const overflowWingValue = overflowWings.includes(wing) ? wing : "";
+
   const toggleShiftPreset = (value: string) => {
     if (!onShiftPresetChange) return;
     if (shiftPreset === value) onShiftPresetChange("");
@@ -193,7 +197,7 @@ export default function SearchFilterBar({
       </select>
       {onWingChange && (
         <div className="chip-group" aria-label="Wing filters">
-          {WINGS.map((w) => (
+          {quickWings.map((w) => (
             <button
               key={w}
               type="button"
@@ -205,6 +209,22 @@ export default function SearchFilterBar({
               {w}
             </button>
           ))}
+          {overflowWings.length > 0 && (
+            <select
+              className="pill pill-toggle wing-overflow-select"
+              aria-label="More wings"
+              value={overflowWingValue}
+              data-active={Boolean(overflowWingValue)}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => toggleWing(event.target.value)}
+            >
+              <option value="">More wings…</option>
+              {overflowWings.map((w) => (
+                <option key={w} value={w}>
+                  {w}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       )}
       {onWingChange && (
