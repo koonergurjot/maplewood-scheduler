@@ -11,6 +11,7 @@ import "./styles/responsive.css";
 import "./styles/ui-sanity.css";
 import "./styles/color-map.css";
 import "./styles/vacancies-redesign.css";
+import "./styles/shared-ui.css";
 
 const initialTheme: Theme = (() => {
   if (typeof window === "undefined") return "light";
