@@ -190,12 +190,21 @@ export default function OpenVacanciesRedesign(props: Props) {
         onClear={resetFilters}
       />
       <table className="vacancies">
+        <caption className="sr-only">
+          Open vacancies grouped by bundles followed by individual days
+        </caption>
         <thead>
           <tr>
-            <th style={{ width: 40 }}></th>
-            <th>Open Vacancies</th>
-            <th style={{ width: 140 }}>Time Left</th>
-            <th style={{ width: "1%" }}></th>
+            <th scope="col" style={{ width: 40 }}>
+              <span className="sr-only">Select vacancy</span>
+            </th>
+            <th scope="col">Open Vacancies</th>
+            <th scope="col" style={{ width: 140 }}>
+              Time Left
+            </th>
+            <th scope="col" style={{ width: "1%" }}>
+              <span className="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody>
