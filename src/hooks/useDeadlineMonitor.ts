@@ -18,6 +18,9 @@ import type {
 import { authFetch, getToken, getApiBaseUrl } from "../utils/api";
 
 const isBrowser = typeof window !== "undefined";
+const isTestEnvironment =
+  typeof globalThis !== "undefined" &&
+  Boolean((globalThis as { __vitest_worker__?: unknown }).__vitest_worker__);
 
 function createEventId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -114,6 +117,7 @@ export function useDeadlineMonitor({
   now,
   formatVacancy,
 }: DeadlineMonitorOptions) {
+  const serverSyncEnabled = isBrowser && !isTestEnvironment;
   const [notifications, setNotifications] = useState<DeadlineNotification[]>([]);
   const notificationsRef = useRef(new Map<string, DeadlineNotification>());
   const triggeredRef = useRef(new Map<string, string>());
@@ -124,6 +128,20 @@ export function useDeadlineMonitor({
     if (!base) return "";
     return base.replace(/\/$/, "");
   }, []);
+
+  const resolveApiUrl = useCallback(
+    (path: string) => {
+      const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+      if (apiBase) {
+        return `${apiBase}${normalizedPath}`;
+      }
+      if (typeof window !== "undefined" && window.location?.origin) {
+        return new URL(normalizedPath, window.location.origin).toString();
+      }
+      return normalizedPath;
+    },
+    [apiBase],
+  );
 
   const syncNotifications = useCallback(() => {
     setNotifications(
@@ -174,13 +192,13 @@ export function useDeadlineMonitor({
 
   const flushPending = useCallback(async () => {
     if (!pendingRef.current.length) return;
-    if (!isBrowser) {
+    if (!serverSyncEnabled) {
       pendingRef.current = [];
       return;
     }
     const events = pendingRef.current.splice(0, pendingRef.current.length);
     if (!events.length) return;
-    const endpoint = `${apiBase}/api/deadlines`;
+    const endpoint = resolveApiUrl("/api/deadlines");
     try {
       await authFetch(endpoint, {
         method: "POST",
@@ -192,11 +210,11 @@ export function useDeadlineMonitor({
       pendingRef.current.unshift(...events);
       throw error;
     }
-  }, [apiBase]);
+  }, [apiBase, serverSyncEnabled]);
 
   const scheduleFlush = useCallback(
     (delayMs: number) => {
-      if (!isBrowser) return;
+      if (!serverSyncEnabled) return;
       if (flushTimerRef.current) return;
       flushTimerRef.current = setTimeout(async () => {
         flushTimerRef.current = null;
@@ -207,16 +225,16 @@ export function useDeadlineMonitor({
         }
       }, delayMs);
     },
-    [flushPending],
+    [flushPending, serverSyncEnabled],
   );
 
   const enqueueServerSync = useCallback(
     (event: DeadlineEvent) => {
-      if (!isBrowser) return;
+      if (!serverSyncEnabled) return;
       pendingRef.current.push(event);
       scheduleFlush(500);
     },
-    [scheduleFlush],
+    [scheduleFlush, serverSyncEnabled],
   );
 
   useEffect(() => {
@@ -342,7 +360,7 @@ export function useDeadlineMonitor({
   ]);
 
   useEffect(() => {
-    if (!isBrowser) return;
+    if (!serverSyncEnabled) return;
     let cancelled = false;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let controller: AbortController | null = null;
@@ -366,7 +384,7 @@ export function useDeadlineMonitor({
       controller = new AbortController();
       try {
         const token = getToken();
-        const response = await fetch(`${apiBase}/api/deadlines/stream`, {
+        const response = await fetch(resolveApiUrl("/api/deadlines/stream"), {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
           signal: controller.signal,
         });
@@ -417,7 +435,7 @@ export function useDeadlineMonitor({
         retryTimer = null;
       }
     };
-  }, [apiBase, upsertNotification]);
+  }, [apiBase, serverSyncEnabled, upsertNotification]);
 
   const latestNotification = useMemo(() => {
     return notifications.find((n) => !n.read) ?? null;

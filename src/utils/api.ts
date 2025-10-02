@@ -29,13 +29,34 @@ export function getApiBaseUrl(): string {
   return raw.replace(/\/$/, "");
 }
 
+function resolveRequestInput(input: RequestInfo | URL): RequestInfo | URL {
+  if (typeof input === "string") {
+    try {
+      // Absolute URLs will parse without throwing.
+      new URL(input);
+      return input;
+    } catch {
+      const base = getApiBaseUrl();
+      const normalizedPath = input.startsWith("/") ? input : `/${input}`;
+      if (base) {
+        return `${base}${normalizedPath}`;
+      }
+      if (typeof window !== "undefined" && window.location?.origin) {
+        return new URL(normalizedPath, window.location.origin).toString();
+      }
+    }
+  }
+  return input;
+}
+
 export async function authFetch(input: RequestInfo, init: RequestInit = {}) {
+  const resolvedInput = resolveRequestInput(input);
   const token = getToken();
   const headers = new Headers(init.headers);
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
-  const response = await fetch(input, { ...init, headers });
+  const response = await fetch(resolvedInput, { ...init, headers });
   if (!response.ok) {
     let message = `Request failed with status ${response.status}`;
     try {
