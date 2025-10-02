@@ -12,6 +12,7 @@ import type { Tag } from "./models/tag";
 import useVacancies from "./state/useVacancies";
 import "./styles/branding.css";
 import { loadState } from "./utils/storage";
+import Button from "./components/ui/Button";
 
 type State = {
   employees: Employee[];
@@ -240,19 +241,19 @@ export default function Dashboard() {
       />
       {editingVacancy && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+          className="dashboard-modal"
           role="dialog"
           aria-modal="true"
           aria-labelledby="edit-vacancy-title"
         >
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-4">
+          <div className="dashboard-modal__panel">
             <div className="flex items-center justify-between mb-4">
               <h2 id="edit-vacancy-title" className="text-lg font-semibold">
                 Edit Vacancy
               </h2>
-              <button onClick={closeEditModal} className="px-2 py-1 rounded-md border">
+              <Button onClick={closeEditModal} size="sm" variant="ghost">
                 Close
-              </button>
+              </Button>
             </div>
             <p className="text-sm text-gray-600 mb-4">
               Adjust tags for {editingVacancy.shiftDate} {editingVacancy.shiftStart}–
@@ -263,16 +264,13 @@ export default function Dashboard() {
               selectedTagIds={editingTagIds}
               onTagChange={setEditingTagIds}
             />
-            <div className="mt-6 flex justify-end gap-2">
-              <button onClick={closeEditModal} className="px-3 py-2 rounded-md border">
+            <div className="dashboard-modal__actions">
+              <Button onClick={closeEditModal} variant="ghost">
                 Cancel
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                className="px-3 py-2 rounded-md bg-black text-white"
-              >
+              </Button>
+              <Button onClick={handleSaveEdit} variant="primary">
                 Save changes
-              </button>
+              </Button>
             </div>
           </div>
         </div>

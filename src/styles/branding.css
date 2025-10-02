@@ -76,3 +76,29 @@ h2 {
 .employee-list tr.recent td {
   background: var(--employee-recent-bg);
 }
+
+.dashboard-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(12, 18, 32, 0.6);
+  z-index: 50;
+}
+
+.dashboard-modal__panel {
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(17, 24, 39, 0.2);
+  padding: 24px;
+  width: min(90vw, 520px);
+}
+
+.dashboard-modal__actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
