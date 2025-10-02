@@ -22,6 +22,13 @@ import {
 import { groupVacanciesByDate } from "./lib/vacancy";
 import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
+import {
+  getFirst,
+  normalizeActive,
+  normalizeClassification,
+  normalizeStatus,
+  splitName,
+} from "./utils/headers";
 import { loadState, saveState, LS_KEY } from "./utils/storage";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
@@ -223,6 +230,183 @@ const displayVacancyLabel = (v: Vacancy) => {
   );
 };
 
+const EMPLOYEE_ID_HEADERS = [
+  "EmployeeID",
+  "Employee ID",
+  "Payroll ID",
+  "PayrollID",
+  "ID",
+  "Employee Number",
+  "Employee #",
+  "EmpID",
+  "Emp ID",
+  "EmployeeCode",
+  "Employee Code",
+];
+
+const FIRST_NAME_HEADERS = [
+  "First Name",
+  "FirstName",
+  "Given Name",
+  "Preferred Name",
+  "Preferred First Name",
+  "Legal First Name",
+];
+
+const LAST_NAME_HEADERS = [
+  "Last Name",
+  "LastName",
+  "Surname",
+  "Family Name",
+  "Legal Last Name",
+];
+
+const FULL_NAME_HEADERS = [
+  "Name",
+  "Employee Name",
+  "Full Name",
+  "Employee",
+];
+
+const CLASSIFICATION_HEADERS = [
+  "Classification",
+  "Class",
+  "Job Class",
+  "Job Title",
+  "Position",
+  "Role",
+];
+
+const STATUS_HEADERS = [
+  "Status",
+  "Employment Status",
+  "Employee Status",
+  "FT/PT",
+  "Employment Type",
+  "Type",
+];
+
+const ACTIVE_HEADERS = [
+  "Active",
+  "Is Active",
+  "Currently Active",
+  "Employment State",
+  "On Leave",
+];
+
+const HOME_WING_HEADERS = [
+  "Home Wing",
+  "Wing",
+  "Home Department",
+  "Department",
+  "Home Unit",
+];
+
+const START_DATE_HEADERS = [
+  "Start Date",
+  "Hire Date",
+  "Seniority Date",
+  "Start",
+  "Date Hired",
+];
+
+const SENIORITY_HOURS_HEADERS = [
+  "Seniority Hours",
+  "Hours",
+  "SeniorityHours",
+  "Total Hours",
+  "Hours Worked",
+];
+
+const SENIORITY_RANK_HEADERS = [
+  "Seniority Rank",
+  "Rank",
+  "Seniority",
+  "Seniority Position",
+  "Order",
+  "Seniority Ranking",
+];
+
+export function mapRowToEmployee(
+  row: Record<string, unknown>,
+  index = 0,
+): Employee | null {
+  if (!row || typeof row !== "object") return null;
+
+  const parseNumber = (value: unknown): number | undefined => {
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : undefined;
+    }
+    if (typeof value === "string") {
+      const trimmed = value.trim().replace(/,/g, "");
+      if (!trimmed) return undefined;
+      const num = Number(trimmed);
+      return Number.isFinite(num) ? num : undefined;
+    }
+    return undefined;
+  };
+
+  const idRaw = getFirst(row, EMPLOYEE_ID_HEADERS);
+  const fullNameRaw = getFirst(row, FULL_NAME_HEADERS);
+  const nameParts = splitName(fullNameRaw);
+
+  const firstNameRaw = getFirst(row, FIRST_NAME_HEADERS);
+  const lastNameRaw = getFirst(row, LAST_NAME_HEADERS);
+
+  const firstName =
+    typeof firstNameRaw === "string" && firstNameRaw.trim()
+      ? firstNameRaw.trim()
+      : nameParts.firstName;
+  const lastName =
+    typeof lastNameRaw === "string" && lastNameRaw.trim()
+      ? lastNameRaw.trim()
+      : nameParts.lastName;
+
+  const hasName = Boolean(firstName || lastName);
+  const idValue = typeof idRaw === "string" ? idRaw.trim() : idRaw;
+  const id =
+    idValue !== undefined && idValue !== null && `${idValue}`.trim()
+      ? `${idValue}`.trim()
+      : hasName
+      ? `emp_${index}`
+      : "";
+
+  if (!id && !hasName) {
+    return null;
+  }
+
+  const classificationRaw = getFirst(row, CLASSIFICATION_HEADERS);
+  const statusRaw = getFirst(row, STATUS_HEADERS);
+  const activeRaw = getFirst(row, ACTIVE_HEADERS);
+  const homeWingRaw = getFirst(row, HOME_WING_HEADERS);
+  const startDateRaw = getFirst(row, START_DATE_HEADERS);
+  const seniorityHoursRaw = getFirst(row, SENIORITY_HOURS_HEADERS);
+  const seniorityRankRaw = getFirst(row, SENIORITY_RANK_HEADERS);
+  const seniorityRankValue = parseNumber(seniorityRankRaw);
+  const seniorityHoursValue = parseNumber(seniorityHoursRaw);
+
+  const employee: Employee = {
+    id: id || `emp_${index}`,
+    firstName,
+    lastName,
+    classification: normalizeClassification(classificationRaw),
+    status: normalizeStatus(statusRaw),
+    homeWing:
+      typeof homeWingRaw === "string" && homeWingRaw.trim()
+        ? homeWingRaw.trim()
+        : undefined,
+    startDate:
+      typeof startDateRaw === "string" && startDateRaw.trim()
+        ? startDateRaw.trim()
+        : undefined,
+    seniorityHours: seniorityHoursValue,
+    seniorityRank: seniorityRankValue ?? index + 1,
+    active: normalizeActive(activeRaw ?? statusRaw),
+  };
+
+  return employee;
+}
+
 function pickWindowMinutes(v: Vacancy, settings: Settings) {
   const known = new Date(v.knownAt);
   const shiftStart = combineDateTime(v.shiftDate, v.shiftStart);
@@ -328,6 +512,9 @@ export default function App() {
   const [stagedDelete, setStagedDelete] = useState<StagedDeleteSnapshot | null>(
     null,
   );
+  const [importToast, setImportToast] = useState<
+    { message: string; timeout: ReturnType<typeof setTimeout> } | null
+  >(null);
   const [activeVacancyId, setActiveVacancyId] = useState<string | null>(null);
   const [showRangeForm, setShowRangeForm] = useState(false);
   // Modal system (confirm/prompt/alert)
@@ -382,6 +569,42 @@ export default function App() {
   };
   const showAlert = (body: string, title = "Notice"): Promise<void> =>
     new Promise((resolve) => setAlertState({ open: true, title, body, resolve }));
+
+  const showImportHeadersToast = (
+    headers: string[],
+    prefix = "Unable to import employees.",
+  ) => {
+    const unique = Array.from(
+      new Set(
+        headers
+          .map((header) =>
+            typeof header === "string" ? header.trim() : String(header ?? ""),
+          )
+          .filter((header) => header.length > 0),
+      ),
+    );
+    const base = prefix.replace(/\.*$/, "");
+    const message = unique.length
+      ? `${base}. Detected headers: ${unique.join(", ")}`
+      : `${base}. No recognizable headers detected.`;
+    setImportToast((prev) => {
+      if (prev?.timeout) clearTimeout(prev.timeout);
+      const timeout = setTimeout(() => {
+        setImportToast((current) =>
+          current?.timeout === timeout ? null : current,
+        );
+      }, 8000);
+      return { message, timeout };
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (importToast?.timeout) {
+        clearTimeout(importToast.timeout);
+      }
+    };
+  }, [importToast]);
 
   // expose helpers for non-App children that cannot receive props easily
   (window as any).appShowConfirm = showConfirm;
@@ -1823,7 +2046,11 @@ export default function App() {
         )}
 
         {tab === "employees" && (
-          <EmployeesPage employees={employees} setEmployees={setEmployees} />
+          <EmployeesPage
+            employees={employees}
+            setEmployees={setEmployees}
+            showImportHeadersToast={showImportHeadersToast}
+          />
         )}
 
         {tab === "archive" && (
@@ -2083,6 +2310,7 @@ export default function App() {
             </div>
           </div>
         )}
+        <Toast open={!!importToast} message={importToast?.message || ""} />
         <Toast
           open={!!stagedDelete}
           message={stagedDelete?.message || ""}
@@ -2104,9 +2332,11 @@ export default function App() {
 function EmployeesPage({
   employees,
   setEmployees,
+  showImportHeadersToast,
 }: {
   employees: Employee[];
   setEmployees: (u: any) => void;
+  showImportHeadersToast: (headers: string[], prefix?: string) => void;
 }) {
   return (
     <div className="grid">
@@ -2126,35 +2356,29 @@ function EmployeesPage({
                 rows = parseCSV(text);
               } catch (err) {
                 console.error(err);
-                await (window as any).appShowAlert?.("Failed to parse CSV");
+                showImportHeadersToast([], "Failed to parse CSV.");
                 return;
               }
-              const out: Employee[] = rows.map((r: any, i: number) => {
-                const rawClass = String(r.classification ?? "").trim();
-                const normalizedClass =
-                  CLASSIFICATIONS.find(
-                    (option) =>
-                      option.toLowerCase() === rawClass.toLowerCase(),
-                  ) ?? CLASSIFICATIONS[0];
+              const mapped = rows
+                .map((r, i) => mapRowToEmployee(r, i))
+                .filter((emp): emp is Employee => !!emp);
 
-                return {
-                  id: String(r.id ?? r.EmployeeID ?? `emp_${i}`),
-                  firstName: String(r.firstName ?? r.name ?? ""),
-                  lastName: String(r.lastName ?? ""),
-                  classification: normalizedClass as Classification,
-                  status: (["FT", "PT", "Casual"].includes(String(r.status))
-                    ? r.status
-                    : "FT") as Status,
-                  homeWing: String(r.homeWing ?? ""),
-                  startDate: String(r.startDate ?? ""),
-                  seniorityHours: Number(r.seniorityHours ?? 0),
-                  seniorityRank: Number(r.seniorityRank ?? i + 1),
-                  active: String(r.active ?? "Yes")
-                    .toLowerCase()
-                    .startsWith("y"),
-                };
-              });
-              setEmployees(out.filter((e) => !!e.id));
+              if (!mapped.length) {
+                const headers = Array.from(
+                  new Set(
+                    rows.flatMap((row) =>
+                      row && typeof row === "object"
+                        ? Object.keys(row)
+                        : [],
+                    ),
+                  ),
+                );
+                showImportHeadersToast(headers, "Unable to import employees.");
+                return;
+              }
+
+              setEmployees(mapped);
+              e.target.value = "";
             }}
           />
           <div className="subtitle">
