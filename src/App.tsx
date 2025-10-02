@@ -1114,13 +1114,13 @@ export default function App() {
         .nav{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:14px}
         .title{font-size:22px;font-weight:800}
         
-        .smart-filter-bar{flex-wrap:nowrap;overflow-x:auto;padding:4px 0}
-        .smart-filter-bar>*{flex-shrink:0}
+        .smart-filter-bar{flex-wrap:wrap;padding:4px 0;gap:8px 12px}
+        .smart-filter-bar>*{flex:0 1 auto}
         .smart-filter-bar input:not([type="checkbox"]){width:auto}
         .smart-filter-bar input[type="text"]{min-width:180px}
         .smart-filter-bar .date-range{display:flex;gap:4px;flex-wrap:nowrap}
         .smart-filter-bar .date-range input{min-width:140px}
-        .smart-filter-bar .chip-group{display:flex;gap:4px;flex-wrap:nowrap}
+        .smart-filter-bar .chip-group{display:flex;gap:4px;flex-wrap:wrap}
         .smart-filter-bar .pill-toggle{background:var(--chipBg);color:var(--chipText);border:1px solid var(--stroke);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s,border-color .2s}
         .smart-filter-bar .pill-toggle[data-active="true"]{background:var(--brand);color:#fff;border-color:var(--brand)}
         .smart-filter-bar .active-filter-chips{display:flex;gap:4px;align-items:center;flex-wrap:nowrap}
