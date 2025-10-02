@@ -228,6 +228,15 @@ export default function OpenVacanciesRedesign(props: Props) {
               );
             })}
           {byDate.map(([date, items]) => {
+            const dayIds = items.map((item) => item.id);
+            const allSelected = dayIds.every((id) =>
+              props.selectedIds.includes(id),
+            );
+            const sectionLabel = fmtDate(date);
+            const toggleLabel = allSelected ? "Clear" : "Select all";
+            const toggleAriaLabel = allSelected
+              ? `Clear selections for ${sectionLabel} vacancies`
+              : `Select all vacancies for ${sectionLabel}`;
             const rendered: React.ReactNode[] = [];
             for (const v of items) {
               const recommendation = recommendations[v.id];
@@ -257,7 +266,19 @@ export default function OpenVacanciesRedesign(props: Props) {
             return (
               <React.Fragment key={`sec-${date}`}>
                 <tr className="section-h">
-                  <td colSpan={4}>{fmtDate(date)}</td>
+                  <td colSpan={4}>
+                    <div className="section-h__content">
+                      <span>{sectionLabel}</span>
+                      <button
+                        type="button"
+                        className="btn btn-sm section-h__toggle"
+                        onClick={() => props.onToggleSelectMany(dayIds)}
+                        aria-label={toggleAriaLabel}
+                      >
+                        {toggleLabel}
+                      </button>
+                    </div>
+                  </td>
                 </tr>
                 {rendered}
               </React.Fragment>
