@@ -1,9 +1,11 @@
 export const CLASSIFICATIONS = [
-  "RCA",
-  "LPN",
   "RN",
-  "Rec",
+  "LPN",
+  "RCA",
+  "Recreation",
   "Receptionist",
+  "ADP RCA",
+  "ADP LPN",
 ] as const;
 
 export type Classification = (typeof CLASSIFICATIONS)[number];
@@ -116,10 +118,8 @@ export const WINGS = [
   "Shamrock",
   "Bluebell",
   "Rosewood",
-  "Recreation",
-  "Float",
-  "Receptionist",
-  "1 on 1",
+  "Front",
+  "ADP",
 ] as const;
 
 export const SHIFT_PRESETS = [
