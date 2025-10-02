@@ -141,14 +141,17 @@ export default function BundleRow({
           rightTag={
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               {recId ? (
-                <span
+                <button
+                  type="button"
                   className="pill"
-                  style={{ cursor: "pointer" }}
                   title={recName}
-                  onClick={() => activeCandidate?.id && onAwardBundle?.(activeCandidate.id)}
+                  aria-label={`Award bundle to ${recName}`}
+                  onClick={() =>
+                    activeCandidate?.id && onAwardBundle?.(activeCandidate.id)
+                  }
                 >
                   {recName}
-                </span>
+                </button>
               ) : (
                 <span className="subtitle">—</span>
               )}
