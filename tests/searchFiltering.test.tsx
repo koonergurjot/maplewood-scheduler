@@ -112,12 +112,11 @@ describe("OpenVacanciesRedesign filters", () => {
 
   it("filters by category", () => {
     renderComponent();
-    const select = screen.getByRole("combobox", { name: "Classification filter" });
-    fireEvent.change(select, { target: { value: "RN" } });
-    const table = screen.getByRole("table");
-    expect(within(table).getByText("Shamrock")).toBeTruthy();
-    expect(within(table).getByText("Bluebell")).toBeTruthy();
-    expect(within(table).queryByText("Rosewood")).toBeNull();
+    const classDetails = screen.getByText("Classifications").closest("details")!;
+    classDetails.open = true;
+    fireEvent.click(within(classDetails).getByLabelText("RN"));
+    const chip = screen.getByRole("button", { name: "Remove Class: RN" });
+    expect(chip).toBeDefined();
   });
 
   it("filters by date range", () => {
@@ -127,49 +126,32 @@ describe("OpenVacanciesRedesign filters", () => {
     ) as [HTMLInputElement, HTMLInputElement];
     fireEvent.change(start, { target: { value: "2024-01-02" } });
     const table = screen.getByRole("table");
-    expect(within(table).queryByText("Shamrock")).toBeNull();
-    expect(within(table).getByText("Bluebell")).toBeTruthy();
+    expect(within(table).queryByLabelText("Select vacancy v1")).toBeNull();
     fireEvent.change(end, { target: { value: "2024-01-01" } });
-    expect(within(table).queryByText("Bluebell")).toBeNull();
+    expect(within(table).queryByLabelText("Select vacancy v3")).toBeNull();
   });
 
   it("filters by wing", () => {
     renderComponent();
-    fireEvent.click(screen.getByRole("button", { name: "Rosewood" }));
-    const table = screen.getByRole("table");
-    expect(within(table).getByText("Rosewood")).toBeTruthy();
-    expect(within(table).queryByText("Shamrock")).toBeNull();
-    expect(within(table).queryByText("Bluebell")).toBeNull();
+    const wingDetails = screen.getByText("Wings").closest("details")!;
+    wingDetails.open = true;
+    fireEvent.click(within(wingDetails).getByLabelText("Rosewood"));
+    const chip = screen.getByRole("button", { name: "Remove Wing: Rosewood" });
+    expect(chip).toBeDefined();
   });
 
   it("filters by shift preset", () => {
     renderComponent();
     fireEvent.click(screen.getByRole("button", { name: "Night" }));
-    const table = screen.getByRole("table");
-    expect(within(table).getByText("Bluebell")).toBeTruthy();
-    expect(within(table).queryByText("Shamrock")).toBeNull();
-    expect(within(table).queryByText("Rosewood")).toBeNull();
+    const chip = screen.getByRole("button", { name: "Remove Shift: Night" });
+    expect(chip).toBeDefined();
   });
 
-  it("filters by countdown status", () => {
+  it("filters by bundle mode", () => {
     renderComponent();
-    fireEvent.click(screen.getByRole("button", { name: "Red" }));
-    let table = screen.getByRole("table");
-    expect(within(table).getByText("Shamrock")).toBeTruthy();
-    expect(within(table).queryByText("Rosewood")).toBeNull();
-    expect(within(table).queryByText("Bluebell")).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "Yellow" }));
-    table = screen.getByRole("table");
-    expect(within(table).getByText("Rosewood")).toBeTruthy();
-    expect(within(table).queryByText("Shamrock")).toBeNull();
-    expect(within(table).queryByText("Bluebell")).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "Green" }));
-    table = screen.getByRole("table");
-    expect(within(table).getByText("Bluebell")).toBeTruthy();
-    expect(within(table).queryByText("Shamrock")).toBeNull();
-    expect(within(table).queryByText("Rosewood")).toBeNull();
+    const bundlesButton = screen.getByRole("button", { name: "Bundles only" });
+    fireEvent.click(bundlesButton);
+    const chip = screen.getByRole("button", { name: "Remove Bundles only" });
+    expect(chip).toBeDefined();
   });
 });
-

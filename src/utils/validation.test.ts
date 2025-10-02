@@ -96,15 +96,17 @@ describe("validateClassification", () => {
     expect(validateClassification("RCA").isValid).toBe(true);
     expect(validateClassification("LPN").isValid).toBe(true);
     expect(validateClassification("RN").isValid).toBe(true);
-    expect(validateClassification("Rec").isValid).toBe(true);
+    expect(validateClassification("Recreation").isValid).toBe(true);
     expect(validateClassification("Receptionist").isValid).toBe(true);
+    expect(validateClassification("ADP RCA").isValid).toBe(true);
+    expect(validateClassification("ADP LPN").isValid).toBe(true);
   });
 
   it("should reject invalid classifications", () => {
     const result = validateClassification("INVALID");
     expect(result.isValid).toBe(false);
     expect(result.error).toBe(
-      "Classification must be one of: RCA, LPN, RN, Rec, Receptionist",
+      "Classification must be one of: RN, LPN, RCA, Recreation, Receptionist, ADP RCA, ADP LPN",
     );
   });
 

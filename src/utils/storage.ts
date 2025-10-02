@@ -1,5 +1,8 @@
 import { appConfig } from "../config";
 import migrateCoverageDates from "../../migrations/2025-coverage-dates";
+import migrateClassificationRename, {
+  migrateVacancyFilterSelections,
+} from "../../migrations/2025-classification-rename";
 import type { Classification } from "../types";
 
 export const LS_KEY = "maplewood-scheduler-v3";
@@ -31,7 +34,8 @@ export function loadVacancyFilters(): StoredVacancyFilters {
   if (!storage) return null;
   try {
     const raw = storage.getItem(OPEN_VACANCY_FILTERS_KEY);
-    return raw ? (JSON.parse(raw) as Partial<VacancyFilterSnapshot>) : null;
+    const parsed = raw ? (JSON.parse(raw) as Partial<VacancyFilterSnapshot>) : null;
+    return migrateVacancyFilterSelections(parsed);
   } catch {
     return null;
   }
@@ -61,7 +65,10 @@ export function loadState<T = any>(): T | null {
   try {
     const raw = localStorage.getItem(LS_KEY);
     const data = (raw ? JSON.parse(raw) : null) as T | null;
-    if (data) migrateCoverageDates(data as any);
+    if (data) {
+      migrateClassificationRename(data as any);
+      migrateCoverageDates(data as any);
+    }
     return data;
   } catch {
     return null;
