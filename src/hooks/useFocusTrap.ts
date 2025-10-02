@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, type RefObject } from "react";
 
-export function useFocusTrap(ref: React.RefObject<HTMLElement>, onEscape?: () => void) {
+export function useFocusTrap(ref: RefObject<HTMLElement>, onEscape?: () => void) {
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
