@@ -55,8 +55,12 @@ export default function OpenVacancies({
     );
   };
 
-  const openVacancies = vacancies.filter(
-    (v) => v.status !== "Filled" && v.status !== "Awarded",
+  const openVacancies = useMemo(
+    () =>
+      vacancies.filter(
+        (v) => v.status !== "Filled" && v.status !== "Awarded",
+      ),
+    [vacancies],
   );
 
   const filteredVacancies = useMemo(() => {
