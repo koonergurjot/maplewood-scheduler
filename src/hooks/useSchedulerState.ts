@@ -58,10 +58,12 @@ export function useSchedulerState() {
     persisted?.vacancyRanges ?? [],
   );
 
-  const employeesById = useMemo(() => {
-    const m = new Map<string, Employee>();
-    for (const e of employees) m.set(e.id, e);
-    return m;
+  const employeesById = useMemo<Record<string, Employee>>(() => {
+    const map: Record<string, Employee> = {};
+    for (const employee of employees) {
+      map[employee.id] = employee;
+    }
+    return map;
   }, [employees]);
 
   useEffect(() => {
