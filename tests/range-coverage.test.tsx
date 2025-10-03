@@ -14,6 +14,7 @@ const employees: Employee[] = [
     status: "FT",
     seniorityRank: 1,
     active: true,
+    activeLabel: "Active",
   },
   {
     id: "e2",
@@ -23,6 +24,7 @@ const employees: Employee[] = [
     status: "FT",
     seniorityRank: 2,
     active: true,
+    activeLabel: "Active",
   },
 ];
 

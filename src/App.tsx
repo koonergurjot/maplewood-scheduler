@@ -9,7 +9,8 @@ import {
 import { Link } from "react-router-dom";
 import { recommend, Recommendation } from "./recommend";
 import type { OfferingTier } from "./offering/offeringMachine";
-import type { SSF$DateCode, Sheet2JSONOpts } from "xlsx";
+import type { Sheet2JSONOpts } from "xlsx";
+import type { SSF$Date } from "ssf";
 import {
   isoDate,
   combineDateTime,
@@ -503,7 +504,12 @@ const DATETIME_HEADER_HINTS = new Set(
 
 const EXCEL_EXTENSIONS = [".xlsx", ".xlsm", ".xlsb", ".xls"];
 const EXCEL_MIME_SUBSTRINGS = ["spreadsheetml", "ms-excel"];
-const EXCEL_SHEET_TO_JSON_OPTIONS: Sheet2JSONOpts = {
+type ExcelSheetToJsonOpts = Sheet2JSONOpts & {
+  cellDates?: boolean;
+  raw?: boolean;
+};
+
+const EXCEL_SHEET_TO_JSON_OPTIONS: ExcelSheetToJsonOpts = {
   defval: "",
   cellDates: true,
   raw: false,
@@ -512,6 +518,13 @@ const EXCEL_SHEET_TO_JSON_OPTIONS: Sheet2JSONOpts = {
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const EXCEL_SERIAL_EPOCH_MS = Date.UTC(1899, 11, 30);
 
+const isExcelParsedDate = (value: unknown): value is SSF$Date =>
+  typeof value === "object" &&
+  value !== null &&
+  "y" in value &&
+  "m" in value &&
+  "d" in value;
+
 const excelSerialToDate = (
   serial: number,
   xlsx?: typeof import("xlsx"),
@@ -519,12 +532,12 @@ const excelSerialToDate = (
   if (!Number.isFinite(serial)) return null;
 
   if (xlsx) {
-    const parsed = xlsx.SSF.parse_date_code(serial) as SSF$DateCode | Date | null;
-    if (parsed) {
-      if (parsed instanceof Date) {
-        return parsed;
-      }
+    const parsed = xlsx.SSF.parse_date_code(serial);
+    if (parsed instanceof Date) {
+      return parsed;
+    }
 
+    if (isExcelParsedDate(parsed)) {
       const { y, m, d, H, M, S, u } = parsed;
       if (
         typeof y === "number" &&
@@ -672,11 +685,16 @@ export async function parseFile(
     const sheet = workbook.Sheets[firstSheetName];
     if (!sheet) return [];
 
-    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+    const sheetToJsonOptions: ExcelSheetToJsonOpts = {
       ...EXCEL_SHEET_TO_JSON_OPTIONS,
       cellDates: true,
       raw: false,
-    });
+    };
+
+    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+      sheet,
+      sheetToJsonOptions,
+    );
 
     return rawRows.map((row) => normalizeExcelRowDates(row, XLSX));
   }
@@ -776,6 +794,14 @@ export default function App() {
     vacancyRanges,
     setVacancyRanges,
   } = useSchedulerState();
+
+  const employeesByIdRecord = useMemo<Record<string, Employee>>(() => {
+    const record: Record<string, Employee> = {};
+    employeesById.forEach((employee, id) => {
+      record[id] = employee;
+    });
+    return record;
+  }, [employeesById]);
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
   const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
   const [bundleUndo, setBundleUndo] = useState<{
@@ -969,10 +995,10 @@ export default function App() {
   const recommendations = useMemo<Record<string, Recommendation>>(() => {
     const m: Record<string, Recommendation> = {};
     vacancies.forEach((v) => {
-      m[v.id] = recommend(v, bids, employeesById);
+      m[v.id] = recommend(v, bids, employeesByIdRecord);
     });
     return m;
-  }, [vacancies, bids, employeesById]);
+  }, [vacancies, bids, employeesByIdRecord]);
 
   // Auto-archive vacations when all their vacancies are awarded
   useEffect(() => {
@@ -1161,10 +1187,8 @@ export default function App() {
     setBids((prev) => [...prev, bid]);
   };
 
-  const handleAwardRange = async (rangeId: string) => {
-    const range = vacancyRanges.find((r) => r.id === rangeId);
-    if (!range) return;
-    const rangeBids = bids.filter((b) => b.vacancyId === rangeId);
+  const handleAwardRange = async (range: VacancyRange) => {
+    const rangeBids = bids.filter((b) => b.vacancyId === range.id);
     if (!rangeBids.length) {
       const ok = await showConfirm(
         "No bids recorded for this range. Create vacancies anyway?",
@@ -1176,13 +1200,13 @@ export default function App() {
     if (outcome.vacancies.length) {
       setVacancies((prev) => [...outcome.vacancies, ...prev]);
     }
-    setVacancyRanges((prev) => prev.filter((r) => r.id !== rangeId));
+    setVacancyRanges((prev) => prev.filter((r) => r.id !== range.id));
     if (outcome.archivedBids.length) {
       setArchivedBids((prev) => ({
         ...prev,
-        [rangeId]: [...(prev[rangeId] ?? []), ...outcome.archivedBids],
+        [range.id]: [...(prev[range.id] ?? []), ...outcome.archivedBids],
       }));
-      setBids((prev) => prev.filter((b) => b.vacancyId !== rangeId));
+      setBids((prev) => prev.filter((b) => b.vacancyId !== range.id));
     }
   };
 
@@ -1220,7 +1244,7 @@ export default function App() {
 
   const ensureBundleBids = (bundleVacancies: Vacancy[], employeeId: string) => {
     const nowISO = new Date().toISOString();
-    const emp = employeesById[employeeId];
+    const emp = employeesById.get(employeeId);
     const toAdd: Bid[] = [];
     for (const v of bundleVacancies) {
       const has = bids.some(
@@ -1303,7 +1327,7 @@ export default function App() {
     applyAwardBundle(bundleId, employeeId, reason || "Bundle award");
     archiveBids(kids.map((v) => v.id));
 
-    const emp = employeesById[employeeId];
+    const emp = employeesById.get(employeeId);
     const name = emp ? `${emp.firstName} ${emp.lastName}`.trim() : employeeId;
     if (bundleUndo?.timeout) clearTimeout(bundleUndo.timeout);
     const timeout = window.setTimeout(() => setBundleUndo(null), 10000);
@@ -1337,7 +1361,7 @@ export default function App() {
         const kids = vacancies.filter(
           (v) => v.bundleId === target.bundleId && v.status === "Open",
         );
-        const emp = employeesById[payload.empId];
+        const emp = payload.empId ? employeesById.get(payload.empId) : undefined;
         const name = emp
           ? `${emp.firstName} ${emp.lastName}`.trim()
           : payload.empId;
@@ -2312,7 +2336,7 @@ export default function App() {
             vacancies={vacancies}
             vacations={vacations}
             employees={employees}
-            employeesById={employeesById}
+            employeesById={employeesByIdRecord}
           />
         )}
 

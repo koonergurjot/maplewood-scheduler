@@ -29,6 +29,7 @@ describe("Recommendation cycling", () => {
       status: "FT",
       seniorityRank: 1,
       active: true,
+      activeLabel: "Active",
     },
     {
       id: "emp-2",
@@ -38,6 +39,7 @@ describe("Recommendation cycling", () => {
       status: "FT",
       seniorityRank: 2,
       active: true,
+      activeLabel: "Active",
     },
   ];
 

@@ -17,6 +17,7 @@ const employees: Employee[] = [
     status: "FT",
     seniorityRank: 1,
     active: true,
+    activeLabel: "Active",
   },
 ];
 
