@@ -80,6 +80,8 @@ export default function VacancyList({
     );
   };
 
+  const countdownNow = filterCountdown ? now : null;
+
   const filteredVacancies = useMemo(() => {
     return vacancies.filter((v) => {
       if (v.status === "Filled" || v.status === "Awarded") return false;
@@ -91,7 +93,7 @@ export default function VacancyList({
         if (preset && (v.shiftStart !== preset.start || v.shiftEnd !== preset.end)) return false;
       }
       if (filterCountdown) {
-        const msLeft = deadlineFor(v, settings).getTime() - now;
+        const msLeft = deadlineFor(v, settings).getTime() - (countdownNow ?? now);
         const winMin = pickWindowMinutes(v, settings);
         const sinceKnownMin = minutesBetween(new Date(), new Date(v.knownAt));
         const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin));
@@ -112,7 +114,7 @@ export default function VacancyList({
     filterCountdown,
     start,
     end,
-    now,
+    countdownNow,
     settings,
   ]);
 
