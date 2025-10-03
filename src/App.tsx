@@ -1161,9 +1161,9 @@ export default function App() {
     setBids((prev) => [...prev, bid]);
   };
 
-  const handleAwardRange = async (rangeId: string) => {
-    const range = vacancyRanges.find((r) => r.id === rangeId);
-    if (!range) return;
+  const handleAwardRange = async (range: VacancyRange) => {
+    const rangeId = range.id;
+    const currentRange = vacancyRanges.find((r) => r.id === rangeId) ?? range;
     const rangeBids = bids.filter((b) => b.vacancyId === rangeId);
     if (!rangeBids.length) {
       const ok = await showConfirm(
@@ -1172,7 +1172,7 @@ export default function App() {
       );
       if (!ok) return;
     }
-    const outcome = awardVacancyRange(range, rangeBids, employees);
+    const outcome = awardVacancyRange(currentRange, rangeBids, employees);
     if (outcome.vacancies.length) {
       setVacancies((prev) => [...outcome.vacancies, ...prev]);
     }
