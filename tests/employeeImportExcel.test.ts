@@ -28,6 +28,8 @@ describe("employee Excel import", () => {
     const rows = await parseFile(file);
     expect(rows).toHaveLength(1);
     expect(rows[0]["Start Date"]).toBe("2024-01-15");
+    expect(rows[0]["Start Date"]).not.toBeInstanceOf(Date);
+    expect(rows[0]["Start Date"]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 
     const employees = rows
       .map((row, index) => mapRowToEmployee(row, index))
@@ -37,6 +39,7 @@ describe("employee Excel import", () => {
 
     expect(employees).toHaveLength(1);
     expect(employees[0]?.startDate).toBe("2024-01-15");
+    expect(employees[0]?.startDate).not.toBeInstanceOf(Date);
     expect(employees[0]?.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

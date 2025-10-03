@@ -672,10 +672,11 @@ export async function parseFile(
     const sheet = workbook.Sheets[firstSheetName];
     if (!sheet) return [];
 
-    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
-      sheet,
-      EXCEL_SHEET_TO_JSON_OPTIONS,
-    );
+    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+      ...EXCEL_SHEET_TO_JSON_OPTIONS,
+      cellDates: true,
+      raw: false,
+    });
 
     return rawRows.map((row) => normalizeExcelRowDates(row, XLSX));
   }
