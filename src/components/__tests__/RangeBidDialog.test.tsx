@@ -13,6 +13,7 @@ describe("RangeBidDialog", () => {
       status: "FT",
       seniorityRank: 1,
       active: true,
+      activeLabel: "Active",
     },
     {
       id: "emp-2",
@@ -22,6 +23,7 @@ describe("RangeBidDialog", () => {
       status: "FT",
       seniorityRank: 2,
       active: true,
+      activeLabel: "Active",
     },
   ];
 
