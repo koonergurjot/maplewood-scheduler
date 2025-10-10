@@ -4,6 +4,7 @@ import { render, screen, fireEvent, cleanup, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import OpenVacanciesRedesign from "../src/components/OpenVacanciesRedesign.tsx";
 import type { Vacancy } from "../src/types";
+import { OPEN_VACANCY_FILTERS_KEY } from "../src/utils/storage";
 
 vi.mock("../src/hooks/useVacancyFilters", async () => {
   return await import("../src/hooks/useVacancyFilters.ts");
@@ -91,6 +92,7 @@ function renderComponent() {
 }
 
 beforeEach(() => {
+  window.localStorage?.removeItem(OPEN_VACANCY_FILTERS_KEY);
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2024-01-01T12:00:00.000Z"));
 });

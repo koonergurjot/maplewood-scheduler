@@ -4,9 +4,10 @@ import { SHIFT_PRESETS } from "../types";
 import type { Recommendation } from "../recommend";
 import BundleRow from "./BundleRow";
 import VacancyRow from "./VacancyRow";
-import { combineDateTime } from "../lib/dates";
+import { combineDateTime, minutesBetween } from "../lib/dates";
 import SearchFilterBar from "./SearchFilterBar";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
+import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
 
 type Props = {
   vacancies: Vacancy[];
@@ -51,6 +52,8 @@ export default function OpenVacanciesRedesign(props: Props) {
     setSelectedWings,
     filterShift,
     setFilterShift,
+    countdown,
+    setCountdown,
     bundleMode,
     setBundleMode,
     resetFilters,
@@ -96,6 +99,19 @@ export default function OpenVacanciesRedesign(props: Props) {
           (v) => v.shiftStart === preset.start && v.shiftEnd === preset.end,
         );
     }
+    if (countdown) {
+      const now = Date.now();
+      list = list.filter((v) => {
+        const msLeft = deadlineFor(v, settings).getTime() - now;
+        const winMin = pickWindowMinutes(v, settings);
+        const sinceKnownMin = minutesBetween(new Date(), new Date(v.knownAt));
+        const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin));
+        let cdClass = "green";
+        if (msLeft <= 0) cdClass = "red";
+        else if (pct < 0.25) cdClass = "yellow";
+        return countdown === cdClass;
+      });
+    }
     if (start) list = list.filter((v) => v.shiftDate >= start);
     if (end) list = list.filter((v) => v.shiftDate <= end);
     if (filters?.wing) list = list.filter((v) => (v.wing || "") === filters!.wing);
@@ -112,6 +128,7 @@ export default function OpenVacanciesRedesign(props: Props) {
     selectedPositions,
     selectedWings,
     filterShift,
+    countdown,
     start,
     end,
     filters,
@@ -179,12 +196,14 @@ export default function OpenVacanciesRedesign(props: Props) {
         selectedPositions={selectedPositions}
         selectedWings={selectedWings}
         shiftPreset={filterShift}
+        countdownStatus={countdown}
         onQueryChange={setSearch}
         onStartDateChange={setStart}
         onEndDateChange={setEnd}
         onPositionsChange={setSelectedPositions}
         onWingsChange={setSelectedWings}
         onShiftPresetChange={setFilterShift}
+        onCountdownChange={setCountdown}
         bundleMode={bundleMode}
         onBundleModeChange={(mode) => setBundleMode(mode)}
         onClear={resetFilters}

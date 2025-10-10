@@ -18,6 +18,7 @@ export type VacancyFilterSnapshot = {
   selectedWings: string[];
   selectedPositions: Classification[];
   filterShift: string;
+  countdown: string;
   start: string;
   end: string;
   search: string;

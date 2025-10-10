@@ -49,6 +49,7 @@ describe("useVacancyFilters localStorage integration", () => {
       selectedWings: ["North"],
       selectedPositions: ["RN"],
       filterShift: "Day",
+      countdown: "yellow",
       start: "2024-01-01",
       end: "2024-01-02",
       search: "nurse",
@@ -61,6 +62,7 @@ describe("useVacancyFilters localStorage integration", () => {
     expect(result.current.selectedWings).toEqual(snapshot.selectedWings);
     expect(result.current.selectedPositions).toEqual(snapshot.selectedPositions);
     expect(result.current.filterShift).toBe(snapshot.filterShift);
+    expect(result.current.countdown).toBe(snapshot.countdown);
     expect(result.current.start).toBe(snapshot.start);
     expect(result.current.end).toBe(snapshot.end);
     expect(result.current.search).toBe(snapshot.search);
@@ -77,6 +79,7 @@ describe("useVacancyFilters localStorage integration", () => {
       result.current.setSelectedPositions(["LPN"]);
       result.current.setSelectedWings(["Bluebell"]);
       result.current.setFilterShift("Evening");
+      result.current.setCountdown("green");
       result.current.setBundleMode("singles");
     });
 
@@ -87,6 +90,7 @@ describe("useVacancyFilters localStorage integration", () => {
           selectedWings: ["Bluebell"],
           selectedPositions: ["LPN"],
           filterShift: "Evening",
+          countdown: "green",
           start: "2024-02-01",
           end: "2024-02-14",
           search: "evening",
@@ -120,6 +124,7 @@ describe("useVacancyFilters localStorage integration", () => {
     await waitFor(() => {
       expect(result.current.search).toBe("");
       expect(result.current.selectedWings).toEqual([]);
+      expect(result.current.countdown).toBe("");
       expect(result.current.bundleMode).toBe("all");
     });
 
