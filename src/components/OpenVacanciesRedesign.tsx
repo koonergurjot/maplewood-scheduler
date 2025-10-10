@@ -4,9 +4,11 @@ import { SHIFT_PRESETS } from "../types";
 import type { Recommendation } from "../recommend";
 import BundleRow from "./BundleRow";
 import VacancyRow from "./VacancyRow";
-import { combineDateTime } from "../lib/dates";
+import { combineDateTime, minutesBetween } from "../lib/dates";
 import SearchFilterBar from "./SearchFilterBar";
 import { useVacancyFilters } from "../hooks/useVacancyFilters";
+import { deadlineFor, pickWindowMinutes } from "../lib/vacancy";
+import type { CountdownFilter } from "../utils/storage";
 
 type Props = {
   vacancies: Vacancy[];
@@ -51,6 +53,8 @@ export default function OpenVacanciesRedesign(props: Props) {
     setSelectedWings,
     filterShift,
     setFilterShift,
+    filterCountdown,
+    setFilterCountdown,
     bundleMode,
     setBundleMode,
     resetFilters,
@@ -96,6 +100,22 @@ export default function OpenVacanciesRedesign(props: Props) {
           (v) => v.shiftStart === preset.start && v.shiftEnd === preset.end,
         );
     }
+    if (filterCountdown) {
+      const now = Date.now();
+      list = list.filter((v) => {
+        const msLeft = deadlineFor(v, settings).getTime() - now;
+        const windowMinutes = pickWindowMinutes(v, settings);
+        const sinceKnown = minutesBetween(new Date(), new Date(v.knownAt));
+        const pct =
+          windowMinutes > 0
+            ? Math.max(0, Math.min(1, (windowMinutes - sinceKnown) / windowMinutes))
+            : 0;
+        let status: CountdownFilter = "green";
+        if (msLeft <= 0) status = "red";
+        else if (pct < 0.25) status = "yellow";
+        return status === filterCountdown;
+      });
+    }
     if (start) list = list.filter((v) => v.shiftDate >= start);
     if (end) list = list.filter((v) => v.shiftDate <= end);
     if (filters?.wing) list = list.filter((v) => (v.wing || "") === filters!.wing);
@@ -112,6 +132,7 @@ export default function OpenVacanciesRedesign(props: Props) {
     selectedPositions,
     selectedWings,
     filterShift,
+    filterCountdown,
     start,
     end,
     filters,
@@ -185,6 +206,8 @@ export default function OpenVacanciesRedesign(props: Props) {
         onPositionsChange={setSelectedPositions}
         onWingsChange={setSelectedWings}
         onShiftPresetChange={setFilterShift}
+        countdownStatus={filterCountdown}
+        onCountdownChange={setFilterCountdown}
         bundleMode={bundleMode}
         onBundleModeChange={(mode) => setBundleMode(mode)}
         onClear={resetFilters}

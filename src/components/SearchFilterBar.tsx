@@ -1,6 +1,20 @@
 import { ChangeEvent, useId } from "react";
+import type { CSSProperties } from "react";
 import { CLASSIFICATIONS, WINGS, SHIFT_PRESETS } from "../types";
 import type { Classification } from "../types";
+import type { CountdownFilter } from "../utils/storage";
+
+const visuallyHiddenStyle: CSSProperties = {
+  position: "absolute",
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: "hidden",
+  clip: "rect(0 0 0 0)",
+  whiteSpace: "nowrap",
+  border: 0,
+};
 
 type BundleMode = "all" | "bundles" | "singles";
 
@@ -15,6 +29,9 @@ type MultiSelectDropdownProps<T extends string> = {
   options: MultiSelectOption<T>[];
   selected: T[];
   onChange: (next: T[]) => void;
+  accessibleLabel?: string;
+  accessibleMode?: "select" | "buttons";
+  accessibleAllLabel?: string;
 };
 
 function MultiSelectDropdown<T extends string>({
@@ -23,6 +40,9 @@ function MultiSelectDropdown<T extends string>({
   options,
   selected,
   onChange,
+  accessibleLabel = label,
+  accessibleMode = "select",
+  accessibleAllLabel,
 }: MultiSelectDropdownProps<T>) {
   const dropdownId = useId();
   const toggleValue = (value: T) => {
@@ -34,41 +54,77 @@ function MultiSelectDropdown<T extends string>({
   };
 
   return (
-    <details className="filter-dropdown">
-      <summary className="filter-dropdown__summary" aria-haspopup="listbox">
-        <span>{label}</span>
-        {selected.length > 0 && (
-          <span className="filter-dropdown__count" aria-live="polite">
-            {selected.length}
-          </span>
-        )}
-      </summary>
-      <div role="group" aria-label={label} className="filter-dropdown__list">
-        {options.map((option) => {
-          const safeValue = option.value
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-");
-          const id = `${dropdownId}-${namePrefix}-${safeValue}`;
-          const checked = selected.includes(option.value);
-          return (
-            <label key={option.value} htmlFor={id} className="filter-dropdown__option">
-              <input
-                id={id}
-                type="checkbox"
-                role="option"
-                aria-selected={checked}
-                checked={checked}
-                onChange={() => toggleValue(option.value)}
-              />
-              <span>{option.label}</span>
-            </label>
-          );
-        })}
-        {options.length === 0 && (
-          <p className="filter-dropdown__empty">No options available.</p>
-        )}
-      </div>
-    </details>
+    <>
+      <details className="filter-dropdown">
+        <summary className="filter-dropdown__summary" aria-haspopup="listbox">
+          <span>{label}</span>
+          {selected.length > 0 && (
+            <span className="filter-dropdown__count" aria-live="polite">
+              {selected.length}
+            </span>
+          )}
+        </summary>
+        <div role="group" aria-label={label} className="filter-dropdown__list">
+          {options.map((option) => {
+            const safeValue = option.value
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-");
+            const id = `${dropdownId}-${namePrefix}-${safeValue}`;
+            const checked = selected.includes(option.value);
+            return (
+              <label key={option.value} htmlFor={id} className="filter-dropdown__option">
+                <input
+                  id={id}
+                  type="checkbox"
+                  role="option"
+                  aria-selected={checked}
+                  checked={checked}
+                  onChange={() => toggleValue(option.value)}
+                />
+                <span>{option.label}</span>
+              </label>
+            );
+          })}
+          {options.length === 0 && (
+            <p className="filter-dropdown__empty">No options available.</p>
+          )}
+        </div>
+      </details>
+      {accessibleMode === "select" ? (
+        <select
+          aria-label={accessibleLabel}
+          value={selected[0] ?? ""}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+            const { value } = event.target;
+            onChange(value ? [value as T] : []);
+          }}
+          style={visuallyHiddenStyle}
+        >
+          <option value="">{accessibleAllLabel ?? `All ${label}`}</option>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <div role="group" aria-label={accessibleLabel} style={visuallyHiddenStyle}>
+          {options.map((option) => {
+            const checked = selected.includes(option.value);
+            return (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={checked}
+                onClick={() => toggleValue(option.value)}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -80,6 +136,7 @@ interface Props {
   bundleMode: BundleMode;
   selectedWings: string[];
   shiftPreset?: string;
+  countdownStatus?: CountdownFilter;
   onQueryChange: (value: string) => void;
   onStartDateChange: (value: string) => void;
   onEndDateChange: (value: string) => void;
@@ -87,6 +144,7 @@ interface Props {
   onBundleModeChange: (value: BundleMode) => void;
   onWingsChange: (value: string[]) => void;
   onShiftPresetChange?: (value: string) => void;
+  onCountdownChange?: (value: CountdownFilter) => void;
   onClear?: () => void;
 }
 
@@ -98,6 +156,7 @@ export default function SearchFilterBar({
   bundleMode,
   selectedWings,
   shiftPreset = "",
+  countdownStatus = "",
   onQueryChange,
   onStartDateChange,
   onEndDateChange,
@@ -105,6 +164,7 @@ export default function SearchFilterBar({
   onBundleModeChange,
   onWingsChange,
   onShiftPresetChange,
+  onCountdownChange,
   onClear,
 }: Props) {
   const searchInputId = useId();
@@ -123,12 +183,19 @@ export default function SearchFilterBar({
     onBundleModeChange("all");
     onWingsChange([]);
     onShiftPresetChange?.("");
+    onCountdownChange?.("");
   };
 
   const toggleShiftPreset = (value: string) => {
     if (!onShiftPresetChange) return;
     if (shiftPreset === value) onShiftPresetChange("");
     else onShiftPresetChange(value);
+  };
+
+  const toggleCountdownPreset = (value: CountdownFilter) => {
+    if (!onCountdownChange) return;
+    if (countdownStatus === value) onCountdownChange("");
+    else onCountdownChange(value);
   };
 
   const toggleBundleMode = (value: BundleMode) => {
@@ -165,6 +232,15 @@ export default function SearchFilterBar({
         onRemove: () => onWingsChange(selectedWings.filter((item) => item !== wing)),
       }),
     );
+  }
+  if (countdownStatus && onCountdownChange) {
+    const label =
+      countdownStatus.charAt(0).toUpperCase() + countdownStatus.slice(1);
+    activeFilters.push({
+      key: `countdown-${countdownStatus}`,
+      label: `Countdown: ${label}`,
+      onRemove: () => onCountdownChange(""),
+    });
   }
   if (shiftPreset && onShiftPresetChange) {
     activeFilters.push({
@@ -220,6 +296,9 @@ export default function SearchFilterBar({
           }))}
           selected={selectedPositions}
           onChange={onPositionsChange}
+          accessibleLabel="Classification filter"
+          accessibleMode="select"
+          accessibleAllLabel="All Classifications"
         />
       </div>
       <div className="search-filter-bar__field">
@@ -229,6 +308,8 @@ export default function SearchFilterBar({
           options={WINGS.map((wing) => ({ value: wing, label: wing }))}
           selected={selectedWings}
           onChange={onWingsChange}
+          accessibleLabel="Wing filters"
+          accessibleMode="buttons"
         />
       </div>
       <div className="search-filter-bar__field">
@@ -284,17 +365,7 @@ export default function SearchFilterBar({
           onChange={(event: ChangeEvent<HTMLSelectElement>) =>
             onShiftPresetChange(event.target.value)
           }
-          style={{
-            position: "absolute",
-            width: 1,
-            height: 1,
-            padding: 0,
-            margin: -1,
-            overflow: "hidden",
-            clip: "rect(0 0 0 0)",
-            whiteSpace: "nowrap",
-            border: 0,
-          }}
+          style={visuallyHiddenStyle}
         >
           <option value="">All Shifts</option>
           {SHIFT_PRESETS.map((preset) => (
@@ -302,6 +373,61 @@ export default function SearchFilterBar({
               {preset.label}
             </option>
           ))}
+        </select>
+      )}
+      {onCountdownChange && (
+        <div
+          className="search-filter-bar__segmented"
+          role="group"
+          aria-label="Countdown status filters"
+        >
+          <span className="search-filter-bar__label" aria-hidden="true">
+            Countdown
+          </span>
+          <div className="search-filter-bar__segmented-buttons">
+            <button
+              type="button"
+              className="segmented-option"
+              data-active={countdownStatus === "red"}
+              aria-pressed={countdownStatus === "red"}
+              onClick={() => toggleCountdownPreset("red")}
+            >
+              Red
+            </button>
+            <button
+              type="button"
+              className="segmented-option"
+              data-active={countdownStatus === "yellow"}
+              aria-pressed={countdownStatus === "yellow"}
+              onClick={() => toggleCountdownPreset("yellow")}
+            >
+              Yellow
+            </button>
+            <button
+              type="button"
+              className="segmented-option"
+              data-active={countdownStatus === "green"}
+              aria-pressed={countdownStatus === "green"}
+              onClick={() => toggleCountdownPreset("green")}
+            >
+              Green
+            </button>
+          </div>
+        </div>
+      )}
+      {onCountdownChange && (
+        <select
+          aria-label="Countdown status filter"
+          value={countdownStatus}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+            onCountdownChange(event.target.value as CountdownFilter)
+          }
+          style={visuallyHiddenStyle}
+        >
+          <option value="">All Countdown Statuses</option>
+          <option value="red">Red</option>
+          <option value="yellow">Yellow</option>
+          <option value="green">Green</option>
         </select>
       )}
       <div className="search-filter-bar__segmented" role="group" aria-label="Bundle filters">

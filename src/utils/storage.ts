@@ -2,6 +2,8 @@ import { appConfig } from "../config";
 import migrateCoverageDates from "../../migrations/2025-coverage-dates";
 import type { Classification } from "../types";
 
+export type CountdownFilter = "" | "green" | "yellow" | "red";
+
 export const LS_KEY = "maplewood-scheduler-v3";
 export const OPEN_VACANCY_FILTERS_KEY = "openVacancyFilters";
 
@@ -18,6 +20,7 @@ export type VacancyFilterSnapshot = {
   selectedWings: string[];
   selectedPositions: Classification[];
   filterShift: string;
+  filterCountdown: CountdownFilter;
   start: string;
   end: string;
   search: string;

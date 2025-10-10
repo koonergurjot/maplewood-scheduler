@@ -4,6 +4,7 @@ import {
   clearVacancyFilters,
   loadVacancyFilters,
   saveVacancyFilters,
+  type CountdownFilter,
   type VacancyFilterSnapshot,
 } from "../utils/storage";
 
@@ -11,6 +12,7 @@ const DEFAULT_FILTERS: VacancyFilterSnapshot = {
   selectedWings: [],
   selectedPositions: [],
   filterShift: "",
+  filterCountdown: "",
   start: "",
   end: "",
   search: "",
@@ -27,6 +29,9 @@ export function useVacancyFilters() {
   );
   const [filterShift, setFilterShift] = useState<string>(
     () => persistedFilters?.filterShift ?? DEFAULT_FILTERS.filterShift,
+  );
+  const [filterCountdown, setFilterCountdown] = useState<CountdownFilter>(
+    () => persistedFilters?.filterCountdown ?? DEFAULT_FILTERS.filterCountdown,
   );
   const [start, setStart] = useState<string>(
     () => persistedFilters?.start ?? DEFAULT_FILTERS.start,
@@ -50,6 +55,7 @@ export function useVacancyFilters() {
       selectedWings,
       selectedPositions,
       filterShift,
+      filterCountdown,
       start,
       end,
       search,
@@ -60,6 +66,7 @@ export function useVacancyFilters() {
     selectedWings,
     selectedPositions,
     filterShift,
+    filterCountdown,
     start,
     end,
     search,
@@ -71,6 +78,7 @@ export function useVacancyFilters() {
     setSelectedWings(DEFAULT_FILTERS.selectedWings);
     setSelectedPositions(DEFAULT_FILTERS.selectedPositions);
     setFilterShift(DEFAULT_FILTERS.filterShift);
+    setFilterCountdown(DEFAULT_FILTERS.filterCountdown);
     setStart(DEFAULT_FILTERS.start);
     setEnd(DEFAULT_FILTERS.end);
     setSearch(DEFAULT_FILTERS.search);
@@ -85,6 +93,8 @@ export function useVacancyFilters() {
     setSelectedPositions,
     filterShift,
     setFilterShift,
+    filterCountdown,
+    setFilterCountdown,
     start,
     setStart,
     end,
