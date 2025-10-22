@@ -106,6 +106,8 @@ export type Employee = {
   seniorityRank: number; // 1 = most senior
   active: boolean;
   activeLabel: string;
+  sourceFileName?: string;
+  importedAt?: string;
 };
 
 export type Vacation = {
@@ -317,17 +319,35 @@ const splitLastFirst = (
 export function mapRowToEmployee(
   row: Record<string, unknown>,
   index = 0,
+  context?: { fileName?: string; importedAt?: string },
 ): Employee | null {
   if (!row || typeof row !== "object") return null;
+
+  const collapseWhitespace = (value: string): string => value.replace(/\s+/g, " ").trim();
+
+  const collapseIfString = (value: unknown): unknown => {
+    if (typeof value === "string") {
+      const collapsed = collapseWhitespace(value);
+      return collapsed.length > 0 ? collapsed : undefined;
+    }
+    return value === null || value === undefined ? undefined : value;
+  };
+
+  const cleanString = (value: unknown): string => {
+    if (typeof value !== "string") return "";
+    return collapseWhitespace(value);
+  };
 
   const parseNumber = (value: unknown): number | undefined => {
     if (typeof value === "number") {
       return Number.isFinite(value) ? value : undefined;
     }
     if (typeof value === "string") {
-      const trimmed = value.trim().replace(/,/g, "");
+      const trimmed = value.trim();
       if (!trimmed) return undefined;
-      const num = Number(trimmed);
+      const normalized = trimmed.replace(/[\s,]+/g, "");
+      if (!normalized) return undefined;
+      const num = Number(normalized);
       return Number.isFinite(num) ? num : undefined;
     }
     return undefined;
@@ -338,16 +358,10 @@ export function mapRowToEmployee(
   const firstNameRaw = getFirst(row, FIRST_NAME_HEADERS);
   const lastNameRaw = getFirst(row, LAST_NAME_HEADERS);
 
-  let firstName =
-    typeof firstNameRaw === "string" && firstNameRaw.trim()
-      ? firstNameRaw.trim()
-      : "";
-  let lastName =
-    typeof lastNameRaw === "string" && lastNameRaw.trim()
-      ? lastNameRaw.trim()
-      : "";
+  let firstName = cleanString(firstNameRaw);
+  let lastName = cleanString(lastNameRaw);
 
-  const fullNameRaw = getFirst(row, FULL_NAME_HEADERS);
+  const fullNameRaw = collapseIfString(getFirst(row, FULL_NAME_HEADERS));
 
   if (!firstName || !lastName) {
     const { firstName: combinedFirst, lastName: combinedLast } =
@@ -363,30 +377,36 @@ export function mapRowToEmployee(
   }
 
   const hasName = Boolean(firstName || lastName);
-  const idValue = typeof idRaw === "string" ? idRaw.trim() : idRaw;
-  const id =
-    idValue !== undefined && idValue !== null && `${idValue}`.trim()
-      ? `${idValue}`.trim()
-      : hasName
-      ? `emp_${index}`
-      : "";
+  const idCandidate = (() => {
+    if (typeof idRaw === "string") {
+      const cleaned = collapseWhitespace(idRaw);
+      return cleaned;
+    }
+    if (typeof idRaw === "number" && Number.isFinite(idRaw)) {
+      return `${idRaw}`.trim();
+    }
+    return "";
+  })();
+  const id = idCandidate ? idCandidate : hasName ? `emp_${index}` : "";
 
   if (!id && !hasName) {
     return null;
   }
 
-  const classificationRaw = getFirst(row, CLASSIFICATION_HEADERS);
-  const statusFromHeaders = getFirst(row, STATUS_HEADERS);
-  const positionStatusRaw = getFirst(row, POSITION_STATUS_HEADERS);
+  const classificationRaw = collapseIfString(getFirst(row, CLASSIFICATION_HEADERS));
+  const statusFromHeaders = collapseIfString(getFirst(row, STATUS_HEADERS));
+  const positionStatusRaw = collapseIfString(getFirst(row, POSITION_STATUS_HEADERS));
   const statusRaw = statusFromHeaders ?? positionStatusRaw;
-  const activeRaw = getFirst(row, ACTIVE_HEADERS);
-  const homeWingRaw = getFirst(row, HOME_WING_HEADERS);
-  const seniorityDateRaw = getFirst(row, SENIORITY_DATE_HEADERS);
-  const startDateRaw = getFirst(row, START_DATE_HEADERS);
-  const seniorityHoursRaw = getFirst(row, SENIORITY_HOURS_HEADERS);
-  const rankingRaw = getFirst(row, RANKING_HEADERS);
+  const activeRaw = collapseIfString(getFirst(row, ACTIVE_HEADERS));
+  const homeWingRaw = collapseIfString(getFirst(row, HOME_WING_HEADERS));
+  const seniorityDateRaw = collapseIfString(getFirst(row, SENIORITY_DATE_HEADERS));
+  const startDateRaw = collapseIfString(getFirst(row, START_DATE_HEADERS));
+  const seniorityHoursRaw = collapseIfString(getFirst(row, SENIORITY_HOURS_HEADERS));
+  const rankingRaw = collapseIfString(getFirst(row, RANKING_HEADERS));
   const seniorityRankRaw =
-    rankingRaw !== undefined ? rankingRaw : getFirst(row, SENIORITY_RANK_HEADERS);
+    rankingRaw !== undefined
+      ? rankingRaw
+      : collapseIfString(getFirst(row, SENIORITY_RANK_HEADERS));
   const seniorityRankValue = parseNumber(seniorityRankRaw);
   const seniorityHoursValue = parseNumber(seniorityHoursRaw);
 
@@ -404,7 +424,7 @@ export function mapRowToEmployee(
     }
 
     if (typeof value === "string") {
-      const trimmed = value.trim();
+      const trimmed = collapseWhitespace(value);
       return trimmed ? trimmed : undefined;
     }
 
@@ -430,13 +450,13 @@ export function mapRowToEmployee(
 
   const deriveActiveLabel = (): string => {
     const primaryRaw =
-      typeof activeRaw === "string" && activeRaw.trim() ? activeRaw.trim() : "";
+      typeof activeRaw === "string" && activeRaw ? activeRaw : "";
     const fallbackRaw =
       !primaryRaw &&
       !active &&
       typeof statusSource === "string" &&
-      statusSource.trim()
-        ? statusSource.trim()
+      statusSource
+        ? statusSource
         : "";
     const source = primaryRaw || fallbackRaw;
     if (!source) {
@@ -496,8 +516,8 @@ export function mapRowToEmployee(
     classification: normalizeClassification(classificationRaw),
     status,
     homeWing:
-      typeof homeWingRaw === "string" && homeWingRaw.trim()
-        ? homeWingRaw.trim()
+      typeof homeWingRaw === "string" && homeWingRaw
+        ? homeWingRaw
         : undefined,
     startDate:
       parseDateValue(seniorityDateRaw) ?? parseDateValue(startDateRaw) ?? undefined,
@@ -506,6 +526,21 @@ export function mapRowToEmployee(
     active,
     activeLabel: deriveActiveLabel(),
   };
+
+  const contextFileName =
+    typeof context?.fileName === "string" && context.fileName.trim()
+      ? context.fileName.trim()
+      : undefined;
+  const contextImportedAt =
+    context?.importedAt ?? (contextFileName ? new Date().toISOString() : undefined);
+
+  if (contextFileName) {
+    employee.sourceFileName = contextFileName;
+  }
+
+  if (contextImportedAt) {
+    employee.importedAt = contextImportedAt;
+  }
 
   return employee;
 }
@@ -2885,8 +2920,15 @@ function EmployeesPage({
     }
 
     const normalizedRows = rows.map((row) => normalizeRowDates(row));
+    const fileName =
+      typeof meta?.fileName === "string" && meta.fileName.trim()
+        ? meta.fileName.trim()
+        : undefined;
+    const importedAt =
+      meta?.importedAt ?? (fileName ? new Date().toISOString() : undefined);
+    const mappingContext = fileName || importedAt ? { fileName, importedAt } : undefined;
     const mapped = normalizedRows
-      .map((r, i) => mapRowToEmployee(r, i))
+      .map((r, i) => mapRowToEmployee(r, i, mappingContext))
       .filter((emp): emp is Employee => !!emp);
 
     if (!mapped.length) {
@@ -2983,7 +3025,10 @@ function EmployeesPage({
       return false;
     }
 
-    const success = importRows(rows);
+    const success = importRows(rows, {
+      fileName: file.name,
+      importedAt: new Date().toISOString(),
+    });
     clearFileInput();
     return success;
   };
