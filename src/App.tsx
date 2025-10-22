@@ -32,6 +32,7 @@ import {
   HOME_WING_HEADERS,
   LAST_NAME_HEADERS,
   POSITION_STATUS_HEADERS,
+  RANKING_HEADERS,
   SENIORITY_DATE_HEADERS,
   SENIORITY_HOURS_HEADERS,
   SENIORITY_RANK_HEADERS,
@@ -253,10 +254,64 @@ const HEADER_SANITIZE_REGEX = /[^a-z0-9]/gi;
 const sanitizeHeaderKey = (header: string) =>
   header.replace(HEADER_SANITIZE_REGEX, "").toLowerCase();
 
-const STATUS_HEADER_CANDIDATES = [
-  ...STATUS_HEADERS,
-  ...POSITION_STATUS_HEADERS,
-];
+const hasStatusToken = (value: unknown): boolean => {
+  if (typeof value !== "string") return false;
+
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+
+  const lower = trimmed.toLowerCase();
+  const compact = lower.replace(/[^a-z0-9]/g, "");
+
+  if (
+    compact === "ft" ||
+    compact === "full" ||
+    compact === "pt" ||
+    compact === "part" ||
+    compact === "cas" ||
+    compact === "casual" ||
+    compact === "flex"
+  ) {
+    return true;
+  }
+
+  if (
+    compact.includes("fulltime") ||
+    compact.includes("parttime") ||
+    compact.includes("casual") ||
+    compact.includes("flex")
+  ) {
+    return true;
+  }
+
+  const tokens = lower
+    .split(/[^a-z0-9]+/i)
+    .map((token) => token.trim())
+    .filter(Boolean);
+
+  if (!tokens.length) return false;
+
+  return tokens.some((token) =>
+    ["full", "ft", "part", "pt", "casual", "cas", "flex"].includes(token),
+  );
+};
+
+const splitLastFirst = (
+  full: unknown,
+): { firstName: string; lastName: string } => {
+  const text = typeof full === "string" ? full.trim() : "";
+  if (!text) {
+    return { firstName: "", lastName: "" };
+  }
+
+  if (text.includes(",")) {
+    const [last, ...rest] = text.split(",");
+    const first = rest.join(",");
+    return { firstName: first.trim(), lastName: last.trim() };
+  }
+
+  return splitName(text);
+};
 
 export function mapRowToEmployee(
   row: Record<string, unknown>,
@@ -278,20 +333,33 @@ export function mapRowToEmployee(
   };
 
   const idRaw = getFirst(row, EMPLOYEE_ID_HEADERS);
-  const fullNameRaw = getFirst(row, FULL_NAME_HEADERS);
-  const nameParts = splitName(fullNameRaw);
 
   const firstNameRaw = getFirst(row, FIRST_NAME_HEADERS);
   const lastNameRaw = getFirst(row, LAST_NAME_HEADERS);
 
-  const firstName =
+  let firstName =
     typeof firstNameRaw === "string" && firstNameRaw.trim()
       ? firstNameRaw.trim()
-      : nameParts.firstName;
-  const lastName =
+      : "";
+  let lastName =
     typeof lastNameRaw === "string" && lastNameRaw.trim()
       ? lastNameRaw.trim()
-      : nameParts.lastName;
+      : "";
+
+  const fullNameRaw = getFirst(row, FULL_NAME_HEADERS);
+
+  if (!firstName || !lastName) {
+    const { firstName: combinedFirst, lastName: combinedLast } =
+      splitLastFirst(fullNameRaw);
+
+    if (!firstName && combinedFirst) {
+      firstName = combinedFirst;
+    }
+
+    if (!lastName && combinedLast) {
+      lastName = combinedLast;
+    }
+  }
 
   const hasName = Boolean(firstName || lastName);
   const idValue = typeof idRaw === "string" ? idRaw.trim() : idRaw;
@@ -307,23 +375,67 @@ export function mapRowToEmployee(
   }
 
   const classificationRaw = getFirst(row, CLASSIFICATION_HEADERS);
-  const statusRaw = getFirst(row, STATUS_HEADER_CANDIDATES);
+  const statusFromHeaders = getFirst(row, STATUS_HEADERS);
+  const positionStatusRaw = getFirst(row, POSITION_STATUS_HEADERS);
+  const statusRaw = statusFromHeaders ?? positionStatusRaw;
   const activeRaw = getFirst(row, ACTIVE_HEADERS);
   const homeWingRaw = getFirst(row, HOME_WING_HEADERS);
+  const seniorityDateRaw = getFirst(row, SENIORITY_DATE_HEADERS);
   const startDateRaw = getFirst(row, START_DATE_HEADERS);
   const seniorityHoursRaw = getFirst(row, SENIORITY_HOURS_HEADERS);
-  const seniorityRankRaw = getFirst(row, SENIORITY_RANK_HEADERS);
+  const rankingRaw = getFirst(row, RANKING_HEADERS);
+  const seniorityRankRaw =
+    rankingRaw !== undefined ? rankingRaw : getFirst(row, SENIORITY_RANK_HEADERS);
   const seniorityRankValue = parseNumber(seniorityRankRaw);
   const seniorityHoursValue = parseNumber(seniorityHoursRaw);
 
-  const active = normalizeActive(activeRaw ?? statusRaw);
+  const parseDateValue = (value: unknown): string | undefined => {
+    if (value instanceof Date) {
+      return isoDate(value);
+    }
+
+    if (typeof value === "number") {
+      const converted = excelSerialToDate(value);
+      if (converted) {
+        return isoDate(converted);
+      }
+      return undefined;
+    }
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      return trimmed ? trimmed : undefined;
+    }
+
+    return undefined;
+  };
+
+  let statusSource: unknown = statusFromHeaders;
+  let status = normalizeStatus(statusRaw);
+
+  if (!hasStatusToken(statusFromHeaders)) {
+    if (
+      positionStatusRaw !== undefined &&
+      (statusFromHeaders === undefined || hasStatusToken(positionStatusRaw))
+    ) {
+      status = normalizeStatus(positionStatusRaw);
+      statusSource = positionStatusRaw;
+    }
+  }
+
+  const activeSource =
+    activeRaw ?? statusSource ?? statusRaw ?? positionStatusRaw ?? statusFromHeaders;
+  const active = normalizeActive(activeSource);
 
   const deriveActiveLabel = (): string => {
     const primaryRaw =
       typeof activeRaw === "string" && activeRaw.trim() ? activeRaw.trim() : "";
     const fallbackRaw =
-      !primaryRaw && !active && typeof statusRaw === "string" && statusRaw.trim()
-        ? statusRaw.trim()
+      !primaryRaw &&
+      !active &&
+      typeof statusSource === "string" &&
+      statusSource.trim()
+        ? statusSource.trim()
         : "";
     const source = primaryRaw || fallbackRaw;
     if (!source) {
@@ -381,15 +493,13 @@ export function mapRowToEmployee(
     firstName,
     lastName,
     classification: normalizeClassification(classificationRaw),
-    status: normalizeStatus(statusRaw),
+    status,
     homeWing:
       typeof homeWingRaw === "string" && homeWingRaw.trim()
         ? homeWingRaw.trim()
         : undefined,
     startDate:
-      typeof startDateRaw === "string" && startDateRaw.trim()
-        ? startDateRaw.trim()
-        : undefined,
+      parseDateValue(seniorityDateRaw) ?? parseDateValue(startDateRaw) ?? undefined,
     seniorityHours: seniorityHoursValue,
     seniorityRank: seniorityRankValue ?? index + 1,
     active,

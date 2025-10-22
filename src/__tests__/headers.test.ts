@@ -110,11 +110,12 @@ describe("mapRowToEmployee", () => {
   it("handles payroll and FTE status headers", () => {
     const row: Record<string, unknown> = {
       "Payroll ID": "900",
-      "Payroll Name": "Alex Johnson",
+      "Payroll Name": "Johnson, Alex",
       "Job Title Description": "Licensed Practical Nurse",
-      "Position FTE Status": "Flex",
+      "Position Status": "Permanent",
+      "Position FTE Status": "Casual/Flex",
       Active: "Yes",
-      "Seniority Date": "2020-01-15",
+      "Seniority Date": 43845,
       "Total Seniority Hours as at Sept 30, 2025": "1,500",
       Ranking: "3",
     };
