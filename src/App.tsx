@@ -2946,36 +2946,46 @@ function EmployeesPage({
 
     if (!rows.length) {
       if (allowHeaderPrompt && isExcelFile(file)) {
-        const opened = await promptHeaderPicker(file);
-        if (opened) {
-          clearFileInput();
-          return false;
+        try {
+          const preview = await getExcelHeaderPreview(file);
+          if (preview.totalRows > 1 && preview.rows.length > 0) {
+            const firstWithData = preview.rows.find((row) =>
+              row.values.some(
+                (value) => String(value ?? "").trim().length > 0,
+              ),
+            );
+            const selectedIndex =
+              firstWithData?.index ?? preview.rows[0]?.index ?? null;
+            setHeaderPicker({
+              file,
+              rows: preview.rows,
+              totalRows: preview.totalRows,
+              selectedIndex,
+              isSubmitting: false,
+            });
+            clearFileInput();
+            return false;
+          }
+        } catch (err) {
+          console.error(err);
         }
       }
 
-      showImportHeadersToast([], "Unable to import employees.");
-      clearFileInput();
-      return false;
-    }
-
-    const { success, headers } = importRows(rows);
-
-    if (!success) {
-      if (allowHeaderPrompt && isExcelFile(file)) {
-        const opened = await promptHeaderPicker(file);
-        if (opened) {
-          clearFileInput();
-          return false;
-        }
-      }
-
+      const headers = Array.from(
+        new Set(
+          rows.flatMap((row) =>
+            row && typeof row === "object" ? Object.keys(row) : [],
+          ),
+        ),
+      );
       showImportHeadersToast(headers, "Unable to import employees.");
       clearFileInput();
       return false;
     }
 
+    const success = importRows(rows);
     clearFileInput();
-    return true;
+    return success;
   };
 
   const handleUseSelectedHeaderRow = async () => {
