@@ -6,6 +6,7 @@ export const CLASSIFICATIONS = [
   "Receptionist",
   "ADP RCA",
   "ADP LPN",
+  "Essential Services",
 ] as const;
 
 export type Classification = (typeof CLASSIFICATIONS)[number];
