@@ -250,19 +250,28 @@ export default function BundleRow({
           <td />
           <td colSpan={3}>
             <div className="bundle-expand">
-              {sorted.map((v) => (
-                <div key={v.id} className="bundle-expand__row">
-                  <div className="bundle-expand__cell bundle-expand__cell--date">
-                    {formatDateLong(v.shiftDate)}
+              {sorted.map((v, idx) => {
+                const dividerStyle =
+                  idx > 0 ? { borderTop: "1px solid var(--stroke)" } : undefined;
+
+                return (
+                  <div
+                    key={v.id}
+                    className="bundle-expand__row"
+                    style={dividerStyle}
+                  >
+                    <div className="bundle-expand__cell bundle-expand__cell--date">
+                      {formatDateLong(v.shiftDate)}
+                    </div>
+                    <div className="bundle-expand__cell bundle-expand__cell--time">
+                      {v.shiftStart}–{v.shiftEnd}
+                    </div>
+                    <div className="bundle-expand__cell bundle-expand__cell--wing">
+                      {v.wing ?? "-"}
+                    </div>
                   </div>
-                  <div className="bundle-expand__cell bundle-expand__cell--time">
-                    {v.shiftStart}–{v.shiftEnd}
-                  </div>
-                  <div className="bundle-expand__cell bundle-expand__cell--wing">
-                    {v.wing ?? "-"}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </td>
         </tr>

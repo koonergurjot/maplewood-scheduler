@@ -24,6 +24,19 @@ import { groupVacanciesByDate } from "./lib/vacancy";
 import { matchText } from "./lib/text";
 import { reorder } from "./utils/reorder";
 import {
+  ACTIVE_HEADERS,
+  CLASSIFICATION_HEADERS,
+  EMPLOYEE_ID_HEADERS,
+  FIRST_NAME_HEADERS,
+  FULL_NAME_HEADERS,
+  HOME_WING_HEADERS,
+  LAST_NAME_HEADERS,
+  POSITION_STATUS_HEADERS,
+  SENIORITY_DATE_HEADERS,
+  SENIORITY_HOURS_HEADERS,
+  SENIORITY_RANK_HEADERS,
+  START_DATE_HEADERS,
+  STATUS_HEADERS,
   getFirst,
   normalizeActive,
   normalizeClassification,
@@ -236,106 +249,14 @@ const displayVacancyLabel = (v: Vacancy) => {
   );
 };
 
-const EMPLOYEE_ID_HEADERS = [
-  "EmployeeID",
-  "Employee ID",
-  "Payroll ID",
-  "PayrollID",
-  "ID",
-  "Employee Number",
-  "Employee #",
-  "EmpID",
-  "Emp ID",
-  "EmployeeCode",
-  "Employee Code",
-];
-
-const FIRST_NAME_HEADERS = [
-  "First Name",
-  "FirstName",
-  "Given Name",
-  "Preferred Name",
-  "Preferred First Name",
-  "Legal First Name",
-];
-
-const LAST_NAME_HEADERS = [
-  "Last Name",
-  "LastName",
-  "Surname",
-  "Family Name",
-  "Legal Last Name",
-];
-
-const FULL_NAME_HEADERS = [
-  "Name",
-  "Employee Name",
-  "Full Name",
-  "Employee",
-];
-
-const CLASSIFICATION_HEADERS = [
-  "Classification",
-  "Class",
-  "Job Class",
-  "Job Title",
-  "Position",
-  "Role",
-];
-
-const STATUS_HEADERS = [
-  "Status",
-  "Employment Status",
-  "Employee Status",
-  "FT/PT",
-  "Employment Type",
-  "Type",
-];
-
-const ACTIVE_HEADERS = [
-  "Active",
-  "Is Active",
-  "Currently Active",
-  "Employment State",
-  "On Leave",
-];
-
-const HOME_WING_HEADERS = [
-  "Home Wing",
-  "Wing",
-  "Home Department",
-  "Department",
-  "Home Unit",
-];
-
-const START_DATE_HEADERS = [
-  "Start Date",
-  "Hire Date",
-  "Seniority Date",
-  "Start",
-  "Date Hired",
-];
-
-const SENIORITY_HOURS_HEADERS = [
-  "Seniority Hours",
-  "Hours",
-  "SeniorityHours",
-  "Total Hours",
-  "Hours Worked",
-];
-
-const SENIORITY_RANK_HEADERS = [
-  "Seniority Rank",
-  "Rank",
-  "Seniority",
-  "Seniority Position",
-  "Order",
-  "Seniority Ranking",
-];
-
 const HEADER_SANITIZE_REGEX = /[^a-z0-9]/gi;
 const sanitizeHeaderKey = (header: string) =>
   header.replace(HEADER_SANITIZE_REGEX, "").toLowerCase();
+
+const STATUS_HEADER_CANDIDATES = [
+  ...STATUS_HEADERS,
+  ...POSITION_STATUS_HEADERS,
+];
 
 export function mapRowToEmployee(
   row: Record<string, unknown>,
@@ -386,7 +307,7 @@ export function mapRowToEmployee(
   }
 
   const classificationRaw = getFirst(row, CLASSIFICATION_HEADERS);
-  const statusRaw = getFirst(row, STATUS_HEADERS);
+  const statusRaw = getFirst(row, STATUS_HEADER_CANDIDATES);
   const activeRaw = getFirst(row, ACTIVE_HEADERS);
   const homeWingRaw = getFirst(row, HOME_WING_HEADERS);
   const startDateRaw = getFirst(row, START_DATE_HEADERS);
@@ -481,6 +402,7 @@ export function mapRowToEmployee(
 const DATE_HEADER_HINTS = new Set(
   [
     ...START_DATE_HEADERS,
+    ...SENIORITY_DATE_HEADERS,
     "End Date",
     "Date Hired",
     "Birth Date",

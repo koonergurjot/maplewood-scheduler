@@ -3,27 +3,156 @@ import type { Classification, Status } from "../types";
 
 const HEADER_SANITIZE_REGEX = /[^a-z0-9]/gi;
 
+export const EMPLOYEE_ID_HEADERS = [
+  "EmployeeID",
+  "Employee ID",
+  "Payroll ID",
+  "PayrollID",
+  "ID",
+  "Employee Number",
+  "Employee #",
+  "EmpID",
+  "Emp ID",
+  "EmployeeCode",
+  "Employee Code",
+];
+
+export const FIRST_NAME_HEADERS = [
+  "First Name",
+  "FirstName",
+  "Given Name",
+  "Preferred Name",
+  "Preferred First Name",
+  "Legal First Name",
+];
+
+export const LAST_NAME_HEADERS = [
+  "Last Name",
+  "LastName",
+  "Surname",
+  "Family Name",
+  "Legal Last Name",
+];
+
+export const FULL_NAME_HEADERS = [
+  "Payroll Name",
+  "Name",
+  "Employee Name",
+  "Full Name",
+  "Employee",
+  "Employee Full Name",
+];
+
+export const CLASSIFICATION_HEADERS = [
+  "Job Title Description",
+  "Job Title",
+  "Classification",
+  "Class",
+  "Job Class",
+  "Position",
+  "Role",
+];
+
+export const STATUS_HEADERS = [
+  "Position Status",
+  "Status",
+  "Employment Status",
+  "Employee Status",
+  "FT/PT",
+  "Employment Type",
+  "Type",
+];
+
+export const POSITION_STATUS_HEADERS = [
+  "Position FTE Status",
+  "FTE Status",
+  "Position FTE",
+];
+
+export const ACTIVE_HEADERS = [
+  "Active",
+  "Is Active",
+  "Currently Active",
+  "Employment State",
+  "On Leave",
+];
+
+export const HOME_WING_HEADERS = [
+  "Home Wing",
+  "Wing",
+  "Home Department",
+  "Department",
+  "Home Unit",
+];
+
+export const SENIORITY_DATE_HEADERS = [
+  "Seniority Date",
+  "Start Date",
+];
+
+export const START_DATE_HEADERS = [
+  "Start Date",
+  "Start",
+  "Hire Date",
+  "Date Hired",
+  "Employment Date",
+  "Original Hire Date",
+  "Seniority Date",
+];
+
+export const SENIORITY_HOURS_HEADERS = [
+  "Total Seniority Hours as at",
+  "Total Seniority Hours",
+  "Seniority Hours",
+  "SeniorityHours",
+  "Total Hours",
+  "Hours Worked",
+  "Hours",
+];
+
+export const RANKING_HEADERS = ["Ranking", "Rank"];
+
+export const SENIORITY_RANK_HEADERS = [
+  "Seniority Rank",
+  "Seniority Ranking",
+  "Seniority",
+  "Seniority Position",
+  "Seniority Order",
+  "Order",
+  ...RANKING_HEADERS,
+];
+
 const CLASSIFICATION_SYNONYMS: Record<string, Classification> = {
   rca: "RCA",
   psw: "RCA",
   "personal support worker": "RCA",
+  personalsupportworker: "RCA",
   hca: "RCA",
   "health care aide": "RCA",
   "healthcare aide": "RCA",
+  healthcareaide: "RCA",
   "care aide": "RCA",
+  careaide: "RCA",
   lpn: "LPN",
   rpn: "LPN",
   "registered practical nurse": "LPN",
   "licensed practical nurse": "LPN",
+  licensedpracticalnurse: "LPN",
+  registeredpracticalnurse: "LPN",
   rn: "RN",
   "registered nurse": "RN",
+  registerednurse: "RN",
   rec: "Recreation",
   recreation: "Recreation",
   "recreation aide": "Recreation",
   "recreation assistant": "Recreation",
+  recreationaide: "Recreation",
+  recreationassistant: "Recreation",
   receptionist: "Receptionist",
   "front desk": "Receptionist",
   "front office": "Receptionist",
+  frontdesk: "Receptionist",
+  frontoffice: "Receptionist",
   adp: "ADP RCA",
   "adp rca": "ADP RCA",
   "adp psw": "ADP RCA",
@@ -76,22 +205,58 @@ const sanitizeHeader = (header: string): string =>
 
 export function getFirst<T = unknown>(
   row: Record<string, unknown>,
-  candidates: string[],
+  candidates: readonly string[],
   fallback?: T,
 ): unknown | T {
-  const normalized = new Map<string, unknown>();
-  for (const [key, value] of Object.entries(row ?? {})) {
-    normalized.set(sanitizeHeader(key), value);
-  }
+  const normalizedEntries = Object.entries(row ?? {}).map(
+    ([key, value]) => [sanitizeHeader(key), value] as const,
+  );
+  const normalized = new Map<string, unknown>(normalizedEntries);
+  const sanitizedCandidates: string[] = [];
+
+  const isMeaningfulValue = (value: unknown): boolean =>
+    value !== undefined &&
+    value !== null &&
+    (typeof value !== "string" || value.trim() !== "");
 
   for (const candidate of candidates) {
-    const value = normalized.get(sanitizeHeader(candidate));
-    if (
-      value !== undefined &&
-      value !== null &&
-      (typeof value !== "string" || value.trim() !== "")
-    ) {
+    const normalizedCandidate = sanitizeHeader(candidate);
+    sanitizedCandidates.push(normalizedCandidate);
+
+    if (!normalizedCandidate) continue;
+
+    const value = normalized.get(normalizedCandidate);
+    if (isMeaningfulValue(value)) {
       return value;
+    }
+  }
+
+  const MIN_PARTIAL_MATCH_LENGTH = 10;
+
+  for (const normalizedCandidate of sanitizedCandidates) {
+    if (
+      !normalizedCandidate ||
+      normalizedCandidate.length < MIN_PARTIAL_MATCH_LENGTH
+    ) {
+      continue;
+    }
+
+    for (const [normalizedKey, value] of normalizedEntries) {
+      if (
+        !normalizedKey ||
+        normalizedKey.length < MIN_PARTIAL_MATCH_LENGTH
+      ) {
+        continue;
+      }
+
+      if (
+        normalizedKey.includes(normalizedCandidate) ||
+        normalizedCandidate.includes(normalizedKey)
+      ) {
+        if (isMeaningfulValue(value)) {
+          return value;
+        }
+      }
     }
   }
 
