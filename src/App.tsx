@@ -9,7 +9,7 @@ import {
 import { Link } from "react-router-dom";
 import { recommend, Recommendation } from "./recommend";
 import type { OfferingTier } from "./offering/offeringMachine";
-import type { SSF$DateCode, Sheet2JSONOpts } from "xlsx";
+import type { Sheet2JSONOpts, WorkSheet } from "xlsx";
 import {
   isoDate,
   combineDateTime,
@@ -503,10 +503,26 @@ const DATETIME_HEADER_HINTS = new Set(
 
 const EXCEL_EXTENSIONS = [".xlsx", ".xlsm", ".xlsb", ".xls"];
 const EXCEL_MIME_SUBSTRINGS = ["spreadsheetml", "ms-excel"];
-const EXCEL_SHEET_TO_JSON_OPTIONS: Sheet2JSONOpts = {
+type ExtendedSheet2JSONOpts = Sheet2JSONOpts & {
+  cellDates?: boolean;
+  raw?: boolean;
+};
+
+const EXCEL_SHEET_TO_JSON_OPTIONS: ExtendedSheet2JSONOpts = {
   defval: "",
   cellDates: true,
   raw: false,
+};
+
+type SSF$DateCode = {
+  y?: number;
+  m?: number;
+  d?: number;
+  H?: number;
+  M?: number;
+  S?: number;
+  u?: number;
+  [key: string]: unknown;
 };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -672,11 +688,84 @@ export async function parseFile(
     const sheet = workbook.Sheets[firstSheetName];
     if (!sheet) return [];
 
-    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-      ...EXCEL_SHEET_TO_JSON_OPTIONS,
-      cellDates: true,
-      raw: false,
-    });
+    const findHeaderRow = (sheet: WorkSheet): number | null => {
+      const normalize = (value: unknown) =>
+        String(value ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+      const headerTokens = [
+        "Payroll Name",
+        "Position Status",
+        "Seniority Date",
+        "Job Title",
+        "Job Title Description",
+        "Position FTE Status",
+        "Total Seniority Hours",
+        "Ranking",
+      ].map(normalize);
+
+      const rows = XLSX.utils.sheet_to_json<any[]>(sheet, {
+        header: 1,
+        defval: "",
+      });
+
+      const searchLimit = Math.min(rows.length, 20);
+      for (let i = 0; i < searchLimit; i += 1) {
+        const row = rows[i];
+        if (!Array.isArray(row)) continue;
+
+        const normalizedRowValues = new Set(
+          row
+            .map(normalize)
+            .filter((value) => value.length > 0),
+        );
+
+        let matchCount = 0;
+        for (const token of headerTokens) {
+          if (token && normalizedRowValues.has(token)) {
+            matchCount += 1;
+            if (matchCount >= 2) {
+              return i;
+            }
+          }
+        }
+      }
+
+      return null;
+    };
+
+    const headerRowIndex = findHeaderRow(sheet);
+    if (headerRowIndex !== null) {
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+        header: 1,
+        defval: "",
+      });
+
+      const headerRow = rows[headerRowIndex];
+      const headers = (Array.isArray(headerRow) ? headerRow : []) as unknown[];
+      const dataRows = rows.slice(headerRowIndex + 1);
+
+      const objects = dataRows.map((r) => {
+        const rowValues: unknown[] = Array.isArray(r) ? (r as unknown[]) : [];
+        const o: Record<string, unknown> = {};
+        headers.forEach((h, i) => {
+          if (h) {
+            const key = String(h).trim();
+            if (key) o[key] = rowValues[i];
+          }
+        });
+        return o;
+      });
+
+      return objects.map((row) => normalizeExcelRowDates(row, XLSX));
+    }
+
+    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+      sheet,
+      {
+        ...EXCEL_SHEET_TO_JSON_OPTIONS,
+        cellDates: true,
+        raw: false,
+      } as ExtendedSheet2JSONOpts,
+    );
 
     return rawRows.map((row) => normalizeExcelRowDates(row, XLSX));
   }
