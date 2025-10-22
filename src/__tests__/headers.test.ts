@@ -107,6 +107,45 @@ describe("mapRowToEmployee", () => {
     expect(mapRowToEmployee({}, 0)).toBeNull();
   });
 
+  it("skips rows when ids and names are only whitespace", () => {
+    const row: Record<string, unknown> = {
+      EmployeeID: "   ",
+      "First Name": "   ",
+      "Last Name": " ",
+    };
+
+    expect(mapRowToEmployee(row, 2)).toBeNull();
+  });
+
+  it("normalizes whitespace, spaced numbers, and metadata", () => {
+    const importedAt = "2024-05-28T12:34:56.000Z";
+    const row: Record<string, unknown> = {
+      EmployeeID: " ",
+      Name: "  Doe,   Jane   ",
+      Classification: " Registered   Nurse ",
+      Status: " Full   Time ",
+      Active: " yes  ",
+      "Seniority Hours": " 1 234.5 ",
+      "Seniority Rank": "  12 ",
+    };
+
+    const employee = mapRowToEmployee(row, 3, {
+      fileName: "  staff upload.csv  ",
+      importedAt,
+    });
+
+    expect(employee).not.toBeNull();
+    expect(employee?.id).toBe("emp_3");
+    expect(employee?.firstName).toBe("Jane");
+    expect(employee?.lastName).toBe("Doe");
+    expect(employee?.classification).toBe("RN");
+    expect(employee?.status).toBe("FT");
+    expect(employee?.seniorityHours).toBeCloseTo(1234.5);
+    expect(employee?.seniorityRank).toBe(12);
+    expect(employee?.sourceFileName).toBe("staff upload.csv");
+    expect(employee?.importedAt).toBe(importedAt);
+  });
+
   it("handles payroll and FTE status headers", () => {
     const row: Record<string, unknown> = {
       "Payroll ID": "900",
