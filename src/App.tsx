@@ -2914,9 +2914,12 @@ function EmployeesPage({
       ),
     );
 
-  const importRows = (rows: Record<string, unknown>[]) => {
+  const importRows = (
+    rows: Record<string, unknown>[],
+    meta?: { fileName?: string; importedAt?: string },
+  ): boolean => {
     if (!rows.length) {
-      return { success: false, mapped: [] as Employee[], headers: [] as string[] };
+      return false;
     }
 
     const normalizedRows = rows.map((row) => normalizeRowDates(row));
@@ -2932,15 +2935,12 @@ function EmployeesPage({
       .filter((emp): emp is Employee => !!emp);
 
     if (!mapped.length) {
-      return {
-        success: false,
-        mapped,
-        headers: getHeadersFromRows(rows),
-      };
+      showImportHeadersToast(getHeadersFromRows(rows));
+      return false;
     }
 
     setEmployees(mapped);
-    return { success: true, mapped, headers: getHeadersFromRows(rows) };
+    return true;
   };
 
   const promptHeaderPicker = async (file: File) => {
