@@ -35,7 +35,12 @@ describe("header utilities", () => {
   it("normalizes classification synonyms", () => {
     expect(normalizeClassification("psw")).toBe("RCA");
     expect(normalizeClassification("ADP LPN")).toBe("ADP LPN");
-    expect(normalizeClassification("unknown")).toBe(CLASSIFICATIONS[0]);
+    expect(normalizeClassification("Licensed Practical Nurse")).toBe("LPN");
+    expect(normalizeClassification("Registered Nurse")).toBe("RN");
+    expect(normalizeClassification("Essential Services")).toBe(
+      "Essential Services",
+    );
+    expect(normalizeClassification("unknown")).toBeUndefined();
   });
 
   it("normalizes employment status labels", () => {

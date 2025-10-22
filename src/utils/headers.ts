@@ -122,43 +122,68 @@ export const SENIORITY_RANK_HEADERS = [
   ...RANKING_HEADERS,
 ];
 
-const CLASSIFICATION_SYNONYMS: Record<string, Classification> = {
-  rca: "RCA",
-  psw: "RCA",
-  "personal support worker": "RCA",
-  personalsupportworker: "RCA",
-  hca: "RCA",
-  "health care aide": "RCA",
-  "healthcare aide": "RCA",
-  healthcareaide: "RCA",
-  "care aide": "RCA",
-  careaide: "RCA",
-  lpn: "LPN",
-  rpn: "LPN",
-  "registered practical nurse": "LPN",
-  "licensed practical nurse": "LPN",
-  licensedpracticalnurse: "LPN",
-  registeredpracticalnurse: "LPN",
-  rn: "RN",
-  "registered nurse": "RN",
-  registerednurse: "RN",
-  rec: "Recreation",
-  recreation: "Recreation",
-  "recreation aide": "Recreation",
-  "recreation assistant": "Recreation",
-  recreationaide: "Recreation",
-  recreationassistant: "Recreation",
-  receptionist: "Receptionist",
-  "front desk": "Receptionist",
-  "front office": "Receptionist",
-  frontdesk: "Receptionist",
-  frontoffice: "Receptionist",
-  adp: "ADP RCA",
-  "adp rca": "ADP RCA",
-  "adp psw": "ADP RCA",
-  "adp lpn": "ADP LPN",
-  "adp nurse": "ADP LPN",
-};
+const CLASS_MAP: Array<{ re: RegExp; value: Classification }> = [
+  {
+    re: /\b(adp|adult\s*day\s*program)\b.*\b(rca|care\s*aide|psw|personal\s*support\s*worker|hca|health\s*care\s*aide|healthcare\s*aide)\b/i,
+    value: "ADP RCA",
+  },
+  {
+    re: /\b(adp|adult\s*day\s*program)\b.*\b(lpn|nurse|practical\s*nurse|rpn|registered\s*practical\s*nurse)\b/i,
+    value: "ADP LPN",
+  },
+  {
+    re: /\badult\s*day(time)?\s*(recreation|activity)\s*aide\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\brecreation\s*\/\s*activity\s*aide\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\brecreation\s*therap(ist|y)\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\b(rehab|rehabilitation)\s*assistant\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\blicensed\s*practical\s*nurse\b/i,
+    value: "LPN",
+  },
+  {
+    re: /\bL\.?P\.?N\.?\b/i,
+    value: "LPN",
+  },
+  {
+    re: /\b(R\.?P\.?N\.?|registered\s*practical\s*nurse)\b/i,
+    value: "LPN",
+  },
+  {
+    re: /\bpractical\s*nurse\b/i,
+    value: "LPN",
+  },
+  {
+    re: /\bregistered\s*nurse\b/i,
+    value: "RN",
+  },
+  {
+    re: /\bR\.?N\.?\b/i,
+    value: "RN",
+  },
+  {
+    re: /\b(care\s*aide|rca|resident\s*care\s*aide|psw|personal\s*support\s*worker|hca|health\s*care\s*aide|healthcare\s*aide)\b/i,
+    value: "RCA",
+  },
+  {
+    re: /\b(receptionist|front\s*desk|front\s*office)\b/i,
+    value: "Receptionist",
+  },
+  {
+    re: /\bessential\s*services?\b/i,
+    value: "Essential Services",
+  },
+];
 
 const STATUS_SYNONYMS: Record<string, Status> = {
   ft: "FT",
@@ -286,26 +311,30 @@ export function splitName(name: unknown): { firstName: string; lastName: string 
   };
 }
 
-export function normalizeClassification(input: unknown): Classification {
-  const raw = typeof input === "string" ? input.trim() : "";
-  if (!raw) return CLASSIFICATIONS[0];
+export function normalizeClassification(
+  input: unknown,
+): Classification | undefined {
+  const raw = String(input ?? "").trim();
+  if (!raw) return undefined;
 
-  const exact = CLASSIFICATIONS.find(
-    (option) => option.toLowerCase() === raw.toLowerCase(),
-  );
-  if (exact) return exact;
-
-  const key = raw.toLowerCase();
-  if (CLASSIFICATION_SYNONYMS[key]) {
-    return CLASSIFICATION_SYNONYMS[key];
+  const s = raw.replace(/\s+/g, " ");
+  for (const { re, value } of CLASS_MAP) {
+    if (re.test(s)) {
+      return value;
+    }
   }
 
-  const normalizedKey = key.replace(/[^a-z0-9]/g, "");
-  if (CLASSIFICATION_SYNONYMS[normalizedKey]) {
-    return CLASSIFICATION_SYNONYMS[normalizedKey];
-  }
+  if (/^\s*ADP\s*LPN\s*$/i.test(s)) return "ADP LPN";
+  if (/^\s*ADP\s*(RCA|PSW|Care\s*Aide|HCA)\s*$/i.test(s)) return "ADP RCA";
+  if (/^\s*ADP\s*$/i.test(s)) return "ADP RCA";
+  if (/^\s*(LPN|RPN)\s*$/i.test(s)) return "LPN";
+  if (/^\s*RN\s*$/i.test(s)) return "RN";
+  if (/^\s*(RCA|PSW|HCA)\s*$/i.test(s)) return "RCA";
+  if (/^\s*(REC|Recreation)\s*$/i.test(s)) return "Recreation";
+  if (/^\s*Receptionist\s*$/i.test(s)) return "Receptionist";
+  if (/^\s*Essential\s*Services?\s*$/i.test(s)) return "Essential Services";
 
-  return CLASSIFICATIONS[0];
+  return undefined;
 }
 
 export function normalizeStatus(input: unknown): Status {
