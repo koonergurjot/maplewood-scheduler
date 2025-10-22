@@ -137,7 +137,9 @@ describe("OpenVacanciesRedesign filters", () => {
 
   it("filters by wing", () => {
     renderComponent();
-    fireEvent.click(screen.getByRole("button", { name: "Rosewood" }));
+    fireEvent.click(screen.getByRole("button", { name: "Wings" }));
+    const wingsListbox = screen.getByRole("listbox", { name: "Wings" });
+    fireEvent.click(within(wingsListbox).getByRole("option", { name: "Rosewood" }));
     const table = screen.getByRole("table");
     expect(within(table).getByText("Rosewood")).toBeTruthy();
     expect(within(table).queryByText("Shamrock")).toBeNull();
