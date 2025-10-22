@@ -2905,11 +2905,19 @@ function EmployeesPage({
     }
   };
 
-  const importRows = (
-    rows: Record<string, unknown>[],
-    meta?: { fileName?: string; importedAt?: string },
-  ) => {
-    if (!rows.length) return false;
+  const getHeadersFromRows = (rows: Record<string, unknown>[]) =>
+    Array.from(
+      new Set(
+        rows.flatMap((row) =>
+          row && typeof row === "object" ? Object.keys(row) : [],
+        ),
+      ),
+    );
+
+  const importRows = (rows: Record<string, unknown>[]) => {
+    if (!rows.length) {
+      return { success: false, mapped: [] as Employee[], headers: [] as string[] };
+    }
 
     const normalizedRows = rows.map((row) => normalizeRowDates(row));
     const fileName =
@@ -2924,19 +2932,39 @@ function EmployeesPage({
       .filter((emp): emp is Employee => !!emp);
 
     if (!mapped.length) {
-      const headers = Array.from(
-        new Set(
-          rows.flatMap((row) =>
-            row && typeof row === "object" ? Object.keys(row) : [],
-          ),
-        ),
-      );
-      showImportHeadersToast(headers, "Unable to import employees.");
-      return false;
+      return {
+        success: false,
+        mapped,
+        headers: getHeadersFromRows(rows),
+      };
     }
 
     setEmployees(mapped);
-    return true;
+    return { success: true, mapped, headers: getHeadersFromRows(rows) };
+  };
+
+  const promptHeaderPicker = async (file: File) => {
+    try {
+      const preview = await getExcelHeaderPreview(file);
+      if (preview.totalRows > 1 && preview.rows.length > 0) {
+        const firstWithData = preview.rows.find((row) =>
+          row.values.some((value) => String(value ?? "").trim().length > 0),
+        );
+        const selectedIndex =
+          firstWithData?.index ?? preview.rows[0]?.index ?? null;
+        setHeaderPicker({
+          file,
+          rows: preview.rows,
+          totalRows: preview.totalRows,
+          selectedIndex,
+          isSubmitting: false,
+        });
+        return true;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    return false;
   };
 
   const handleFileImport = async (
