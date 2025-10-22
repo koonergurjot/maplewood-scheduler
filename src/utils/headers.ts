@@ -203,26 +203,90 @@ const POSITIVE_ACTIVITY = new Set([
 const sanitizeHeader = (header: string): string =>
   header.replace(HEADER_SANITIZE_REGEX, "").toLowerCase();
 
+const tokenizeHeader = (header: string): string[] =>
+  header.toLowerCase().match(/[a-z0-9]+/g) ?? [];
+
+const BENIGN_SUFFIX_WORDS = new Set(
+  [
+    "as",
+    "at",
+    "on",
+    "of",
+    "per",
+    "for",
+    "from",
+    "to",
+    "through",
+    "thru",
+    "by",
+    "in",
+    "asof",
+    "fy",
+    "fye",
+    "ytd",
+    "jan",
+    "january",
+    "feb",
+    "february",
+    "mar",
+    "march",
+    "apr",
+    "april",
+    "may",
+    "jun",
+    "june",
+    "jul",
+    "july",
+    "aug",
+    "august",
+    "sep",
+    "sept",
+    "september",
+    "oct",
+    "october",
+    "nov",
+    "november",
+    "dec",
+    "december",
+  ].map((word) => word.toLowerCase()),
+);
+
+const isBenignSuffixWord = (word: string): boolean => {
+  if (!word) {
+    return false;
+  }
+
+  if (/[0-9]/.test(word)) {
+    return true;
+  }
+
+  return BENIGN_SUFFIX_WORDS.has(word);
+};
+
 export function getFirst<T = unknown>(
   row: Record<string, unknown>,
   candidates: readonly string[],
   fallback?: T,
 ): unknown | T {
-  const normalizedEntries = Object.entries(row ?? {}).map(
-    ([key, value]) => [sanitizeHeader(key), value] as const,
+  const entries = Object.entries(row ?? {}).map(([key, value]) => ({
+    normalizedKey: sanitizeHeader(key),
+    keyWords: tokenizeHeader(key),
+    value,
+  }));
+  const normalized = new Map<string, unknown>(
+    entries.map(({ normalizedKey, value }) => [normalizedKey, value] as const),
   );
-  const normalized = new Map<string, unknown>(normalizedEntries);
-  const sanitizedCandidates: string[] = [];
+  const candidateInfos = candidates.map((candidate) => ({
+    normalizedCandidate: sanitizeHeader(candidate),
+    candidateWords: tokenizeHeader(candidate),
+  }));
 
   const isMeaningfulValue = (value: unknown): boolean =>
     value !== undefined &&
     value !== null &&
     (typeof value !== "string" || value.trim() !== "");
 
-  for (const candidate of candidates) {
-    const normalizedCandidate = sanitizeHeader(candidate);
-    sanitizedCandidates.push(normalizedCandidate);
-
+  for (const { normalizedCandidate } of candidateInfos) {
     if (!normalizedCandidate) continue;
 
     const value = normalized.get(normalizedCandidate);
@@ -233,29 +297,43 @@ export function getFirst<T = unknown>(
 
   const MIN_PARTIAL_MATCH_LENGTH = 10;
 
-  for (const normalizedCandidate of sanitizedCandidates) {
+  for (const { normalizedCandidate, candidateWords } of candidateInfos) {
     if (
       !normalizedCandidate ||
-      normalizedCandidate.length < MIN_PARTIAL_MATCH_LENGTH
+      normalizedCandidate.length < MIN_PARTIAL_MATCH_LENGTH ||
+      candidateWords.length === 0
     ) {
       continue;
     }
 
-    for (const [normalizedKey, value] of normalizedEntries) {
+    for (const { normalizedKey, keyWords, value } of entries) {
       if (
         !normalizedKey ||
-        normalizedKey.length < MIN_PARTIAL_MATCH_LENGTH
+        normalizedKey.length < MIN_PARTIAL_MATCH_LENGTH ||
+        keyWords.length < candidateWords.length
       ) {
         continue;
       }
 
-      if (
-        normalizedKey.includes(normalizedCandidate) ||
-        normalizedCandidate.includes(normalizedKey)
-      ) {
-        if (isMeaningfulValue(value)) {
-          return value;
+      let isPrefix = true;
+      for (let index = 0; index < candidateWords.length; index += 1) {
+        if (candidateWords[index] !== keyWords[index]) {
+          isPrefix = false;
+          break;
         }
+      }
+
+      if (!isPrefix) {
+        continue;
+      }
+
+      const suffixWords = keyWords.slice(candidateWords.length);
+      if (!suffixWords.every(isBenignSuffixWord)) {
+        continue;
+      }
+
+      if (isMeaningfulValue(value)) {
+        return value;
       }
     }
   }
