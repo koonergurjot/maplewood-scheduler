@@ -2914,7 +2914,10 @@ function EmployeesPage({
       ),
     );
 
-  const importRows = (rows: Record<string, unknown>[]) => {
+  const importRows = (
+    rows: Record<string, unknown>[],
+    meta?: { fileName?: string | null; importedAt?: string | null },
+  ) => {
     if (!rows.length) {
       return { success: false, mapped: [] as Employee[], headers: [] as string[] };
     }
