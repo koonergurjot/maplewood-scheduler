@@ -6,7 +6,13 @@ export function workingDays(range: VacancyRange): string[] {
 
 export function deadlineForRange(range: VacancyRange, settings: Settings): Date {
   const days = workingDays(range);
-  const first = days[0];
+  const fallbackDay = range.startDate || range.endDate;
+  const first = days[0] ?? fallbackDay;
+
+  if (!first) {
+    throw new Error("Vacancy range is missing a start date");
+  }
+
   const start =
     (range.perDayTimes && range.perDayTimes[first]?.start) ||
     range.shiftStart ||
