@@ -2879,14 +2879,6 @@ function EmployeesPage({
       .filter((emp): emp is Employee => !!emp);
 
     if (!mapped.length) {
-      const headers = Array.from(
-        new Set(
-          rows.flatMap((row) =>
-            row && typeof row === "object" ? Object.keys(row) : [],
-          ),
-        ),
-      );
-      showImportHeadersToast(headers, "Unable to import employees.");
       return false;
     }
 
@@ -2913,7 +2905,8 @@ function EmployeesPage({
       return false;
     }
 
-    if (!rows.length) {
+    const success = importRows(rows);
+    if (!success) {
       if (allowHeaderPrompt && isExcelFile(file)) {
         try {
           const preview = await getExcelHeaderPreview(file);
@@ -2952,9 +2945,8 @@ function EmployeesPage({
       return false;
     }
 
-    const success = importRows(rows);
     clearFileInput();
-    return success;
+    return true;
   };
 
   const handleUseSelectedHeaderRow = async () => {
