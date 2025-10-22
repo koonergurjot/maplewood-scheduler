@@ -4,6 +4,7 @@ import {
   normalizeActive,
   normalizeClassification,
   normalizeStatus,
+  SENIORITY_HOURS_HEADERS,
   splitName,
 } from "../utils/headers";
 import { CLASSIFICATIONS } from "../types";
@@ -15,6 +16,14 @@ describe("header utilities", () => {
     expect(getFirst(row, ["payroll id"])).toBe("12345");
     expect(getFirst(row, ["first name"])).toBe("Anna");
     expect(getFirst(row, ["missing"], "fallback")).toBe("fallback");
+  });
+
+  it("matches dynamic headers with prefixes", () => {
+    const row = {
+      "Total Seniority Hours as at Sept 30, 2025": "1,234",
+    };
+
+    expect(getFirst(row, SENIORITY_HOURS_HEADERS)).toBe("1,234");
   });
 
   it("splits combined names", () => {
@@ -96,5 +105,30 @@ describe("mapRowToEmployee", () => {
 
   it("returns null for rows without ids or names", () => {
     expect(mapRowToEmployee({}, 0)).toBeNull();
+  });
+
+  it("handles payroll and FTE status headers", () => {
+    const row: Record<string, unknown> = {
+      "Payroll ID": "900",
+      "Payroll Name": "Alex Johnson",
+      "Job Title Description": "Licensed Practical Nurse",
+      "Position FTE Status": "Flex",
+      Active: "Yes",
+      "Seniority Date": "2020-01-15",
+      "Total Seniority Hours as at Sept 30, 2025": "1,500",
+      Ranking: "3",
+    };
+
+    const employee = mapRowToEmployee(row, 2);
+    expect(employee).not.toBeNull();
+    expect(employee?.id).toBe("900");
+    expect(employee?.firstName).toBe("Alex");
+    expect(employee?.lastName).toBe("Johnson");
+    expect(employee?.classification).toBe("LPN");
+    expect(employee?.status).toBe("Casual");
+    expect(employee?.active).toBe(true);
+    expect(employee?.startDate).toBe("2020-01-15");
+    expect(employee?.seniorityHours).toBeCloseTo(1500);
+    expect(employee?.seniorityRank).toBe(3);
   });
 });
