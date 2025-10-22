@@ -1,4 +1,10 @@
-import { ChangeEvent, useId } from "react";
+import {
+  ChangeEvent,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import type { CSSProperties } from "react";
 import { CLASSIFICATIONS, WINGS, SHIFT_PRESETS } from "../types";
 import type { Classification } from "../types";
@@ -40,6 +46,50 @@ function MultiSelectDropdown<T extends string>({
   selectLabel,
 }: MultiSelectDropdownProps<T>) {
   const dropdownId = useId();
+  const listId = `${dropdownId}-${namePrefix}-list`;
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const summaryButtonRef = useRef<HTMLButtonElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleDropdown = () => {
+    setIsOpen((previous) => !previous);
+  };
+
+  const closeDropdown = () => {
+    setIsOpen(false);
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        closeDropdown();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        closeDropdown();
+        summaryButtonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
   const toggleValue = (value: T) => {
     if (selected.includes(value)) {
       onChange(selected.filter((item) => item !== value));
@@ -51,19 +101,38 @@ function MultiSelectDropdown<T extends string>({
   const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const { value } = event.target;
     onChange(value ? ([value as T]) : ([] as T[]));
+    closeDropdown();
   };
 
   return (
-    <div className="filter-dropdown">
-      <div className="filter-dropdown__summary" aria-hidden="true">
+    <div
+      className={`filter-dropdown${isOpen ? " filter-dropdown--open" : ""}`}
+      ref={dropdownRef}
+    >
+      <button
+        ref={summaryButtonRef}
+        type="button"
+        className="filter-dropdown__summary"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={listId}
+        onClick={toggleDropdown}
+      >
         <span>{label}</span>
         {selected.length > 0 && (
           <span className="filter-dropdown__count" aria-live="polite">
             {selected.length}
           </span>
         )}
-      </div>
-      <div role="group" aria-label={label} className="filter-dropdown__list">
+      </button>
+      <div
+        role="listbox"
+        aria-multiselectable="true"
+        aria-label={label}
+        id={listId}
+        className="filter-dropdown__list"
+        hidden={!isOpen}
+      >
         {options.map((option) => {
           const safeValue = option.value
             .toLowerCase()
@@ -77,7 +146,8 @@ function MultiSelectDropdown<T extends string>({
               type="button"
               className="filter-dropdown__option"
               data-active={isActive}
-              aria-pressed={isActive}
+              role="option"
+              aria-selected={isActive}
               onClick={() => toggleValue(option.value)}
             >
               {option.label}
