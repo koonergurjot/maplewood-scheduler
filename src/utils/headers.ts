@@ -315,25 +315,33 @@ export function getFirst<T = unknown>(
         continue;
       }
 
-      let isPrefix = true;
-      for (let index = 0; index < candidateWords.length; index += 1) {
-        if (candidateWords[index] !== keyWords[index]) {
-          isPrefix = false;
-          break;
+      const candidateLength = candidateWords.length;
+
+      for (
+        let startIndex = 0;
+        startIndex <= keyWords.length - candidateLength;
+        startIndex += 1
+      ) {
+        let matches = true;
+        for (let index = 0; index < candidateLength; index += 1) {
+          if (candidateWords[index] !== keyWords[startIndex + index]) {
+            matches = false;
+            break;
+          }
         }
-      }
 
-      if (!isPrefix) {
-        continue;
-      }
+        if (!matches) {
+          continue;
+        }
 
-      const suffixWords = keyWords.slice(candidateWords.length);
-      if (!suffixWords.every(isBenignSuffixWord)) {
-        continue;
-      }
+        const suffixWords = keyWords.slice(startIndex + candidateLength);
+        if (!suffixWords.every(isBenignSuffixWord)) {
+          continue;
+        }
 
-      if (isMeaningfulValue(value)) {
-        return value;
+        if (isMeaningfulValue(value)) {
+          return value;
+        }
       }
     }
   }
