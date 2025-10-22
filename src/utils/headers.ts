@@ -172,6 +172,7 @@ const STATUS_SYNONYMS: Record<string, Status> = {
   casual: "Casual",
   "cas": "Casual",
   "flex": "Casual",
+  "casualflex": "Casual",
   "temporary": "Casual",
 };
 
@@ -318,8 +319,12 @@ export function normalizeStatus(input: unknown): Status {
   if (STATUS_SYNONYMS[compact]) return STATUS_SYNONYMS[compact];
 
   if (key.includes("full")) return "FT";
+  if (compact.includes("fulltime")) return "FT";
   if (key.includes("part")) return "PT";
+  if (compact.includes("parttime")) return "PT";
   if (key.includes("casual")) return "Casual";
+  if (key.includes("flex")) return "Casual";
+  if (compact.includes("flex")) return "Casual";
 
   return "FT";
 }
