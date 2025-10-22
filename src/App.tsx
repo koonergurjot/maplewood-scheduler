@@ -50,6 +50,7 @@ import BulkAwardDialog from "./components/BulkAwardDialog";
 import VacancyRangeForm from "./components/VacancyRangeForm";
 import BundleRow from "./components/BundleRow";
 import CoverageDaysModal from "./components/CoverageDaysModal";
+import HeaderRowPickerModal from "./components/ImportDialog";
 import VacancyRow from "./components/VacancyRow";
 import VacancyDetail from "./components/VacancyDetail";
 import OpenVacanciesRedesign from "./components/OpenVacanciesRedesign";
@@ -700,89 +701,157 @@ const blobToArrayBuffer = async (blob: Blob): Promise<ArrayBuffer> => {
   throw new Error("Unable to convert blob to ArrayBuffer");
 };
 
-export async function parseFile(
-  file: File,
-): Promise<Record<string, unknown>[]> {
+export interface ExcelHeaderPreviewRow {
+  index: number;
+  values: unknown[];
+}
+
+export interface ExcelHeaderPreview {
+  totalRows: number;
+  rows: ExcelHeaderPreviewRow[];
+}
+
+export const isExcelFile = (file: File): boolean => {
   const lowerName = file.name?.toLowerCase() ?? "";
   const mime = file.type?.toLowerCase?.() ?? "";
 
-  const isExcel =
+  return (
     EXCEL_EXTENSIONS.some((ext) => lowerName.endsWith(ext)) ||
-    EXCEL_MIME_SUBSTRINGS.some((substr) => mime.includes(substr));
+    EXCEL_MIME_SUBSTRINGS.some((substr) => mime.includes(substr))
+  );
+};
 
-  if (isExcel) {
-    const XLSX = await import("xlsx");
-    const arrayBuffer = await blobToArrayBuffer(file);
-    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: "array" });
-    const firstSheetName = workbook.SheetNames[0];
-    if (!firstSheetName) return [];
+type ExcelSheetContext = {
+  XLSX: typeof import("xlsx");
+  sheet: WorkSheet;
+};
 
-    const sheet = workbook.Sheets[firstSheetName];
-    if (!sheet) return [];
+const loadFirstWorksheet = async (
+  file: File,
+): Promise<ExcelSheetContext | null> => {
+  const XLSX = await import("xlsx");
+  const arrayBuffer = await blobToArrayBuffer(file);
+  const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: "array" });
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) return null;
 
-    const findHeaderRow = (sheet: WorkSheet): number | null => {
-      const normalize = (value: unknown) =>
-        String(value ?? "").replace(/\s+/g, " ").trim().toLowerCase();
-      const headerTokens = [
-        "Payroll Name",
-        "Position Status",
-        "Seniority Date",
-        "Job Title",
-        "Job Title Description",
-        "Position FTE Status",
-        "Total Seniority Hours",
-        "Ranking",
-      ].map(normalize);
+  const sheet = workbook.Sheets[firstSheetName];
+  if (!sheet) return null;
 
-      const rows = XLSX.utils.sheet_to_json<any[]>(sheet, {
-        header: 1,
-        defval: "",
-      });
+  return { XLSX, sheet };
+};
 
-      const searchLimit = Math.min(rows.length, 20);
-      for (let i = 0; i < searchLimit; i += 1) {
-        const row = rows[i];
-        if (!Array.isArray(row)) continue;
+const toArrayRow = (row: unknown): unknown[] =>
+  Array.isArray(row) ? (row as unknown[]) : [];
 
-        const normalizedRowValues = new Set(
-          row
-            .map(normalize)
-            .filter((value) => value.length > 0),
-        );
+const getHeaderMatrix = (
+  XLSX: typeof import("xlsx"),
+  sheet: WorkSheet,
+): unknown[][] => {
+  const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+    header: 1,
+    defval: "",
+  });
 
-        let matchCount = 0;
-        for (const token of headerTokens) {
-          if (token && normalizedRowValues.has(token)) {
-            matchCount += 1;
-            if (matchCount >= 2) {
-              return i;
-            }
-          }
+  return rows.map(toArrayRow);
+};
+
+const normalizeHeaderValue = (value: unknown) =>
+  String(value ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+
+const findHeaderRowIndex = (rows: unknown[][]): number | null => {
+  const headerTokens = [
+    "Payroll Name",
+    "Position Status",
+    "Seniority Date",
+    "Job Title",
+    "Job Title Description",
+    "Position FTE Status",
+    "Total Seniority Hours",
+    "Ranking",
+  ].map(normalizeHeaderValue);
+
+  const searchLimit = Math.min(rows.length, 20);
+  for (let i = 0; i < searchLimit; i += 1) {
+    const row = rows[i];
+    const normalizedRowValues = new Set(
+      row
+        .map(normalizeHeaderValue)
+        .filter((value) => value.length > 0),
+    );
+
+    let matchCount = 0;
+    for (const token of headerTokens) {
+      if (token && normalizedRowValues.has(token)) {
+        matchCount += 1;
+        if (matchCount >= 2) {
+          return i;
         }
       }
+    }
+  }
 
-      return null;
-    };
+  return null;
+};
 
-    const headerRowIndex = findHeaderRow(sheet);
-    if (headerRowIndex !== null) {
-      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-        header: 1,
-        defval: "",
-      });
+export async function getExcelHeaderPreview(
+  file: File,
+  limit = 10,
+): Promise<ExcelHeaderPreview> {
+  if (!isExcelFile(file)) {
+    return { totalRows: 0, rows: [] };
+  }
 
-      const headerRow = rows[headerRowIndex];
-      const headers = (Array.isArray(headerRow) ? headerRow : []) as unknown[];
-      const dataRows = rows.slice(headerRowIndex + 1);
+  const context = await loadFirstWorksheet(file);
+  if (!context) {
+    return { totalRows: 0, rows: [] };
+  }
 
-      const objects = dataRows.map((r) => {
-        const rowValues: unknown[] = Array.isArray(r) ? (r as unknown[]) : [];
+  const { XLSX, sheet } = context;
+  const matrix = getHeaderMatrix(XLSX, sheet);
+  const totalRows = matrix.length;
+  const rows = matrix.slice(0, limit).map((values, index) => ({
+    index,
+    values,
+  }));
+
+  return { totalRows, rows };
+}
+
+export async function parseFile(
+  file: File,
+  opts?: { headerRow?: number },
+): Promise<Record<string, unknown>[]> {
+  if (isExcelFile(file)) {
+    const context = await loadFirstWorksheet(file);
+    if (!context) return [];
+
+    const { XLSX, sheet } = context;
+    const matrix = getHeaderMatrix(XLSX, sheet);
+
+    const manualHeaderRow = opts?.headerRow;
+    const headerRowIndex =
+      typeof manualHeaderRow === "number" &&
+      Number.isInteger(manualHeaderRow) &&
+      manualHeaderRow >= 0
+        ? manualHeaderRow
+        : findHeaderRowIndex(matrix);
+
+    if (
+      headerRowIndex !== null &&
+      headerRowIndex >= 0 &&
+      headerRowIndex < matrix.length
+    ) {
+      const headerRowValues = toArrayRow(matrix[headerRowIndex]);
+      const dataRows = matrix.slice(headerRowIndex + 1).map(toArrayRow);
+
+      const objects = dataRows.map((rowValues) => {
         const o: Record<string, unknown> = {};
-        headers.forEach((h, i) => {
-          if (h) {
-            const key = String(h).trim();
-            if (key) o[key] = rowValues[i];
-          }
+        headerRowValues.forEach((headerValue, i) => {
+          if (!headerValue) return;
+          const key = String(headerValue).trim();
+          if (!key) return;
+          o[key] = rowValues[i];
         });
         return o;
       });
@@ -2730,6 +2799,14 @@ export default function App() {
 }
 
 // ---------- Pages ----------
+type HeaderPickerState = {
+  file: File;
+  rows: ExcelHeaderPreviewRow[];
+  totalRows: number;
+  selectedIndex: number | null;
+  isSubmitting: boolean;
+};
+
 function EmployeesPage({
   employees,
   setEmployees,
@@ -2742,6 +2819,10 @@ function EmployeesPage({
   const [saveToast, setSaveToast] = useState<
     { message: string; timeout: ReturnType<typeof setTimeout> } | null
   >(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [headerPicker, setHeaderPicker] = useState<HeaderPickerState | null>(
+    null,
+  );
 
   useEffect(() => {
     return () => {
@@ -2783,47 +2864,136 @@ function EmployeesPage({
     showSaveToast(updated);
   };
 
+  const clearFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const importRows = (rows: Record<string, unknown>[]) => {
+    if (!rows.length) return false;
+
+    const normalizedRows = rows.map((row) => normalizeRowDates(row));
+    const mapped = normalizedRows
+      .map((r, i) => mapRowToEmployee(r, i))
+      .filter((emp): emp is Employee => !!emp);
+
+    if (!mapped.length) {
+      const headers = Array.from(
+        new Set(
+          rows.flatMap((row) =>
+            row && typeof row === "object" ? Object.keys(row) : [],
+          ),
+        ),
+      );
+      showImportHeadersToast(headers, "Unable to import employees.");
+      return false;
+    }
+
+    setEmployees(mapped);
+    return true;
+  };
+
+  const handleFileImport = async (
+    file: File,
+    options?: { headerRow?: number; allowHeaderPrompt?: boolean },
+  ): Promise<boolean> => {
+    const { headerRow, allowHeaderPrompt = true } = options ?? {};
+
+    let rows: Record<string, unknown>[] = [];
+    try {
+      rows = await parseFile(
+        file,
+        typeof headerRow === "number" ? { headerRow } : undefined,
+      );
+    } catch (err) {
+      console.error(err);
+      showImportHeadersToast([], "Failed to parse file.");
+      clearFileInput();
+      return false;
+    }
+
+    if (!rows.length) {
+      if (allowHeaderPrompt && isExcelFile(file)) {
+        try {
+          const preview = await getExcelHeaderPreview(file);
+          if (preview.totalRows > 1 && preview.rows.length > 0) {
+            const firstWithData = preview.rows.find((row) =>
+              row.values.some(
+                (value) => String(value ?? "").trim().length > 0,
+              ),
+            );
+            const selectedIndex =
+              firstWithData?.index ?? preview.rows[0]?.index ?? null;
+            setHeaderPicker({
+              file,
+              rows: preview.rows,
+              totalRows: preview.totalRows,
+              selectedIndex,
+              isSubmitting: false,
+            });
+            clearFileInput();
+            return false;
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      const headers = Array.from(
+        new Set(
+          rows.flatMap((row) =>
+            row && typeof row === "object" ? Object.keys(row) : [],
+          ),
+        ),
+      );
+      showImportHeadersToast(headers, "Unable to import employees.");
+      clearFileInput();
+      return false;
+    }
+
+    const success = importRows(rows);
+    clearFileInput();
+    return success;
+  };
+
+  const handleUseSelectedHeaderRow = async () => {
+    if (!headerPicker?.file || headerPicker.selectedIndex === null) return;
+    setHeaderPicker((prev) =>
+      prev ? { ...prev, isSubmitting: true } : prev,
+    );
+    const success = await handleFileImport(headerPicker.file, {
+      headerRow: headerPicker.selectedIndex,
+      allowHeaderPrompt: false,
+    });
+    if (success) {
+      setHeaderPicker(null);
+    } else {
+      setHeaderPicker((prev) =>
+        prev ? { ...prev, isSubmitting: false } : prev,
+      );
+    }
+  };
+
+  const handleCancelHeaderPicker = () => {
+    setHeaderPicker(null);
+    clearFileInput();
+  };
+
   return (
-    <div className="grid">
-      <div className="card">
-        <div className="card-h">Import Staff (CSV)</div>
-        <div className="card-c">
+    <>
+      <div className="grid">
+        <div className="card">
+          <div className="card-h">Import Staff (CSV)</div>
+          <div className="card-c">
           <input
+            ref={fileInputRef}
             type="file"
             accept=".csv,.xlsx,.xls,.xlsm,.xlsb"
             onChange={async (e) => {
               const f = e.target.files?.[0];
               if (!f) return;
-              let rows: Record<string, unknown>[] = [];
-              try {
-                rows = await parseFile(f);
-              } catch (err) {
-                console.error(err);
-                showImportHeadersToast([], "Failed to parse file.");
-                e.target.value = "";
-                return;
-              }
-              const normalizedRows = rows.map((row) => normalizeRowDates(row));
-              const mapped = normalizedRows
-                .map((r, i) => mapRowToEmployee(r, i))
-                .filter((emp): emp is Employee => !!emp);
-
-              if (!mapped.length) {
-                const headers = Array.from(
-                  new Set(
-                    rows.flatMap((row) =>
-                      row && typeof row === "object"
-                        ? Object.keys(row)
-                        : [],
-                    ),
-                  ),
-                );
-                showImportHeadersToast(headers, "Unable to import employees.");
-                return;
-              }
-
-              setEmployees(mapped);
-              e.target.value = "";
+              await handleFileImport(f);
             }}
           />
           <div className="subtitle">
@@ -2935,7 +3105,22 @@ function EmployeesPage({
         </div>
       </div>
       <Toast open={!!saveToast} message={saveToast?.message ?? ""} />
-    </div>
+      </div>
+      <HeaderRowPickerModal
+        open={!!headerPicker}
+        rows={headerPicker?.rows ?? []}
+        totalRows={headerPicker?.totalRows ?? 0}
+        selectedIndex={headerPicker?.selectedIndex ?? null}
+        isSubmitting={headerPicker?.isSubmitting ?? false}
+        onSelect={(index) =>
+          setHeaderPicker((prev) =>
+            prev ? { ...prev, selectedIndex: index } : prev,
+          )
+        }
+        onCancel={handleCancelHeaderPicker}
+        onConfirm={handleUseSelectedHeaderRow}
+      />
+    </>
   );
 }
 

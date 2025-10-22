@@ -1,7 +1,8 @@
 import { Buffer } from "buffer";
 import { readFileSync } from "fs";
 import { describe, expect, it } from "vitest";
-import { mapRowToEmployee, parseFile } from "../App";
+import * as XLSX from "xlsx";
+import { getExcelHeaderPreview, mapRowToEmployee, parseFile } from "../App";
 
 const EXCEL_FIXTURE_PATH = "tests/fixtures/employee.xlsx.base64";
 
@@ -33,5 +34,28 @@ describe("parseFile", () => {
     expect(employees[0]?.startDate).toBe("2024-01-15");
     expect(typeof employees[0]?.startDate).toBe("string");
     expect(employees[0]?.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("allows overriding the detected header row", async () => {
+    const workbook = XLSX.utils.book_new();
+    const sheet = XLSX.utils.aoa_to_sheet([
+      ["Notes", "Detail"],
+      ["Employee Name", "Start Date"],
+      ["Jane Doe", new Date("2024-02-01T00:00:00Z")],
+    ]);
+    XLSX.utils.book_append_sheet(workbook, sheet, "Sheet1");
+    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const file = new File([buffer], "manual-header.xlsx", {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const preview = await getExcelHeaderPreview(file);
+    expect(preview.totalRows).toBe(3);
+    expect(preview.rows[1]?.index).toBe(1);
+
+    const rows = await parseFile(file, { headerRow: 1 });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]["Employee Name"]).toBe("Jane Doe");
+    expect(rows[0]["Start Date"]).toBe("2024-02-01");
   });
 });
