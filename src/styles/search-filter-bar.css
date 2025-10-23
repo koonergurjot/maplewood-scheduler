@@ -1,6 +1,7 @@
 .search-filter-bar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-auto-flow: row;
   gap: 18px;
   align-items: start;
   padding: 16px;
@@ -60,6 +61,7 @@
   gap: 6px;
   min-width: 0;
   width: 100%;
+  grid-column: span 2;
 }
 
 .search-filter-bar__segmented-buttons {
@@ -69,6 +71,10 @@
 }
 
 .search-filter-bar__segmented-buttons .segmented-option {
+  flex: 1 1 140px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   border-radius: 999px;
   border: 1px solid var(--stroke);
   background: var(--chipBg);
@@ -98,6 +104,10 @@
 .search-filter-bar__segmented-buttons .segmented-option[data-active="true"]:focus-visible {
   color: var(--button-text-on-brand);
   background: var(--brand);
+}
+
+.search-filter-bar__segmented[aria-label="Bundle filters"] {
+  grid-column: 1 / -1;
 }
 
 .search-filter-bar__action {
@@ -249,5 +259,9 @@
 
   .search-filter-bar__date-range {
     grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .search-filter-bar__segmented {
+    grid-column: 1 / -1;
   }
 }
