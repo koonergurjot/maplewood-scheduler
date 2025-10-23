@@ -262,7 +262,7 @@
   }
 
   .search-filter-bar__date-range {
-    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
 
   .search-filter-bar__segmented {
