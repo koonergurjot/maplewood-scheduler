@@ -99,7 +99,7 @@ export type Employee = {
   firstName: string;
   lastName: string;
   classification: Classification;
-  status: Status;
+  status?: Status;
   homeWing?: string; // not used for coverage now
   startDate?: string; // ISO YYYY-MM-DD
   seniorityHours?: number;
@@ -4687,7 +4687,7 @@ function EmployeeCombo({
             >
               {e.firstName} {e.lastName}{" "}
               <span className="pill" style={{ marginLeft: 6 }}>
-                {e.classification} {e.status}
+                {e.classification} {e.status ?? "Unknown"}
               </span>
             </div>
           ))}

@@ -270,21 +270,23 @@ const CLASS_MAP: Array<{ re: RegExp; value: Classification }> = [
   },
 ];
 
-const STATUS_SYNONYMS: Record<string, Status> = {
-  ft: "FT",
-  "fulltime": "FT",
-  "full-time": "FT",
-  "full time": "FT",
-  pt: "PT",
-  "parttime": "PT",
-  "part-time": "PT",
-  "part time": "PT",
-  casual: "Casual",
-  "cas": "Casual",
-  "flex": "Casual",
-  "casualflex": "Casual",
-  "temporary": "Casual",
-};
+const STATUS_MAP: Array<{ re: RegExp; value: Status }> = [
+  // Casual first so "Part time casual" resolves to Casual
+  {
+    re: /\b(cas(?:ual)?(?:[-/\s]*flex)?|on[-\s]*call|oc|temp(?:orary)?|flex)\b/i,
+    value: "Casual",
+  },
+  // Part-time next
+  {
+    re: /\b(part[\s-]*time|p\/?t|pt|rpt|reg(ular)?\s*part[\s-]*time)\b/i,
+    value: "PT",
+  },
+  // Full-time last
+  {
+    re: /\b(full[\s-]*time|f\/?t|ft|rft|reg(ular)?\s*full[\s-]*time)\b/i,
+    value: "FT",
+  },
+];
 
 const NEGATIVE_ACTIVITY = new Set([
   "no",
@@ -422,25 +424,16 @@ export function normalizeClassification(
   return undefined;
 }
 
-export function normalizeStatus(input: unknown): Status {
-  const raw = typeof input === "string" ? input.trim() : "";
-  if (!raw) return "FT";
+export function normalizeStatus(input: unknown): Status | undefined {
+  const raw = String(input ?? "").trim();
+  if (!raw) return undefined;
 
-  const key = raw.toLowerCase();
-  if (STATUS_SYNONYMS[key]) return STATUS_SYNONYMS[key];
+  const s = raw.replace(/\s+/g, " ");
+  for (const { re, value } of STATUS_MAP) {
+    if (re.test(s)) return value;
+  }
 
-  const compact = key.replace(/[^a-z0-9]/g, "");
-  if (STATUS_SYNONYMS[compact]) return STATUS_SYNONYMS[compact];
-
-  if (key.includes("full")) return "FT";
-  if (compact.includes("fulltime")) return "FT";
-  if (key.includes("part")) return "PT";
-  if (compact.includes("parttime")) return "PT";
-  if (key.includes("casual")) return "Casual";
-  if (key.includes("flex")) return "Casual";
-  if (compact.includes("flex")) return "Casual";
-
-  return "FT";
+  return undefined; // do NOT default to FT
 }
 
 export function normalizeActive(input: unknown): boolean {
