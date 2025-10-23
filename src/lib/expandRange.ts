@@ -20,6 +20,18 @@ export function expandRangeToVacancies(
         ),
       ).sort()
     : [];
+  const normalizeOverrides = <T,>(
+    overrides: Record<string, T> | undefined,
+  ): Record<string, T> | undefined =>
+    overrides
+      ? Object.fromEntries(
+          Object.entries(overrides)
+            .map(([day, value]) => [day.trim(), value] as const)
+            .filter(([day]) => day.length > 0),
+        )
+      : undefined;
+  const perDayTimes = normalizeOverrides(range.perDayTimes);
+  const perDayWings = normalizeOverrides(range.perDayWings);
   const days = workingDaysProvided
     ? normalizedWorkingDays
     : getDatesInRange(range.startDate, range.endDate);
@@ -39,14 +51,14 @@ export function expandRangeToVacancies(
       : {}),
     reason: range.reason,
     classification: range.classification,
-    wing: range.perDayWings?.[d] ?? range.wing,
+    wing: perDayWings?.[d] ?? range.wing,
     date: d,
-    start: range.perDayTimes?.[d]?.start ?? range.shiftStart ?? "06:30",
-    end: range.perDayTimes?.[d]?.end ?? range.shiftEnd ?? "14:30",
+    start: perDayTimes?.[d]?.start ?? range.shiftStart ?? "06:30",
+    end: perDayTimes?.[d]?.end ?? range.shiftEnd ?? "14:30",
     shiftDate: d,
     shiftStart:
-      range.perDayTimes?.[d]?.start ?? range.shiftStart ?? "06:30",
-    shiftEnd: range.perDayTimes?.[d]?.end ?? range.shiftEnd ?? "14:30",
+      perDayTimes?.[d]?.start ?? range.shiftStart ?? "06:30",
+    shiftEnd: perDayTimes?.[d]?.end ?? range.shiftEnd ?? "14:30",
     knownAt: nowISO,
     offeringTier: "CASUALS",
     offeringRoundStartedAt: nowISO,

@@ -54,6 +54,41 @@ describe("expandRangeToVacancies", () => {
     );
   });
 
+  it("trims override keys alongside working days", () => {
+    const range: VacancyRange = {
+      id: "r-trim",
+      reason: "Backfill",
+      classification: "RCA",
+      wing: "Rosewood",
+      startDate: "2025-03-01",
+      endDate: "2025-03-02",
+      knownAt: "2025-02-20T00:00:00Z",
+      workingDays: [" 2025-03-02 ", "2025-03-01", "2025-03-01"],
+      perDayTimes: {
+        "2025-03-02 ": { start: "09:00", end: "17:00" },
+      },
+      perDayWings: {
+        " 2025-03-02": "Oakwood",
+      },
+      shiftStart: "06:30",
+      shiftEnd: "14:30",
+      offeringStep: "Casuals",
+      status: "Open",
+    };
+
+    const vxs = expandRangeToVacancies(range);
+
+    expect(vxs.map((v) => v.shiftDate)).toEqual([
+      "2025-03-01",
+      "2025-03-02",
+    ]);
+    expect(vxs[0].shiftStart).toBe("06:30");
+    expect(vxs[0].wing).toBe("Rosewood");
+    expect(vxs[1].shiftStart).toBe("09:00");
+    expect(vxs[1].shiftEnd).toBe("17:00");
+    expect(vxs[1].wing).toBe("Oakwood");
+  });
+
   it("returns no vacancies when a range has zero working days selected", () => {
     const range: VacancyRange = {
       id: "r-empty",
