@@ -32,6 +32,18 @@ describe("validateDateRange", () => {
     expect(result.isValid).toBe(false);
     expect(result.error).toBe("Both start and end dates are required");
   });
+
+  it("should reject invalid start date", () => {
+    const result = validateDateRange("not-a-date", "2025-01-15");
+    expect(result.isValid).toBe(false);
+    expect(result.error).toBe("Start date must be a valid date");
+  });
+
+  it("should reject invalid end date", () => {
+    const result = validateDateRange("2025-01-15", "bad-end");
+    expect(result.isValid).toBe(false);
+    expect(result.error).toBe("End date must be a valid date");
+  });
 });
 
 describe("validateRequired", () => {

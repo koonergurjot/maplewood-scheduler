@@ -20,6 +20,14 @@ export function validateDateRange(startDate: string, endDate: string): Validatio
   const start = new Date(startDate);
   const end = new Date(endDate);
 
+  if (Number.isNaN(start.getTime())) {
+    return { isValid: false, error: "Start date must be a valid date" };
+  }
+
+  if (Number.isNaN(end.getTime())) {
+    return { isValid: false, error: "End date must be a valid date" };
+  }
+
   if (start > end) {
     return { isValid: false, error: "Start date must be before or equal to end date" };
   }
