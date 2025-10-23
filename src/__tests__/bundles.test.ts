@@ -7,7 +7,7 @@ import type { VacancyRange } from "../types";
 const makeRange = (start: string, end: string): VacancyRange => ({
   id: "r1",
   reason: "Test",
-  classification: "RCA",
+  classification: "Care Aide",
   startDate: start,
   endDate: end,
   knownAt: "2025-09-01T00:00:00Z",

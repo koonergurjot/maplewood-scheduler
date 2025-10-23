@@ -33,10 +33,12 @@ describe("header utilities", () => {
   });
 
   it("normalizes classification synonyms", () => {
-    expect(normalizeClassification("psw")).toBe("RCA");
-    expect(normalizeClassification("ADP LPN")).toBe("ADP LPN");
-    expect(normalizeClassification("Licensed Practical Nurse")).toBe("LPN");
-    expect(normalizeClassification("Registered Nurse")).toBe("RN");
+    expect(normalizeClassification("psw")).toBe("Care Aide");
+    expect(normalizeClassification("Adult Day Program LPN")).toBe("Adult Day Program LPN");
+    expect(normalizeClassification("Licensed Practical Nurse")).toBe(
+      "Licensed Practical Nurse",
+    );
+    expect(normalizeClassification("Registered Nurse")).toBe("Registered Nurse");
     expect(normalizeClassification("Essential Services")).toBe(
       "Essential Services",
     );
@@ -77,7 +79,7 @@ describe("mapRowToEmployee", () => {
     expect(employee?.id).toBe("001");
     expect(employee?.firstName).toBe("Jane");
     expect(employee?.lastName).toBe("Doe");
-    expect(employee?.classification).toBe("RCA");
+    expect(employee?.classification).toBe("Care Aide");
     expect(employee?.status).toBe("PT");
     expect(employee?.active).toBe(false);
     expect(employee?.activeLabel).toBe("On Leave");
@@ -101,7 +103,7 @@ describe("mapRowToEmployee", () => {
     expect(employee?.id).toBe("777");
     expect(employee?.firstName).toBe("John");
     expect(employee?.lastName).toBe("Smith");
-    expect(employee?.classification).toBe("ADP RCA");
+    expect(employee?.classification).toBe("Adult Day Program RCA");
     expect(employee?.status).toBe("FT");
     expect(employee?.seniorityRank).toBe(5);
     expect(employee?.active).toBe(true);
@@ -143,7 +145,7 @@ describe("mapRowToEmployee", () => {
     expect(employee?.id).toBe("emp_3");
     expect(employee?.firstName).toBe("Jane");
     expect(employee?.lastName).toBe("Doe");
-    expect(employee?.classification).toBe("RN");
+    expect(employee?.classification).toBe("Registered Nurse");
     expect(employee?.status).toBe("FT");
     expect(employee?.seniorityHours).toBeCloseTo(1234.5);
     expect(employee?.seniorityRank).toBe(12);
@@ -169,7 +171,7 @@ describe("mapRowToEmployee", () => {
     expect(employee?.id).toBe("900");
     expect(employee?.firstName).toBe("Alex");
     expect(employee?.lastName).toBe("Johnson");
-    expect(employee?.classification).toBe("LPN");
+    expect(employee?.classification).toBe("Licensed Practical Nurse");
     expect(employee?.status).toBe("Casual");
     expect(employee?.active).toBe(true);
     expect(employee?.startDate).toBe("2020-01-15");

@@ -98,7 +98,7 @@ describe("employee Excel import", () => {
     expect(employee?.firstName).toBe("Renuka");
     expect(employee?.lastName).toBe("Bhat");
     expect(employee?.status).toBe("FT");
-    expect(employee?.classification).toBe("RCA");
+    expect(employee?.classification).toBe("Care Aide");
     expect(employee?.seniorityHours).toBe(15864.44);
     expect(employee?.startDate).toBe("2017-06-22");
   });

@@ -6,7 +6,7 @@ describe("coverageDatesForSubmit and hydrateCoverageSelection", () => {
   const base: Vacancy = {
     id: "v1",
     reason: "Test",
-    classification: "RN",
+    classification: "Registered Nurse",
     date: "2025-01-10",
     start: "08:00",
     end: "16:00",
@@ -41,7 +41,7 @@ describe("groupVacanciesByDate", () => {
   const v1: Vacancy = {
     id: "a",
     reason: "Test",
-    classification: "RN",
+    classification: "Registered Nurse",
     date: "2025-01-10",
     start: "08:00",
     end: "16:00",
@@ -59,7 +59,7 @@ describe("groupVacanciesByDate", () => {
   const v2: Vacancy = {
     id: "b",
     reason: "Test",
-    classification: "RN",
+    classification: "Registered Nurse",
     date: "2025-01-11",
     start: "08:00",
     end: "16:00",

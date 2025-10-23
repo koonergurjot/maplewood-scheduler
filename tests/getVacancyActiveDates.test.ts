@@ -5,7 +5,7 @@ import type { Vacancy } from "../src/types";
 const baseVacancy: Vacancy = {
   id: "1",
   reason: "vacation",
-  classification: "RCA",
+  classification: "Care Aide",
   date: "2025-01-10",
   start: "06:30",
   end: "14:30",

@@ -16,7 +16,7 @@ const settings: Settings = {
 const baseRange: VacancyRange = {
   id: "range-1",
   reason: "Vacation coverage",
-  classification: "RN",
+  classification: "Registered Nurse",
   startDate: "2025-05-01",
   endDate: "2025-05-05",
   knownAt: "2025-04-20T12:00:00Z",

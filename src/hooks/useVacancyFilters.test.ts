@@ -47,7 +47,7 @@ describe("useVacancyFilters localStorage integration", () => {
   it("hydrates state from storage", () => {
     const snapshot: VacancyFilterSnapshot = {
       selectedWings: ["North"],
-      selectedPositions: ["RN"],
+      selectedPositions: ["Registered Nurse"],
       filterShift: "Day",
       countdown: "yellow",
       start: "2024-01-01",
@@ -76,7 +76,7 @@ describe("useVacancyFilters localStorage integration", () => {
       result.current.setSearch("evening");
       result.current.setStart("2024-02-01");
       result.current.setEnd("2024-02-14");
-      result.current.setSelectedPositions(["LPN"]);
+      result.current.setSelectedPositions(["Licensed Practical Nurse"]);
       result.current.setSelectedWings(["Bluebell"]);
       result.current.setFilterShift("Evening");
       result.current.setCountdown("green");
@@ -88,7 +88,7 @@ describe("useVacancyFilters localStorage integration", () => {
         OPEN_VACANCY_FILTERS_KEY,
         JSON.stringify({
           selectedWings: ["Bluebell"],
-          selectedPositions: ["LPN"],
+          selectedPositions: ["Licensed Practical Nurse"],
           filterShift: "Evening",
           countdown: "green",
           start: "2024-02-01",

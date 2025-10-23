@@ -19,7 +19,7 @@ const baseVacancy: Vacancy = {
   id: "base",
   date: "2025-01-01",
   reason: "Coverage",
-  classification: "RN",
+  classification: "Registered Nurse",
   shiftDate: "2025-01-01",
   shiftStart: "08:00",
   shiftEnd: "16:00",

@@ -122,139 +122,139 @@ export const SENIORITY_RANK_HEADERS = [
 const CLASS_MAP: Array<{ re: RegExp; value: Classification }> = [
   {
     re: /\b(adp|adult\s*day\s*program)\b.*\b(rca|care\s*aide|psw|personal\s*support\s*worker|hca|health\s*care\s*aide|healthcare\s*aide)\b/i,
-    value: "ADP RCA",
+    value: "Adult Day Program RCA",
   },
   {
     re: /\badult\s*day\s*program\s*care\s*aide\b/i,
-    value: "ADP RCA",
+    value: "Adult Day Program RCA",
   },
   {
     re: /\badp\s*care\s*aide\b/i,
-    value: "ADP RCA",
+    value: "Adult Day Program RCA",
   },
   {
     re: /\b(adp|adult\s*day\s*program)\b.*\b(lpn|nurse|practical\s*nurse|rpn|registered\s*practical\s*nurse)\b/i,
-    value: "ADP LPN",
+    value: "Adult Day Program LPN",
   },
   {
     re: /\badult\s*day(time)?\s*(recreation|activity)\s*aide\b/i,
-    value: "Recreation",
+    value: "Adult Daytime Recreation Aide",
   },
   {
     re: /\badp\s*recreation\s*aide\b/i,
-    value: "Recreation",
+    value: "Recreation/Activity Aide",
   },
   {
     re: /\badult\s*day\s*recreation\s*aide\b/i,
-    value: "Recreation",
+    value: "Recreation/Activity Aide",
   },
   {
     re: /\brecreation\s*\/\s*activity\s*aide\b/i,
-    value: "Recreation",
+    value: "Recreation/Activity Aide",
   },
   {
     re: /\brecreation[-\s]*aide\b/i,
-    value: "Recreation",
+    value: "Recreation/Activity Aide",
   },
   {
     re: /\bactivity[-\s]*aide\b/i,
-    value: "Recreation",
+    value: "Recreation/Activity Aide",
   },
   {
     re: /\brec\s*\/\s*activity[-\s]*aide\b/i,
-    value: "Recreation",
+    value: "Recreation/Activity Aide",
   },
   {
     re: /\brecreation\s*therap(ist|y)\b/i,
-    value: "Recreation",
+    value: "Recreation Therapist",
   },
   {
     re: /\brecreation[-\s]*therapy\b/i,
-    value: "Recreation",
+    value: "Recreation Therapist",
   },
   {
     re: /\brec\s*therapist\b/i,
-    value: "Recreation",
+    value: "Recreation Therapist",
   },
   {
     re: /\b(rehab|rehabilitation)\s*assistant\b/i,
-    value: "Recreation",
+    value: "Rehab Assistant",
   },
   {
     re: /\brehab[-\s]*aide\b/i,
-    value: "Recreation",
+    value: "Rehab Assistant",
   },
   {
     re: /\brehabilitation[-\s]*aide\b/i,
-    value: "Recreation",
+    value: "Rehab Assistant",
   },
   {
     re: /\bphysio[-\s]*aide\b/i,
-    value: "Recreation",
+    value: "Rehab Assistant",
   },
   {
     re: /\bota\s*\/\s*pta\b/i,
-    value: "Recreation",
+    value: "Rehab Assistant",
   },
   {
     re: /\blicensed\s*practical\s*nurse\b/i,
-    value: "LPN",
+    value: "Licensed Practical Nurse",
   },
   {
     re: /\bL\.?P\.?N\.?\b/i,
-    value: "LPN",
+    value: "Licensed Practical Nurse",
   },
   {
     re: /\b(R\.?P\.?N\.?|registered\s*practical\s*nurse)\b/i,
-    value: "LPN",
+    value: "Licensed Practical Nurse",
   },
   {
     re: /\bpractical\s*nurse\b/i,
-    value: "LPN",
+    value: "Licensed Practical Nurse",
   },
   {
     re: /\blpn\b/i,
-    value: "LPN",
+    value: "Licensed Practical Nurse",
   },
   {
     re: /\bpractical\s*nurses?\b/i,
-    value: "LPN",
+    value: "Licensed Practical Nurse",
   },
   {
     re: /\blicensed\s*practical\b/i,
-    value: "LPN",
+    value: "Licensed Practical Nurse",
   },
   {
     re: /\bregistered\s*nurse\b/i,
-    value: "RN",
+    value: "Registered Nurse",
   },
   {
     re: /\bR\.?N\.?\b/i,
-    value: "RN",
+    value: "Registered Nurse",
   },
   {
     re: /\brn\b/i,
-    value: "RN",
+    value: "Registered Nurse",
   },
   {
     re: /\bregistered\s*nurses?\b/i,
-    value: "RN",
+    value: "Registered Nurse",
   },
   {
     re: /\b(care\s*aide|rca|resident\s*care\s*aide|psw|personal\s*support\s*worker|hca|health\s*care\s*aide|healthcare\s*aide)\b/i,
-    value: "RCA",
+    value: "Care Aide",
   },
   {
     re: /\bresident[-\s]*care[-\s]*aide\b/i,
-    value: "RCA",
+    value: "Care Aide",
   },
   {
     re: /\bH\.?C\.?A\.?\b/i,
-    value: "RCA",
+    value: "Care Aide",
   },
   {
     re: /\bhealth[-\s]*care[-\s]*aide\b/i,
-    value: "RCA",
+    value: "Care Aide",
   },
   {
     re: /\b(receptionist|front\s*desk|front\s*office)\b/i,
@@ -409,13 +409,13 @@ export function normalizeClassification(
     }
   }
 
-  if (/^\s*ADP\s*LPN\s*$/i.test(s)) return "ADP LPN";
-  if (/^\s*ADP\s*(RCA|PSW|Care\s*Aide|HCA)\s*$/i.test(s)) return "ADP RCA";
-  if (/^\s*ADP\s*$/i.test(s)) return "ADP RCA";
-  if (/^\s*(LPN|RPN)\s*$/i.test(s)) return "LPN";
-  if (/^\s*RN\s*$/i.test(s)) return "RN";
-  if (/^\s*(RCA|PSW|HCA)\s*$/i.test(s)) return "RCA";
-  if (/^\s*(REC|Recreation)\s*$/i.test(s)) return "Recreation";
+  if (/^\s*ADP\s*LPN\s*$/i.test(s)) return "Adult Day Program LPN";
+  if (/^\s*ADP\s*(RCA|PSW|Care\s*Aide|HCA)\s*$/i.test(s)) return "Adult Day Program RCA";
+  if (/^\s*ADP\s*$/i.test(s)) return "Adult Day Program RCA";
+  if (/^\s*(LPN|RPN)\s*$/i.test(s)) return "Licensed Practical Nurse";
+  if (/^\s*RN\s*$/i.test(s)) return "Registered Nurse";
+  if (/^\s*(RCA|PSW|HCA)\s*$/i.test(s)) return "Care Aide";
+  if (/^\s*(REC|Recreation)\s*$/i.test(s)) return "Recreation/Activity Aide";
   if (/^\s*Receptionist\s*$/i.test(s)) return "Receptionist";
   if (/^\s*Essential\s*Services?\s*$/i.test(s)) return "Essential Services";
 

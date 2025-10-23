@@ -70,7 +70,7 @@ describe("DeadlineHub", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     hub.addClient(res);
-    expect(hub.clients.size).toBe(1);
+    expect((hub as any).clients.size).toBe(1);
 
     writeMock.mockImplementationOnce(() => {
       throw new Error("stream closed");
@@ -85,7 +85,7 @@ describe("DeadlineHub", () => {
       channels: ["email"],
     });
 
-    expect(hub.clients.size).toBe(0);
+    expect((hub as any).clients.size).toBe(0);
     expect(endMock).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith(
       "Failed to push deadline event to client",

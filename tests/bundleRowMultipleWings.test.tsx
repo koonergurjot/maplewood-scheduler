@@ -9,7 +9,7 @@ describe("BundleRow", () => {
   afterEach(cleanup);
   const baseVacancy = {
     reason: "Vacation",
-    classification: "RN",
+    classification: "Registered Nurse",
     date: "2024-01-01",
     start: "08:00",
     end: "16:00",

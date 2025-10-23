@@ -6,7 +6,7 @@ describe("applyAwardVacancy", () => {
     const vac: Vacancy = {
       id: "v1",
       reason: "Test",
-      classification: "RN",
+      classification: "Registered Nurse",
       date: "2024-01-01",
       start: "08:00",
       end: "16:00",
@@ -29,7 +29,7 @@ describe("applyAwardVacancy", () => {
       {
         id: "v1",
         reason: "Test",
-        classification: "RN",
+        classification: "Registered Nurse",
         date: "2024-01-01",
         start: "08:00",
         end: "16:00",
@@ -44,7 +44,7 @@ describe("applyAwardVacancy", () => {
       {
         id: "v2",
         reason: "Test",
-        classification: "RN",
+        classification: "Registered Nurse",
         date: "2024-01-01",
         start: "08:00",
         end: "16:00",
@@ -59,7 +59,7 @@ describe("applyAwardVacancy", () => {
       {
         id: "v3",
         reason: "Unrelated",
-        classification: "RN",
+        classification: "Registered Nurse",
         date: "2024-01-01",
         start: "08:00",
         end: "16:00",

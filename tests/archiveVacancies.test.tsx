@@ -22,7 +22,7 @@ describe("ArchivePage", () => {
     const vacancy: Vacancy = {
       id: "v1",
       reason: "Test",
-      classification: "RN",
+      classification: "Registered Nurse",
       date: "2024-01-01",
       start: "08:00",
       end: "16:00",
@@ -39,7 +39,7 @@ describe("ArchivePage", () => {
       bidderEmployeeId: "e1",
       bidderName: "Alice",
       bidderStatus: "FT",
-      bidderClassification: "RN",
+      bidderClassification: "Registered Nurse",
       bidTimestamp: "2024-01-01T00:00:00Z",
       notes: "hi",
     };

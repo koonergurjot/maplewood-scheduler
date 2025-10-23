@@ -8,7 +8,7 @@ test("awarded and filled shifts hidden by default and toggle shows them", () => 
   const todayIso = new Date().toISOString().slice(0, 10);
   const base: Omit<Vacancy, "id" | "status"> = {
     reason: "Test",
-    classification: "RN",
+    classification: "Registered Nurse",
     date: todayIso,
     start: "08:00",
     end: "16:00",
