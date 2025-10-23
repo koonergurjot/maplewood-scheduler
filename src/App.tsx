@@ -2879,6 +2879,9 @@ function EmployeesPage({
   const [saveToast, setSaveToast] = useState<
     { message: string; timeout: ReturnType<typeof setTimeout> } | null
   >(null);
+  const [importQaNotice, setImportQaNotice] = useState<
+    { count: number; sample: string[] } | null
+  >(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [headerPicker, setHeaderPicker] = useState<HeaderPickerState | null>(
     null,
@@ -2943,6 +2946,7 @@ function EmployeesPage({
     rows: Record<string, unknown>[],
     meta?: { fileName?: string; importedAt?: string },
   ): boolean => {
+    setImportQaNotice(null);
     if (!rows.length) {
       return false;
     }
@@ -2965,6 +2969,34 @@ function EmployeesPage({
     }
 
     setEmployees(mapped);
+    const unmappedTitles = normalizedRows
+      .map((row) => {
+        const candidates = [
+          row["rawTitle"],
+          row["Job Title Description"],
+          row["Job Title"],
+        ];
+        for (const value of candidates) {
+          if (typeof value === "string") {
+            const trimmed = value.trim();
+            if (trimmed) return trimmed;
+          }
+          if (typeof value === "number" && Number.isFinite(value)) {
+            const text = `${value}`.trim();
+            if (text) return text;
+          }
+        }
+        return undefined;
+      })
+      .filter((title): title is string => Boolean(title))
+      .filter((title) => !normalizeClassification(title));
+
+    if (unmappedTitles.length) {
+      const sample = Array.from(new Set(unmappedTitles)).slice(0, 10);
+      setImportQaNotice({ count: unmappedTitles.length, sample });
+    } else {
+      setImportQaNotice(null);
+    }
     return true;
   };
 
@@ -3087,23 +3119,49 @@ function EmployeesPage({
         <div className="card">
           <div className="card-h">Import Staff (CSV)</div>
           <div className="card-c">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.xlsx,.xls,.xlsm,.xlsb"
-            onChange={async (e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              await handleFileImport(f);
-            }}
-          />
-          <div className="subtitle">
-            Columns: id, firstName, lastName, classification (RCA/LPN/RN/Rec/
-            Receptionist), status (FT/PT/Casual), homeWing, startDate,
-            seniorityHours, seniorityRank, active (Yes/No)
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls,.xlsm,.xlsb"
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                await handleFileImport(f);
+              }}
+            />
+            <div className="subtitle">
+              Columns: id, firstName, lastName, classification (RCA/LPN/RN/Rec/
+              Receptionist), status (FT/PT/Casual), homeWing, startDate,
+              seniorityHours, seniorityRank, active (Yes/No)
+            </div>
+            {importQaNotice && (
+              <div
+                role="status"
+                aria-live="polite"
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  borderRadius: 12,
+                  borderLeft: "4px solid var(--warn)",
+                  background: "var(--cardAlt)",
+                  boxShadow: "inset 0 0 0 1px rgba(180, 83, 9, 0.2)",
+                  color: "var(--text)",
+                  lineHeight: 1.45,
+                }}
+              >
+                <div style={{ fontWeight: 700 }}>
+                  Unrecognized classifications in {importQaNotice.count} row
+                  {importQaNotice.count === 1 ? "" : "s"}.
+                </div>
+                {importQaNotice.sample.length > 0 && (
+                  <div>
+                    First examples: {importQaNotice.sample.join(", ")}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
       <div className="card">
         <div className="card-h">Add Employee</div>
