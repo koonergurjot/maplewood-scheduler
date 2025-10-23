@@ -22,14 +22,24 @@ export function bundleContiguousVacanciesByRef(vacs: Vacancy[]): Vacancy[] {
     byRef.set(v.vacancyRef, arr);
   }
 
+  const MS_PER_DAY = 86_400_000;
+  const parseDateValue = (iso: string): number => {
+    const [y, m, d] = iso.split("-").map((part) => Number.parseInt(part, 10));
+    if ([y, m, d].some((part) => Number.isNaN(part))) {
+      return Number.NaN;
+    }
+    return Date.UTC(y, m - 1, d);
+  };
+
   for (const arr of byRef.values()) {
     arr.sort((a, b) => a.shiftDate.localeCompare(b.shiftDate));
 
     let group: Vacancy[] = [];
-    let prev: string | null = null;
+    let prevValue: number | null = null;
     const flush = () => {
       if (group.length < 2) {
         group = [];
+        prevValue = null;
         return;
       }
       let bid = group.find((v) => v.bundleId)?.bundleId;
@@ -39,14 +49,19 @@ export function bundleContiguousVacanciesByRef(vacs: Vacancy[]): Vacancy[] {
         v.bundleMode = "one-person";
       }
       group = [];
+      prevValue = null;
     };
 
     for (const v of arr) {
-      if (prev && new Date(v.shiftDate + "T00:00:00").getTime() - new Date(prev + "T00:00:00").getTime() !== 86400000) {
+      const currentValue = parseDateValue(v.shiftDate);
+      if (
+        prevValue !== null &&
+        (!Number.isFinite(currentValue) || currentValue - prevValue !== MS_PER_DAY)
+      ) {
         flush();
       }
       group.push(v);
-      prev = v.shiftDate;
+      prevValue = Number.isFinite(currentValue) ? currentValue : null;
     }
     flush();
   }
