@@ -125,6 +125,14 @@ const CLASS_MAP: Array<{ re: RegExp; value: Classification }> = [
     value: "ADP RCA",
   },
   {
+    re: /\badult\s*day\s*program\s*care\s*aide\b/i,
+    value: "ADP RCA",
+  },
+  {
+    re: /\badp\s*care\s*aide\b/i,
+    value: "ADP RCA",
+  },
+  {
     re: /\b(adp|adult\s*day\s*program)\b.*\b(lpn|nurse|practical\s*nurse|rpn|registered\s*practical\s*nurse)\b/i,
     value: "ADP LPN",
   },
@@ -133,7 +141,27 @@ const CLASS_MAP: Array<{ re: RegExp; value: Classification }> = [
     value: "Recreation",
   },
   {
+    re: /\badp\s*recreation\s*aide\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\badult\s*day\s*recreation\s*aide\b/i,
+    value: "Recreation",
+  },
+  {
     re: /\brecreation\s*\/\s*activity\s*aide\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\brecreation[-\s]*aide\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\bactivity[-\s]*aide\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\brec\s*\/\s*activity[-\s]*aide\b/i,
     value: "Recreation",
   },
   {
@@ -141,7 +169,31 @@ const CLASS_MAP: Array<{ re: RegExp; value: Classification }> = [
     value: "Recreation",
   },
   {
+    re: /\brecreation[-\s]*therapy\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\brec\s*therapist\b/i,
+    value: "Recreation",
+  },
+  {
     re: /\b(rehab|rehabilitation)\s*assistant\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\brehab[-\s]*aide\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\brehabilitation[-\s]*aide\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\bphysio[-\s]*aide\b/i,
+    value: "Recreation",
+  },
+  {
+    re: /\bota\s*\/\s*pta\b/i,
     value: "Recreation",
   },
   {
@@ -161,6 +213,18 @@ const CLASS_MAP: Array<{ re: RegExp; value: Classification }> = [
     value: "LPN",
   },
   {
+    re: /\blpn\b/i,
+    value: "LPN",
+  },
+  {
+    re: /\bpractical\s*nurses?\b/i,
+    value: "LPN",
+  },
+  {
+    re: /\blicensed\s*practical\b/i,
+    value: "LPN",
+  },
+  {
     re: /\bregistered\s*nurse\b/i,
     value: "RN",
   },
@@ -169,7 +233,27 @@ const CLASS_MAP: Array<{ re: RegExp; value: Classification }> = [
     value: "RN",
   },
   {
+    re: /\brn\b/i,
+    value: "RN",
+  },
+  {
+    re: /\bregistered\s*nurses?\b/i,
+    value: "RN",
+  },
+  {
     re: /\b(care\s*aide|rca|resident\s*care\s*aide|psw|personal\s*support\s*worker|hca|health\s*care\s*aide|healthcare\s*aide)\b/i,
+    value: "RCA",
+  },
+  {
+    re: /\bresident[-\s]*care[-\s]*aide\b/i,
+    value: "RCA",
+  },
+  {
+    re: /\bH\.?C\.?A\.?\b/i,
+    value: "RCA",
+  },
+  {
+    re: /\bhealth[-\s]*care[-\s]*aide\b/i,
     value: "RCA",
   },
   {
@@ -178,6 +262,10 @@ const CLASS_MAP: Array<{ re: RegExp; value: Classification }> = [
   },
   {
     re: /\bessential\s*services?\b/i,
+    value: "Essential Services",
+  },
+  {
+    re: /\bessential\b/i,
     value: "Essential Services",
   },
 ];
