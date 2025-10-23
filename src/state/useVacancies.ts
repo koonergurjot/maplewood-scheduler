@@ -41,6 +41,11 @@ export function useVacancies() {
   );
   const [staged, setStaged] = useState<Vacancy[] | null>(null);
   const undoTimerRef = useRef<number | null>(null);
+  const latestVacanciesRef = useRef(vacancies);
+
+  useEffect(() => {
+    latestVacanciesRef.current = vacancies;
+  }, [vacancies]);
 
   function persist(vacs: Vacancy[], log: AuditEntry[] = auditLog) {
     const current = loadState() || {};
@@ -89,7 +94,7 @@ export function useVacancies() {
     setAuditLog(nextLog);
     setStaged(null);
     undoTimerRef.current = null;
-    persist(vacancies, nextLog);
+    persist(latestVacanciesRef.current, nextLog);
   }
 
   function addVacancies(newVacancies: Vacancy[]) {
