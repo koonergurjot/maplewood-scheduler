@@ -10,10 +10,22 @@ export function expandRangeToVacancies(
   awardAsBlock = true,
 ): Vacancy[] {
   const nowISO = new Date().toISOString();
-  const days =
-    range.workingDays?.length
-      ? [...range.workingDays].sort()
-      : getDatesInRange(range.startDate, range.endDate);
+  const workingDaysProvided = Array.isArray(range.workingDays);
+  const normalizedWorkingDays = workingDaysProvided
+    ? Array.from(
+        new Set(
+          range.workingDays
+            .map((day) => (typeof day === "string" ? day.trim() : ""))
+            .filter((day): day is string => day.length > 0),
+        ),
+      ).sort()
+    : [];
+  const days = workingDaysProvided
+    ? normalizedWorkingDays
+    : getDatesInRange(range.startDate, range.endDate);
+  if (!days.length) {
+    return [];
+  }
   const coverageDates = range.startDate === range.endDate ? undefined : days;
   const isMulti = days.length >= 2;
   const singleAward = isMulti && awardAsBlock;

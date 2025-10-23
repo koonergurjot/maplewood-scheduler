@@ -54,6 +54,24 @@ describe("expandRangeToVacancies", () => {
     );
   });
 
+  it("returns no vacancies when a range has zero working days selected", () => {
+    const range: VacancyRange = {
+      id: "r-empty",
+      reason: "Coverage",
+      classification: "RCA",
+      startDate: "2025-02-01",
+      endDate: "2025-02-05",
+      knownAt: "2025-01-15T00:00:00Z",
+      workingDays: [],
+      shiftStart: "06:30",
+      shiftEnd: "14:30",
+      offeringStep: "Casuals",
+      status: "Open",
+    };
+
+    expect(expandRangeToVacancies(range)).toEqual([]);
+  });
+
   it("omits coverageDates for single-day ranges", () => {
     const range: VacancyRange = {
       id: "r2",
