@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { useVacancies } from "./useVacancies";
 import type { Vacancy } from "../types";
+import type { AuditEntry } from "./useVacancies";
 
 const storageMocks = vi.hoisted(() => ({
   loadState: vi.fn(),
@@ -49,7 +50,7 @@ describe("useVacancies", () => {
   });
 
   it("finalizes staged deletions with the latest vacancy state", () => {
-    let storedState = {
+    let storedState: { vacancies: Vacancy[]; auditLog: AuditEntry[] } = {
       vacancies: [makeVacancy("1"), makeVacancy("2")],
       auditLog: [],
     };
@@ -81,7 +82,7 @@ describe("useVacancies", () => {
   });
 
   it("restores staged deletions on undo and cancels finalize timer", () => {
-    let storedState = {
+    let storedState: { vacancies: Vacancy[]; auditLog: AuditEntry[] } = {
       vacancies: [makeVacancy("1"), makeVacancy("2")],
       auditLog: [],
     };
