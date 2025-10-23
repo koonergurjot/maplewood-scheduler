@@ -20,7 +20,7 @@ export type Employee = {
   firstName: string;
   lastName: string;
   classification: Classification;
-  status: Status;
+  status?: Status;
   homeWing?: string;
   startDate?: string;
   seniorityHours?: number;

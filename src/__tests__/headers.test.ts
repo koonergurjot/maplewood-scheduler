@@ -49,7 +49,8 @@ describe("header utilities", () => {
     expect(normalizeStatus("Full Time")).toBe("FT");
     expect(normalizeStatus("part-time")).toBe("PT");
     expect(normalizeStatus("cas")).toBe("Casual");
-    expect(normalizeStatus(undefined)).toBe("FT");
+    expect(normalizeStatus("Part time casual")).toBe("Casual");
+    expect(normalizeStatus(undefined)).toBeUndefined();
   });
 
   it("normalizes activity including On Leave", () => {
@@ -177,5 +178,17 @@ describe("mapRowToEmployee", () => {
     expect(employee?.startDate).toBe("2020-01-15");
     expect(employee?.seniorityHours).toBeCloseTo(1500);
     expect(employee?.seniorityRank).toBe(3);
+  });
+
+  it("leaves employment status undefined when no match is found", () => {
+    const row: Record<string, unknown> = {
+      EmployeeID: "4242",
+      "Employee Name": "Doe, Jamie",
+      Classification: "Registered Nurse",
+    };
+
+    const employee = mapRowToEmployee(row, 1);
+    expect(employee).not.toBeNull();
+    expect(employee?.status).toBeUndefined();
   });
 });

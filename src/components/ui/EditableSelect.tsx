@@ -79,6 +79,13 @@ export default function EditableSelect({
     return selectedOption?.label ?? "—";
   }, [placeholder, renderPreview, selectedOption]);
 
+  const shouldShowPlaceholderOption = useMemo(
+    () =>
+      placeholder !== undefined &&
+      !options.some((option) => option.value === ""),
+    [options, placeholder],
+  );
+
   const commit = (nextValue: string) => {
     pendingActionRef.current = "save";
     setIsEditing(false);
@@ -152,6 +159,11 @@ export default function EditableSelect({
           style={{ ...selectStyle, ...selectProps?.style }}
           disabled={disabled}
         >
+          {shouldShowPlaceholderOption && (
+            <option key="__placeholder" value="">
+              {placeholder}
+            </option>
+          )}
           {options.map((option) => (
             <option key={String(option.value)} value={option.value}>
               {option.label}

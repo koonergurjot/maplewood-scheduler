@@ -399,7 +399,7 @@ function SelectEmployee({
             >
               {e.firstName} {e.lastName}{" "}
               <span className="pill vacancy-row__employee-pill">
-                {e.classification} {e.status}
+                {e.classification} {e.status ?? "Unknown"}
               </span>
             </div>
           ))}

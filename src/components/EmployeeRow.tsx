@@ -80,12 +80,13 @@ export default function EmployeeRow({ employee, onChange }: EmployeeRowProps) {
       </td>
       <td>
         <EditableSelect
-          value={employee.status}
+          value={employee.status ?? ""}
           options={statusOptions}
+          placeholder="Select status"
           onSave={(value) => {
             handleCommit({
               ...employee,
-              status: value as Status,
+              status: value ? (value as Status) : undefined,
             });
           }}
         />
