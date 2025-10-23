@@ -46,11 +46,12 @@ export class DeadlineHub {
       broadcastedAt: event.broadcastedAt ?? new Date().toISOString(),
     };
     const serialized = `event: deadline\ndata: ${JSON.stringify(payload)}\n\n`;
-    for (const { res } of this.clients.values()) {
+    for (const [id, { res }] of this.clients.entries()) {
       try {
         res.write(serialized);
       } catch (err) {
         console.warn("Failed to push deadline event to client", err);
+        this.removeClient(id);
       }
     }
     await this.dispatch(payload);
