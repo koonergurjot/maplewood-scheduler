@@ -209,6 +209,7 @@ const WINGS = [
   "Shamrock",
   "Bluebell",
   "Rosewood",
+  "ADP",
   "Recreation",
   "Float",
   "Receptionist",
