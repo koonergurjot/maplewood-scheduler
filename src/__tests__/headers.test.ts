@@ -37,6 +37,8 @@ describe("header utilities", () => {
     expect(normalizeClassification("ADP LPN")).toBe("ADP LPN");
     expect(normalizeClassification("Licensed Practical Nurse")).toBe("LPN");
     expect(normalizeClassification("Registered Nurse")).toBe("RN");
+    expect(normalizeClassification("Recreation Aide")).toBe("Recreation");
+    expect(normalizeClassification("Rec Assistant")).toBe("Recreation");
     expect(normalizeClassification("Essential Services")).toBe(
       "Essential Services",
     );

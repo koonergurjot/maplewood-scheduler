@@ -140,6 +140,10 @@ const CLASS_MAP: Array<{ re: RegExp; value: Classification }> = [
     value: "Recreation",
   },
   {
+    re: /\brec(?:reation)?[\s./-]*(?:aide|aid|asst|assist(?:ant)?)\b/i,
+    value: "Recreation",
+  },
+  {
     re: /\brecreation\s*therap(ist|y)\b/i,
     value: "Recreation",
   },
