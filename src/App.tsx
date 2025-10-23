@@ -257,6 +257,13 @@ const HEADER_SANITIZE_REGEX = /[^a-z0-9]/gi;
 const sanitizeHeaderKey = (header: string) =>
   header.replace(HEADER_SANITIZE_REGEX, "").toLowerCase();
 
+const LEGACY_CLASSIFICATION_HEADERS: readonly string[] = [
+  "Class",
+  "Job Class",
+  "Position",
+  "Role",
+];
+
 const hasStatusToken = (value: unknown): boolean => {
   if (typeof value !== "string") return false;
 
@@ -393,8 +400,25 @@ export function mapRowToEmployee(
     return null;
   }
 
-  const classificationRaw = collapseIfString(getFirst(row, CLASSIFICATION_HEADERS));
-  const normalizedClassification = normalizeClassification(classificationRaw);
+  const resolveClassificationFromHeaders = (
+    headers: readonly string[],
+  ): Classification | undefined => {
+    for (const header of headers) {
+      const rawValue = collapseIfString(getFirst(row, [header]));
+      if (rawValue === undefined) continue;
+
+      const normalized = normalizeClassification(rawValue);
+      if (normalized) {
+        return normalized;
+      }
+    }
+
+    return undefined;
+  };
+
+  const normalizedClassification =
+    resolveClassificationFromHeaders(CLASSIFICATION_HEADERS) ??
+    resolveClassificationFromHeaders(LEGACY_CLASSIFICATION_HEADERS);
   const statusFromHeaders = collapseIfString(getFirst(row, STATUS_HEADERS));
   const positionStatusRaw = collapseIfString(getFirst(row, POSITION_STATUS_HEADERS));
   const statusRaw = statusFromHeaders ?? positionStatusRaw;
