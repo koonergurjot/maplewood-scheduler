@@ -10,6 +10,9 @@ export const displayVacancyLabel = (v: Vacancy) => {
 export function pickWindowMinutes(v: Vacancy, settings: Settings) {
   const known = new Date(v.knownAt);
   const shiftStart = combineDateTime(v.shiftDate, v.shiftStart);
+  if (Number.isNaN(known.getTime()) || Number.isNaN(shiftStart.getTime())) {
+    return settings.responseWindows.h4to24;
+  }
   const hrsUntilShift = (shiftStart.getTime() - known.getTime()) / 3_600_000;
   if (hrsUntilShift < 2) return settings.responseWindows.lt2h;
   if (hrsUntilShift < 4) return settings.responseWindows.h2to4;
@@ -20,7 +23,9 @@ export function pickWindowMinutes(v: Vacancy, settings: Settings) {
 
 export function deadlineFor(v: Vacancy, settings: Settings) {
   const winMin = pickWindowMinutes(v, settings);
-  return new Date(new Date(v.knownAt).getTime() + winMin * 60000);
+  const known = new Date(v.knownAt);
+  const baseMs = Number.isNaN(known.getTime()) ? Date.now() : known.getTime();
+  return new Date(baseMs + winMin * 60000);
 }
 
 export function getVacancyActiveDates(v: Vacancy): string[] {
