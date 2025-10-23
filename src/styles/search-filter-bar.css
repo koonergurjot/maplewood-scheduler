@@ -1,8 +1,9 @@
 .search-filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-auto-flow: row;
+  gap: 18px;
+  align-items: start;
   padding: 16px;
   border-radius: 16px;
   border: 1px solid var(--stroke);
@@ -14,8 +15,8 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  flex: 1 1 200px;
-  min-width: 160px;
+  min-width: 0;
+  width: 100%;
 }
 
 .search-filter-bar__field input[type="text"],
@@ -58,8 +59,9 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  flex: 1 1 240px;
-  min-width: 200px;
+  min-width: 0;
+  width: 100%;
+  grid-column: span 2;
 }
 
 .search-filter-bar__segmented-buttons {
@@ -69,6 +71,10 @@
 }
 
 .search-filter-bar__segmented-buttons .segmented-option {
+  flex: 1 1 140px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   border-radius: 999px;
   border: 1px solid var(--stroke);
   background: var(--chipBg);
@@ -100,8 +106,13 @@
   background: var(--brand);
 }
 
+.search-filter-bar__segmented[aria-label="Bundle filters"] {
+  grid-column: 1 / -1;
+}
+
 .search-filter-bar__action {
-  flex: 0 0 auto;
+  align-self: start;
+  justify-self: start;
 }
 
 .search-filter-bar__action .btn {
@@ -115,6 +126,7 @@
   gap: 8px;
   width: 100%;
   padding-top: 4px;
+  grid-column: 1 / -1;
 }
 
 .search-filter-bar__chips-row .active-filter-chip {
@@ -241,15 +253,15 @@
 @media (max-width: 900px) {
   .search-filter-bar {
     padding: 12px;
-    gap: 10px;
-  }
-
-  .search-filter-bar__field,
-  .search-filter-bar__segmented {
-    flex: 1 1 100%;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
 
   .search-filter-bar__date-range {
     grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .search-filter-bar__segmented {
+    grid-column: 1 / -1;
   }
 }
