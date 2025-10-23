@@ -47,10 +47,7 @@ export const CLASSIFICATION_HEADERS = [
   "Job Title Description",
   "Job Title",
   "Classification",
-  "Class",
-  "Job Class",
-  "Position",
-  "Role",
+  "Title",
 ];
 
 export const STATUS_HEADERS = [
