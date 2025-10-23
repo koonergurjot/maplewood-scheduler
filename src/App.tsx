@@ -394,6 +394,7 @@ export function mapRowToEmployee(
   }
 
   const classificationRaw = collapseIfString(getFirst(row, CLASSIFICATION_HEADERS));
+  const normalizedClassification = normalizeClassification(classificationRaw);
   const statusFromHeaders = collapseIfString(getFirst(row, STATUS_HEADERS));
   const positionStatusRaw = collapseIfString(getFirst(row, POSITION_STATUS_HEADERS));
   const statusRaw = statusFromHeaders ?? positionStatusRaw;
@@ -513,7 +514,7 @@ export function mapRowToEmployee(
     id: id || `emp_${index}`,
     firstName,
     lastName,
-    classification: normalizeClassification(classificationRaw),
+    classification: normalizedClassification ?? CLASSIFICATIONS[0],
     status,
     homeWing:
       typeof homeWingRaw === "string" && homeWingRaw
