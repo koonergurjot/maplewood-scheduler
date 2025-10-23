@@ -12,7 +12,7 @@ const baseState = {
       id: "e1",
       firstName: "Alice",
       lastName: "A",
-      classification: "RN",
+      classification: "Registered Nurse",
       status: "FT",
       seniorityRank: 1,
       active: true,
@@ -38,7 +38,7 @@ describe("bundle award", () => {
           {
             id: "v1",
             reason: "Test",
-            classification: "RN",
+            classification: "Registered Nurse",
             date: "2024-01-01",
             start: "08:00",
             end: "16:00",
@@ -55,7 +55,7 @@ describe("bundle award", () => {
           {
             id: "v2",
             reason: "Test",
-            classification: "RN",
+            classification: "Registered Nurse",
             date: "2024-01-01",
             start: "16:00",
             end: "23:00",
@@ -115,7 +115,7 @@ describe("bundle award", () => {
           {
             id: "v1",
             reason: "Test",
-            classification: "RN",
+            classification: "Registered Nurse",
             date: "2024-01-01",
             start: "08:00",
             end: "16:00",
@@ -132,7 +132,7 @@ describe("bundle award", () => {
           {
             id: "v2",
             reason: "Test",
-            classification: "RN",
+            classification: "Registered Nurse",
             date: "2024-01-01",
             start: "16:00",
             end: "23:00",
@@ -149,7 +149,7 @@ describe("bundle award", () => {
           {
             id: "c1",
             reason: "Existing",
-            classification: "RN",
+            classification: "Registered Nurse",
             date: "2024-01-01",
             start: "08:00",
             end: "16:00",

@@ -8,8 +8,8 @@ const LS_KEY = "maplewood-scheduler-v3";
 
 const baseState = {
   employees: [
-    { id: "e1", firstName: "Alice", lastName: "A", classification: "RN", status: "FT", seniorityRank: 1, active: true },
-    { id: "e2", firstName: "Bob", lastName: "B", classification: "LPN", status: "PT", seniorityRank: 2, active: true },
+    { id: "e1", firstName: "Alice", lastName: "A", classification: "Registered Nurse", status: "FT", seniorityRank: 1, active: true },
+    { id: "e2", firstName: "Bob", lastName: "B", classification: "Licensed Practical Nurse", status: "PT", seniorityRank: 2, active: true },
   ],
   vacations: [],
   bids: [],
@@ -31,7 +31,7 @@ describe("award vacancy UI", () => {
           {
             id: "v1",
             reason: "Test",
-            classification: "RN",
+            classification: "Registered Nurse",
             date: "2024-01-01",
             start: "08:00",
             end: "16:00",
@@ -46,7 +46,7 @@ describe("award vacancy UI", () => {
           {
             id: "v2",
             reason: "Test",
-            classification: "RN",
+            classification: "Registered Nurse",
             date: "2024-01-02",
             start: "08:00",
             end: "16:00",
@@ -115,7 +115,7 @@ describe("award vacancy UI", () => {
           {
             id: "v1",
             reason: "Test",
-            classification: "RN",
+            classification: "Registered Nurse",
             date: "2024-01-01",
             start: "08:00",
             end: "16:00",

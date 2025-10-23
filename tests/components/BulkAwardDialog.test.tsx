@@ -13,10 +13,11 @@ const employees: Employee[] = [
     id: "e1",
     firstName: "Alice",
     lastName: "Admin",
-    classification: "RN",
+    classification: "Registered Nurse",
     status: "FT",
     seniorityRank: 1,
     active: true,
+    activeLabel: "Active",
   },
 ];
 
@@ -24,7 +25,7 @@ const bundleVacancies: Vacancy[] = [
   {
     id: "v1",
     reason: "Test",
-    classification: "RN",
+    classification: "Registered Nurse",
     date: "2024-01-01",
     start: "08:00",
     end: "16:00",
@@ -41,7 +42,7 @@ const bundleVacancies: Vacancy[] = [
   {
     id: "v2",
     reason: "Test",
-    classification: "RN",
+    classification: "Registered Nurse",
     date: "2024-01-02",
     start: "08:00",
     end: "16:00",
@@ -63,7 +64,7 @@ const bids: Bid[] = [
     bidderEmployeeId: "e1",
     bidderName: "Alice Admin",
     bidderStatus: "FT",
-    bidderClassification: "RN",
+    bidderClassification: "Registered Nurse",
     bidTimestamp: "2024-01-01T12:00:00.000Z",
   },
 ];

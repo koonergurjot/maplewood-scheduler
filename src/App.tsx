@@ -86,7 +86,7 @@ import { awardVacancyRange } from "./lib/vacancy-range-award";
  * ✔ Sticky table header for Open Vacancies + scrollable panel; highlight the row that’s “due next”
  * ✔ Theme toggle (Dark/Light) + text size slider (great for wall displays)
  * ✔ Reason codes required when you override the recommendation (audit‑friendly trail)
- * ✔ Eligibility gate: block awards outside vacancy class (RCA/LPN/RN/Rec/Receptionist) unless “Allow class override” is checked
+ * ✔ Eligibility gate: block awards outside vacancy class (Care Aide/Licensed Practical Nurse/Registered Nurse/Recreation roles/Receptionist) unless “Allow class override” is checked
  * ✔ Open Vacancies layout reformatted to take most of the page and avoid cut‑off
  */
 
@@ -3130,8 +3130,10 @@ function EmployeesPage({
               }}
             />
             <div className="subtitle">
-              Columns: id, firstName, lastName, classification (RCA/LPN/RN/Rec/
-              Receptionist), status (FT/PT/Casual), homeWing, startDate,
+              Columns: id, firstName, lastName, classification (Registered Nurse,
+              Licensed Practical Nurse, Care Aide, Recreation roles,
+              Receptionist, Essential Services, Adult Day Program roles), status
+              (FT/PT/Casual), homeWing, startDate,
               seniorityHours, seniorityRank, active (Yes/No)
             </div>
             {importQaNotice && (

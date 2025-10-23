@@ -11,7 +11,7 @@ const LS_KEY = "maplewood-scheduler-v3";
 const BASE_VACANCY: Vacancy = {
   id: "vacancy-1",
   reason: "Shift",
-  classification: "RN",
+  classification: "Registered Nurse",
   date: "2024-01-01",
   start: "08:00",
   end: "16:00",
@@ -28,7 +28,7 @@ const BASE_VACATION: Vacation = {
   id: "vac-1",
   employeeId: "emp-1",
   employeeName: "Employee One",
-  classification: "RN",
+  classification: "Registered Nurse",
   wing: "Alpha",
   startDate: "2024-01-01",
   endDate: "2024-01-02",
@@ -60,7 +60,7 @@ describe("OpenVacancies", () => {
       makeVacancy({ id: "v1" }),
       makeVacancy({
         id: "v2",
-        classification: "LPN",
+        classification: "Licensed Practical Nurse",
         date: "2024-01-02",
         shiftDate: "2024-01-02",
         knownAt: "2024-01-02T00:00:00.000Z",
@@ -87,7 +87,7 @@ describe("OpenVacancies", () => {
       makeVacancy({ id: "v1" }),
       makeVacancy({
         id: "v2",
-        classification: "LPN",
+        classification: "Licensed Practical Nurse",
         date: "2024-01-02",
         shiftDate: "2024-01-02",
         knownAt: "2024-01-02T00:00:00.000Z",
@@ -130,7 +130,7 @@ describe("OpenVacancies", () => {
       makeVacancy({ id: "v1" }),
       makeVacancy({
         id: "v2",
-        classification: "LPN",
+        classification: "Licensed Practical Nurse",
         date: "2024-01-02",
         shiftDate: "2024-01-02",
         knownAt: "2024-01-02T00:00:00.000Z",

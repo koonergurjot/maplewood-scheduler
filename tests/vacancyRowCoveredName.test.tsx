@@ -11,7 +11,7 @@ describe("VacancyRow", () => {
     const vacancy: Vacancy = {
       id: "v1",
       reason: "Vacation Backfill",
-      classification: "RN",
+      classification: "Registered Nurse",
       wing: "Shamrock",
       date: "2024-01-01",
       start: "08:00",

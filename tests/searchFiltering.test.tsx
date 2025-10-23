@@ -24,7 +24,7 @@ const vacancies: Vacancy[] = [
   {
     id: "v1",
     reason: "Shift A",
-    classification: "RN",
+    classification: "Registered Nurse",
     wing: "Shamrock",
     date: "2024-01-01",
     start: "06:30",
@@ -40,7 +40,7 @@ const vacancies: Vacancy[] = [
   {
     id: "v2",
     reason: "Shift B",
-    classification: "LPN",
+    classification: "Licensed Practical Nurse",
     wing: "Rosewood",
     date: "2024-01-01",
     start: "14:30",
@@ -56,7 +56,7 @@ const vacancies: Vacancy[] = [
   {
     id: "v3",
     reason: "Shift C",
-    classification: "RN",
+    classification: "Registered Nurse",
     wing: "Bluebell",
     date: "2024-01-02",
     start: "22:30",
@@ -115,7 +115,7 @@ describe("OpenVacanciesRedesign filters", () => {
   it("filters by category", () => {
     renderComponent();
     const select = screen.getByRole("combobox", { name: "Classification filter" });
-    fireEvent.change(select, { target: { value: "RN" } });
+    fireEvent.change(select, { target: { value: "Registered Nurse" } });
     const table = screen.getByRole("table");
     expect(within(table).getByText("Shamrock")).toBeTruthy();
     expect(within(table).getByText("Bluebell")).toBeTruthy();

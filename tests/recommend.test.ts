@@ -3,10 +3,10 @@ import { recommend } from "../src/recommend";
 import type { Bid, Employee, Vacancy } from "../src/recommend";
 
 const employees: Record<string, Employee> = {
-  a: { id: "a", active: true, seniorityRank: 2, classification: "RN" },
-  b: { id: "b", active: true, seniorityRank: 1, classification: "RN" },
-  c: { id: "c", active: true, seniorityRank: 1, classification: "LPN" },
-  d: { id: "d", active: false, seniorityRank: 1, classification: "RN" },
+  a: { id: "a", active: true, seniorityRank: 2, classification: "Registered Nurse" },
+  b: { id: "b", active: true, seniorityRank: 1, classification: "Registered Nurse" },
+  c: { id: "c", active: true, seniorityRank: 1, classification: "Licensed Practical Nurse" },
+  d: { id: "d", active: false, seniorityRank: 1, classification: "Registered Nurse" },
 };
 
 const bids: Bid[] = [
@@ -18,7 +18,7 @@ const bids: Bid[] = [
 
 const BASE_VACANCY: Vacancy = {
   id: "vac1",
-  classification: "RN",
+  classification: "Registered Nurse",
   offeringTier: "CASUALS",
 };
 
@@ -34,7 +34,7 @@ describe("recommend", () => {
     expect(rec.id).toBe("b");
     expect(rec.why).toContain("Bidder");
     expect(rec.why).toContain("Rank 1");
-    expect(rec.why).toContain("Class RN");
+    expect(rec.why).toContain("Class Registered Nurse");
     expect(rec.candidates.map((c) => c.id)).toEqual(["b", "a"]);
     expect(rec.candidates[0].why).toEqual(rec.why);
   });
@@ -51,7 +51,7 @@ describe("recommend", () => {
     const vac = makeVacancy();
     const employeesWithTie: Record<string, Employee> = {
       ...employees,
-      e: { id: "e", active: true, seniorityRank: 1, classification: "RN" },
+      e: { id: "e", active: true, seniorityRank: 1, classification: "Registered Nurse" },
     };
     const tieBids: Bid[] = [
       { vacancyId: "vac1", bidderEmployeeId: "e" },
@@ -65,7 +65,7 @@ describe("recommend", () => {
     const vac = makeVacancy();
     const employeesWithTie: Record<string, Employee> = {
       ...employees,
-      e: { id: "e", active: true, seniorityRank: 1, classification: "RN" },
+      e: { id: "e", active: true, seniorityRank: 1, classification: "Registered Nurse" },
     };
     const tieBids: Bid[] = [
       {
@@ -87,7 +87,7 @@ describe("recommend", () => {
     const vac = makeVacancy();
     const employeesWithTie: Record<string, Employee> = {
       ...employees,
-      e: { id: "e", active: true, seniorityRank: 1, classification: "RN" },
+      e: { id: "e", active: true, seniorityRank: 1, classification: "Registered Nurse" },
     };
     const tieBids: Bid[] = [
       {
@@ -108,8 +108,8 @@ describe("recommend", () => {
   it("prefers higher seniority hours when present", () => {
     const vac = makeVacancy();
     const employeesWithHours: Record<string, Employee> = {
-      x: { id: "x", active: true, seniorityHours: 200, classification: "RN" },
-      y: { id: "y", active: true, seniorityHours: 100, classification: "RN" },
+      x: { id: "x", active: true, seniorityHours: 200, classification: "Registered Nurse" },
+      y: { id: "y", active: true, seniorityHours: 100, classification: "Registered Nurse" },
     };
     const hourBids: Bid[] = [
       { vacancyId: "vac1", bidderEmployeeId: "y" },

@@ -1,11 +1,14 @@
 export const CLASSIFICATIONS = [
-  "RN",
-  "LPN",
-  "RCA",
-  "Recreation",
+  "Registered Nurse",
+  "Licensed Practical Nurse",
+  "Care Aide",
+  "Rehab Assistant",
+  "Recreation Therapist",
+  "Recreation/Activity Aide",
   "Receptionist",
-  "ADP RCA",
-  "ADP LPN",
+  "Adult Day Program RCA",
+  "Adult Day Program LPN",
+  "Adult Daytime Recreation Aide",
   "Essential Services",
 ] as const;
 

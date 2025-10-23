@@ -26,7 +26,7 @@ const dayVacancies: Vacancy[] = [
   {
     id: "vac-1",
     reason: "Day One",
-    classification: "RN",
+    classification: "Registered Nurse",
     wing: "North",
     date: "2024-05-01",
     start: "08:00",
@@ -42,7 +42,7 @@ const dayVacancies: Vacancy[] = [
   {
     id: "vac-2",
     reason: "Day Two",
-    classification: "RN",
+    classification: "Registered Nurse",
     wing: "North",
     date: "2024-05-01",
     start: "10:00",

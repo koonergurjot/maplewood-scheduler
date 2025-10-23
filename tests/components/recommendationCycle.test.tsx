@@ -25,19 +25,21 @@ describe("Recommendation cycling", () => {
       id: "emp-1",
       firstName: "Alice",
       lastName: "Alpha",
-      classification: "RN",
+      classification: "Registered Nurse",
       status: "FT",
       seniorityRank: 1,
       active: true,
+      activeLabel: "Active",
     },
     {
       id: "emp-2",
       firstName: "Bob",
       lastName: "Beta",
-      classification: "RN",
+      classification: "Registered Nurse",
       status: "FT",
       seniorityRank: 2,
       active: true,
+      activeLabel: "Active",
     },
   ];
 
@@ -53,17 +55,17 @@ describe("Recommendation cycling", () => {
 
   const recommendation: Recommendation = {
     id: "emp-1",
-    why: ["Bidder", "Rank 1", "Class RN"],
+    why: ["Bidder", "Rank 1", "Class Registered Nurse"],
     candidates: [
-      { id: "emp-1", why: ["Bidder", "Rank 1", "Class RN"] },
-      { id: "emp-2", why: ["Bidder", "Rank 2", "Class RN"] },
+      { id: "emp-1", why: ["Bidder", "Rank 1", "Class Registered Nurse"] },
+      { id: "emp-2", why: ["Bidder", "Rank 2", "Class Registered Nurse"] },
     ],
   };
 
   const vacancy: Vacancy = {
     id: "vac-1",
     reason: "Backfill",
-    classification: "RN",
+    classification: "Registered Nurse",
     wing: "Shamrock",
     date: "2024-01-01",
     start: "08:00",

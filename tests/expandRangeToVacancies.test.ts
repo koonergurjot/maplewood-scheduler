@@ -17,7 +17,7 @@ describe("expandRangeToVacancies", () => {
     const range: VacancyRange = {
       id: "r1",
       reason: "Backfill",
-      classification: "RCA",
+      classification: "Care Aide",
       wing: "Rosewood",
       startDate: "2025-01-10",
       endDate: "2025-01-12",
@@ -58,7 +58,7 @@ describe("expandRangeToVacancies", () => {
     const range: VacancyRange = {
       id: "r-empty",
       reason: "Coverage",
-      classification: "RCA",
+      classification: "Care Aide",
       startDate: "2025-02-01",
       endDate: "2025-02-05",
       knownAt: "2025-01-15T00:00:00Z",
@@ -76,7 +76,7 @@ describe("expandRangeToVacancies", () => {
     const range: VacancyRange = {
       id: "r2",
       reason: "Backfill",
-      classification: "RCA",
+      classification: "Care Aide",
       wing: "Rosewood",
       startDate: "2025-01-10",
       endDate: "2025-01-10",
@@ -97,7 +97,7 @@ describe("expandRangeToVacancies", () => {
     const range: VacancyRange = {
       id: "r3",
       reason: "Backfill",
-      classification: "RCA",
+      classification: "Care Aide",
       startDate: "2025-01-10",
       endDate: "2025-01-11",
       knownAt: "2025-01-01T00:00:00Z",
@@ -117,7 +117,7 @@ describe("expandRangeToVacancies", () => {
     const range: VacancyRange = {
       id: "r4",
       reason: "Test",
-      classification: "RCA",
+      classification: "Care Aide",
       startDate: "2025-01-01",
       endDate: "2025-01-03",
       knownAt: "2025-01-01T00:00:00Z",

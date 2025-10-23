@@ -9,7 +9,7 @@ describe("archiveBidsForVacancy", () => {
         bidderEmployeeId: "e1",
         bidderName: "A",
         bidderStatus: "FT",
-        bidderClassification: "RN",
+        bidderClassification: "Registered Nurse",
         bidTimestamp: "2024-01-01T00:00:00Z",
       },
       {
@@ -17,7 +17,7 @@ describe("archiveBidsForVacancy", () => {
         bidderEmployeeId: "e2",
         bidderName: "B",
         bidderStatus: "PT",
-        bidderClassification: "RN",
+        bidderClassification: "Registered Nurse",
         bidTimestamp: "2024-01-02T00:00:00Z",
       },
     ];
@@ -28,7 +28,7 @@ describe("archiveBidsForVacancy", () => {
           bidderEmployeeId: "e3",
           bidderName: "C",
           bidderStatus: "FT",
-          bidderClassification: "RN",
+          bidderClassification: "Registered Nurse",
           bidTimestamp: "2024-01-03T00:00:00Z",
         },
       ],

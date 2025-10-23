@@ -15,9 +15,9 @@
   --wing-Float: var(--pink);
 
   /* Class mappings */
-  --class-RCA: var(--amber);
-  --class-LPN: var(--sky);
-  --class-RN: var(--violet);
+  --class-care-aide: var(--amber);
+  --class-licensed-practical-nurse: var(--sky);
+  --class-registered-nurse: var(--violet);
 }
 
 /* Apply mapped colors to chip/badge elements */
@@ -41,6 +41,10 @@
 [data-wing="Float"] { --chipColor: var(--wing-Float); }
 
 /* Class selectors */
-[data-class="RCA"] { --chipColor: var(--class-RCA); }
-[data-class="LPN"] { --chipColor: var(--class-LPN); }
-[data-class="RN"] { --chipColor: var(--class-RN); }
+[data-class="Care Aide"] { --chipColor: var(--class-care-aide); }
+[data-class="Licensed Practical Nurse"] {
+  --chipColor: var(--class-licensed-practical-nurse);
+}
+[data-class="Registered Nurse"] {
+  --chipColor: var(--class-registered-nurse);
+}

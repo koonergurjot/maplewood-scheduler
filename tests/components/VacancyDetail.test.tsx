@@ -10,7 +10,7 @@ const baseVacancy: Vacancy = {
   shiftStart: "07:00",
   shiftEnd: "15:00",
   reason: "Illness",
-  classification: "RN",
+  classification: "Registered Nurse",
   wing: "Shamrock",
   status: "Open",
   knownAt: "2024-04-30T12:00:00.000Z",

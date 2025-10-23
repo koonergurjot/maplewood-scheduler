@@ -14,7 +14,7 @@ describe("CoverageDaysModal", () => {
         endDate="2024-01-10"
         defaultStart="08:00"
         defaultEnd="16:00"
-        classification="RN"
+        classification="Registered Nurse"
         initial={{
           selectedDates: ["2024-01-10"],
           perDayTimes: {
@@ -38,7 +38,7 @@ describe("CoverageDaysModal", () => {
         endDate="2024-01-12"
         defaultStart="08:00"
         defaultEnd="16:00"
-        classification="RN"
+        classification="Registered Nurse"
         initial={{
           perDayTimes: {
             "2024-01-11": { start: "09:00", end: "17:00" },
