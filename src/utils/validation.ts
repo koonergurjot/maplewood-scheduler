@@ -64,7 +64,7 @@ export function validateTime(time: string): ValidationResult {
 }
 
 /**
- * Validate time range (start time should be before end time)
+ * Validate time range, including the permitted ≤12-hour overnight window
  */
 export function validateTimeRange(startTime: string, endTime: string): ValidationResult {
   const startValid = validateTime(startTime);
