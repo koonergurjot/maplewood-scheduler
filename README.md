@@ -134,9 +134,20 @@ PORT=3001
 ## Usage
 
 ```ts
-import { getVacancies } from "./src/utils/api";
+import { authFetch, setToken } from "./src/utils/api";
 
-getVacancies().then(console.log);
+// During sign-in, persist the API token so future requests are authenticated.
+setToken("your-session-token");
+
+async function printVacancies() {
+  const response = await authFetch("/api/v1/vacancies?status=open");
+  const vacancies = await response.json();
+  console.log(vacancies);
+}
+
+printVacancies().catch((error) => {
+  console.error("Unable to load vacancies", error);
+});
 ```
 
 ## Why this project?
