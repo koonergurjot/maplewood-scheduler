@@ -26,8 +26,15 @@ type PersistedState = {
   vacancyRanges?: VacancyRange[];
 };
 
-export function useSchedulerState() {
-  const persisted: PersistedState | null = loadState();
+export function useSchedulerState(
+  persistedArg?: PersistedState | null,
+) {
+  const [persisted] = useState<PersistedState | null>(() => {
+    if (persistedArg !== undefined) {
+      return persistedArg ?? null;
+    }
+    return loadState<PersistedState>() ?? null;
+  });
 
   const hydrateEmployees = (list: StoredEmployee[] | undefined): Employee[] =>
     (list ?? []).map((emp) => ({

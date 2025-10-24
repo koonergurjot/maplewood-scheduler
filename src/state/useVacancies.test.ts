@@ -79,6 +79,7 @@ describe("useVacancies", () => {
     expect(storedState.auditLog).toHaveLength(1);
     expect(storedState.auditLog[0].payload.vacancyIds).toEqual(["1"]);
     expect(storedState.auditLog[0].payload.userAction).toBe("single");
+    expect(mockLoadState).toHaveBeenCalledTimes(1);
   });
 
   it("restores staged deletions on undo and cancels finalize timer", () => {
@@ -113,5 +114,6 @@ describe("useVacancies", () => {
     expect(result.current.auditLog).toHaveLength(0);
     expect(storedState.auditLog).toHaveLength(0);
     expect(mockSaveState).toHaveBeenCalledTimes(2);
+    expect(mockLoadState).toHaveBeenCalledTimes(1);
   });
 });

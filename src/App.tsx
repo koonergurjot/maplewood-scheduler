@@ -240,7 +240,7 @@ type PersistedState = {
   vacancies?: Vacancy[];
   bids?: Bid[];
   archivedBids?: Record<string, Bid[]>;
-  settings?: Partial<Settings>;
+  settings?: Settings;
   notificationPrefs?: NotificationPreferences;
   vacancyRanges?: VacancyRange[];
 };
@@ -1008,7 +1008,9 @@ export const archiveBidsForVacancy = (
 
 // ---------- Main App ----------
 export default function App() {
-  const persisted = loadState<PersistedState>() ?? null;
+  const [persisted] = useState<PersistedState | null>(
+    () => loadState<PersistedState>() ?? null,
+  );
   const [tab, setTab] = useState<typeof TAB_KEYS[number]>("coverage");
 
   const {
@@ -1027,7 +1029,7 @@ export default function App() {
     employeesById,
     vacancyRanges,
     setVacancyRanges,
-  } = useSchedulerState();
+  } = useSchedulerState(persisted);
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
   const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
   const [bundleUndo, setBundleUndo] = useState<{
