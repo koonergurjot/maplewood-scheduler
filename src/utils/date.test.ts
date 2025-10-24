@@ -108,6 +108,12 @@ describe("formatCoverageSummary", () => {
     expect(result).toBe("All 2 days");
   });
 
+  it("should format single-day full selection correctly", () => {
+    const dates = ["2025-01-13"];
+    const result = formatCoverageSummary(dates, dates);
+    expect(result).toBe("All 1 day");
+  });
+
   it("should format partial selection correctly", () => {
     const selected = ["2025-01-13"];
     const total = ["2025-01-13", "2025-01-14", "2025-01-15"];

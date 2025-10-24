@@ -84,7 +84,8 @@ export function formatCoverageSummary(selectedDates: string[], totalDates: strin
   }
   
   if (selectedCount === totalCount) {
-    return `All ${totalCount} days`;
+    const dayLabel = totalCount === 1 ? "day" : "days";
+    return `All ${totalCount} ${dayLabel}`;
   }
   
   return `${selectedCount} of ${totalCount} days`;
