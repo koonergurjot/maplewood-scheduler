@@ -97,6 +97,12 @@ describe("validateTimeRange", () => {
     expect(result.error).toBe("Start time must be before end time");
   });
 
+  it("should reject overnight shift longer than 12 hours", () => {
+    const result = validateTimeRange("18:00", "09:00");
+    expect(result.isValid).toBe(false);
+    expect(result.error).toBe("Start time must be before end time");
+  });
+
   it("should reject invalid time format", () => {
     const result = validateTimeRange("25:00", "17:00");
     expect(result.isValid).toBe(false);
