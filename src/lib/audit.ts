@@ -1,4 +1,5 @@
 import { OfferingTier } from "../offering/offeringMachine";
+import { randomId } from "../utils/id";
 import type { Storage } from "./storage";
 
 export interface AuditLog {
@@ -61,10 +62,7 @@ export function logOfferingChange(
   storage: Storage,
 ): AuditLog {
   const log: AuditLog = {
-    id:
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2),
+    id: randomId(),
     ts: new Date().toISOString(),
     actor,
     action: "OFFERING_TIER_CHANGED",
