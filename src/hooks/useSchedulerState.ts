@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type SetStateAction,
+} from "react";
 import type {
   Employee,
   Vacation,
@@ -26,6 +32,16 @@ type PersistedState = {
   vacancyRanges?: VacancyRange[];
 };
 
+const normalizeBidTimestamp = (bid: Bid): Bid => {
+  const timestamp = bid.bidTimestamp ?? bid.createdAt ?? "";
+  return {
+    ...bid,
+    bidTimestamp: timestamp,
+  };
+};
+
+const normalizeBids = (list: Bid[]): Bid[] => list.map(normalizeBidTimestamp);
+
 export function useSchedulerState() {
   const persisted: PersistedState | null = loadState();
 
@@ -49,7 +65,7 @@ export function useSchedulerState() {
       : [],
   );
   const [vacancies, setVacancies] = useState<Vacancy[]>(seededVacancies);
-  const [bids, setBids] = useState<Bid[]>(persisted?.bids ?? []);
+  const [bids, setBidsState] = useState<Bid[]>(normalizeBids(persisted?.bids ?? []));
   const [archivedBids, setArchivedBids] = useState<Record<string, Bid[]>>(
     persisted?.archivedBids ?? {},
   );
@@ -65,6 +81,19 @@ export function useSchedulerState() {
     }
     return map;
   }, [employees]);
+
+  const setBids = useCallback(
+    (update: SetStateAction<Bid[]>) => {
+      if (typeof update === "function") {
+        setBidsState((prev) =>
+          normalizeBids((update as (prev: Bid[]) => Bid[])(prev)),
+        );
+      } else {
+        setBidsState(normalizeBids(update));
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     saveState({

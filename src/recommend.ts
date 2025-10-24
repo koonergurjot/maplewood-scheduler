@@ -23,7 +23,8 @@ export interface Vacancy {
 export interface Bid {
   vacancyId: string;
   bidderEmployeeId: string;
-  placedAt?: string;
+  bidTimestamp?: string;
+  createdAt?: string;
 }
 
 export interface Employee {
@@ -42,7 +43,8 @@ export function recommend(
   const relevant = bids.filter((b) => b.vacancyId === vac.id);
   const candidates = relevant
     .map((b, idx) => {
-      const parsed = b.placedAt ? Date.parse(b.placedAt) : undefined;
+      const timestamp = b.bidTimestamp ?? b.createdAt;
+      const parsed = timestamp ? Date.parse(timestamp) : undefined;
       return {
         emp: employeesById[b.bidderEmployeeId],
         order: idx,

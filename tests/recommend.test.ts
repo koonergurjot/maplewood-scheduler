@@ -71,12 +71,12 @@ describe("recommend", () => {
       {
         vacancyId: "vac1",
         bidderEmployeeId: "b",
-        placedAt: "2024-01-01T11:00:00Z",
+        bidTimestamp: "2024-01-01T11:00:00Z",
       },
       {
         vacancyId: "vac1",
         bidderEmployeeId: "e",
-        placedAt: "2024-01-01T10:00:00Z",
+        bidTimestamp: "2024-01-01T10:00:00Z",
       },
     ];
     const rec = recommend(vac, tieBids, employeesWithTie);
@@ -93,12 +93,34 @@ describe("recommend", () => {
       {
         vacancyId: "vac1",
         bidderEmployeeId: "e",
-        placedAt: "not-a-date",
+        bidTimestamp: "not-a-date",
       },
       {
         vacancyId: "vac1",
         bidderEmployeeId: "b",
-        placedAt: "2024-01-01T09:00:00Z",
+        bidTimestamp: "2024-01-01T09:00:00Z",
+      },
+    ];
+    const rec = recommend(vac, tieBids, employeesWithTie);
+    expect(rec.id).toBe("e");
+  });
+
+  it("uses createdAt when bidTimestamp is missing", () => {
+    const vac = makeVacancy();
+    const employeesWithTie: Record<string, Employee> = {
+      ...employees,
+      e: { id: "e", active: true, seniorityRank: 1, classification: "Registered Nurse" },
+    };
+    const tieBids: Bid[] = [
+      {
+        vacancyId: "vac1",
+        bidderEmployeeId: "b",
+        createdAt: "2024-01-01T11:00:00Z",
+      },
+      {
+        vacancyId: "vac1",
+        bidderEmployeeId: "e",
+        createdAt: "2024-01-01T10:00:00Z",
       },
     ];
     const rec = recommend(vac, tieBids, employeesWithTie);
