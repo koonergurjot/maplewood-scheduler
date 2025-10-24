@@ -15,24 +15,29 @@ export type AuditEntry = {
 
 const UNDO_MS = 10000;
 
-export function useVacancies() {
-  const persisted: any = loadState() || {};
-  let initialVacancies: Vacancy[] = Array.isArray(persisted.vacancies)
+type PersistedVacancyState = {
+  vacancies?: Vacancy[];
+  auditLog?: AuditEntry[];
+  [key: string]: unknown;
+};
+
+export function useVacancies(persistedArg?: PersistedVacancyState | null) {
+  const [persisted] = useState<PersistedVacancyState>(() => {
+    if (persistedArg !== undefined) {
+      return persistedArg ?? {};
+    }
+    return loadState<PersistedVacancyState>() ?? {};
+  });
+  const persistedRef = useRef<PersistedVacancyState>(persisted);
+
+  const hydratedVacancies: Vacancy[] = Array.isArray(persisted.vacancies)
     ? persisted.vacancies.map((v: any) => ({
         id: v.id || randomId(),
         ...v,
       }))
     : [];
 
-  // backfill ids if needed
-  useEffect(() => {
-    if (persisted.vacancies && persisted.vacancies.some((v: any) => !v.id)) {
-      persist(initialVacancies, persisted.auditLog || []);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const [vacancies, setVacancies] = useState<Vacancy[]>(initialVacancies);
+  const [vacancies, setVacancies] = useState<Vacancy[]>(hydratedVacancies);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>(
     Array.isArray(persisted.auditLog) ? persisted.auditLog : [],
   );
@@ -44,11 +49,24 @@ export function useVacancies() {
     latestVacanciesRef.current = vacancies;
   }, [vacancies]);
 
+  useEffect(() => {
+    if (
+      Array.isArray(persisted.vacancies) &&
+      persisted.vacancies.some((v: any) => !v.id)
+    ) {
+      persist(hydratedVacancies, Array.isArray(persisted.auditLog) ? persisted.auditLog : []);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function persist(vacs: Vacancy[], log: AuditEntry[] = auditLog) {
-    const current = loadState() || {};
-    current.vacancies = vacs;
-    current.auditLog = log;
-    saveState(current);
+    const next = {
+      ...persistedRef.current,
+      vacancies: vacs,
+      auditLog: log,
+    } as PersistedVacancyState;
+    persistedRef.current = next;
+    saveState(next);
   }
 
   function stageDelete(ids: string[]) {

@@ -23,7 +23,9 @@ type State = {
 type PersistedDashboardState = Partial<State>;
 
 export default function Dashboard() {
-  const persisted = loadState<PersistedDashboardState>() ?? {};
+  const [persisted] = useState<PersistedDashboardState>(
+    () => loadState<PersistedDashboardState>() ?? {},
+  );
   const data: State = {
     employees: persisted.employees ?? [],
     vacations: persisted.vacations ?? [],
@@ -36,7 +38,7 @@ export default function Dashboard() {
     staged,
     addVacancies,
     updateVacancy,
-  } = useVacancies();
+  } = useVacancies(persisted);
 
   const [view, setView] = useState<"list" | "calendar">("list");
   const [showRangeForm, setShowRangeForm] = useState(false);
