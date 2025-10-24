@@ -1,5 +1,6 @@
 import type { Vacancy, VacancyRange } from "../types";
 import { getDatesInRange } from "../utils/date";
+import { randomId } from "../utils/id";
 
 /**
  * Expand a VacancyRange into individual Vacancy objects that the
@@ -29,11 +30,11 @@ export function expandRangeToVacancies(
   const coverageDates = range.startDate === range.endDate ? undefined : days;
   const isMulti = days.length >= 2;
   const singleAward = isMulti && awardAsBlock;
-  const bundleId = singleAward ? crypto.randomUUID() : undefined;
+  const bundleId = singleAward ? randomId() : undefined;
   if (bundleId) console.debug("[bundle] created", bundleId, { days: days.length });
 
   return days.map<Vacancy>((d) => ({
-    id: crypto.randomUUID(),
+    id: randomId(),
     ...(singleAward
       ? { bundleId, bundleMode: "one-person" as const }
       : {}),

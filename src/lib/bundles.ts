@@ -1,9 +1,10 @@
 import type { Vacancy, VacancyRange } from "../types";
 import { expandRangeToVacancies } from "./expandRange";
 import { applyAwardBundle } from "./vacancy";
+import { randomId } from "../utils/id";
 
 export function ensureBundleId<T extends { bundleId?: string }>(v: T): string {
-  if (!v.bundleId) v.bundleId = crypto.randomUUID();
+  if (!v.bundleId) v.bundleId = randomId();
   return v.bundleId;
 }
 
@@ -43,7 +44,7 @@ export function bundleContiguousVacanciesByRef(vacs: Vacancy[]): Vacancy[] {
         return;
       }
       let bid = group.find((v) => v.bundleId)?.bundleId;
-      if (!bid) bid = crypto.randomUUID();
+      if (!bid) bid = randomId();
       for (const v of group) {
         v.bundleId = bid;
         v.bundleMode = "one-person";

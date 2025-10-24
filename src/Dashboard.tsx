@@ -12,6 +12,7 @@ import type { Tag } from "./models/tag";
 import useVacancies from "./state/useVacancies";
 import "./styles/branding.css";
 import { loadState } from "./utils/storage";
+import { randomId } from "./utils/id";
 import Button from "./components/ui/Button";
 
 type State = {
@@ -110,10 +111,7 @@ export default function Dashboard() {
     context: CalendarVacancyActionContext,
   ) => {
     const source = context.vacancy;
-    const newId =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const newId = randomId();
     const duplicate: Vacancy = {
       ...source,
       id: newId,

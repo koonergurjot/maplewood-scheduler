@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Vacancy } from "../types";
 import { loadState, saveState } from "../utils/storage";
+import { randomId } from "../utils/id";
 
 export type AuditEntry = {
   id: string;
@@ -18,11 +19,7 @@ export function useVacancies() {
   const persisted: any = loadState() || {};
   let initialVacancies: Vacancy[] = Array.isArray(persisted.vacancies)
     ? persisted.vacancies.map((v: any) => ({
-        id:
-          v.id ||
-          (typeof crypto !== "undefined" && "randomUUID" in crypto
-            ? crypto.randomUUID()
-            : Date.now().toString()),
+        id: v.id || randomId(),
         ...v,
       }))
     : [];
@@ -79,10 +76,7 @@ export function useVacancies() {
 
   function finalizeDeletes(ids: string[]) {
     const entry: AuditEntry = {
-      id:
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : Math.random().toString(36).slice(2),
+      id: randomId(),
       type: "VACANCY_DELETE",
       at: new Date().toISOString(),
       payload: {

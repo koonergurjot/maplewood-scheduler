@@ -2,6 +2,7 @@ import BodyLock from "./BodyLock";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { VacancyRange, Bid, Employee } from "../types";
+import { randomId } from "../utils/id";
 
 type Props = {
   open: boolean;
@@ -67,7 +68,7 @@ export default function RangeBidDialog({
     const employee = employees.find((x) => x.id === employeeId);
     const now = new Date().toISOString();
     const bid: Bid = {
-      id: `BID-${crypto.randomUUID()}`,
+      id: randomId("BID"),
       vacancyId: range.id,
       bidderEmployeeId: employeeId,
       bidderName: employee

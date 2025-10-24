@@ -3,6 +3,7 @@ import { CLASSIFICATIONS } from "../types";
 import type { VacancyRange, Classification, Vacancy } from "../types";
 import CoverageDaysModal from "./CoverageDaysModal";
 import { getDatesInRange, formatCoverageSummary } from "../utils/date";
+import { randomId } from "../utils/id";
 import { formatDateLong } from "../lib/dates";
 
 type Props = {
@@ -92,7 +93,7 @@ export default function VacancyRangeForm({
 
     const now = new Date().toISOString();
     const range: VacancyRange = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       reason: "Vacation",
       classification,
       wing: wing || undefined,

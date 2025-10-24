@@ -1,6 +1,7 @@
 import type { VacancyRange, Bid, Employee, Vacancy } from "../types";
 import { createVacanciesFromRange } from "./bundles";
 import { getDatesInRange } from "../utils/date";
+import { randomId } from "../utils/id";
 
 export type RangeAwardOutcome = {
   vacancies: Vacancy[];
@@ -193,7 +194,7 @@ export function awardVacancyRange(
     for (const segment of segments) {
       const vac: Vacancy = {
         ...template,
-        ...(first ? {} : { id: crypto.randomUUID() }),
+        ...(first ? {} : { id: randomId() }),
         start: minutesToTime(segment.start),
         end: minutesToTime(segment.end),
         shiftStart: minutesToTime(segment.start),

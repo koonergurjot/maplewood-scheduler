@@ -16,6 +16,7 @@ import type {
   DeadlineNotification,
 } from "../types/notifications";
 import { authFetch, getToken, getApiBaseUrl } from "../utils/api";
+import { randomId } from "../utils/id";
 
 const isBrowser = typeof window !== "undefined";
 const isTestEnvironment =
@@ -23,10 +24,7 @@ const isTestEnvironment =
   Boolean((globalThis as { __vitest_worker__?: unknown }).__vitest_worker__);
 
 function createEventId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `deadline_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+  return randomId("deadline");
 }
 
 function formatDuration(minutes: number): string {

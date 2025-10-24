@@ -45,6 +45,7 @@ import {
   splitName,
 } from "./utils/headers";
 import { loadState, LS_KEY } from "./utils/storage";
+import { randomId } from "./utils/id";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
 import VacancyRangeForm from "./components/VacancyRangeForm";
@@ -1350,11 +1351,11 @@ export default function App() {
         : dateRangeInclusive(v.startDate!, v.endDate!);
     const isMulti = days.length >= 2;
     const singleAward = isMulti; // always bundle multi-day vacancies as one-person blocks
-    const bid = singleAward ? crypto.randomUUID() : undefined;
+    const bid = singleAward ? randomId() : undefined;
     if (bid) console.debug("[bundle] created", bid, { days: days.length });
     const nowISO = new Date().toISOString();
     const vxs: Vacancy[] = days.map((d) => ({
-      id: crypto.randomUUID(),
+      id: randomId(),
       vacationId: vac.id,
       ...(singleAward
         ? { bundleId: bid, bundleMode: "one-person" as const }
