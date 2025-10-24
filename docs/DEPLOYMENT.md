@@ -10,10 +10,9 @@ npm run preview
 
 ## Docker
 
-```bash
-docker build -t maplewood-scheduler .
-docker run -p 3001:3001 maplewood-scheduler
-```
+Docker deployment is not currently supported because this repository does not
+include a Dockerfile. Use one of the other options below, or create a custom
+Dockerfile tailored to your environment if containerization is required.
 
 ## Netlify
 
