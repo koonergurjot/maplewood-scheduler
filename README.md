@@ -25,7 +25,7 @@
 
 <p align="center">
   <a href="TODO">Live Demo</a> •
-  <a href="#installation--quick-start">Quickstart</a> •
+  <a href="#installation--quick-start">Quick Start</a> •
   <a href="https://github.com/codespaces/new">Open in Codespaces</a>
 </p>
 
