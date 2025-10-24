@@ -35,10 +35,19 @@ type Props = {
     singlesOnly?: boolean;
   };
   recommendations: Record<string, Recommendation>;
+  now?: number;
 };
 
 export default function OpenVacanciesRedesign(props: Props) {
-  const { vacancies, vacations, filters, settings, employees, recommendations } = props;
+  const {
+    vacancies,
+    vacations,
+    filters,
+    settings,
+    employees,
+    recommendations,
+    now: providedNow,
+  } = props;
   const {
     search,
     setSearch,
@@ -58,6 +67,7 @@ export default function OpenVacanciesRedesign(props: Props) {
     setBundleMode,
     resetFilters,
   } = useVacancyFilters();
+  const now = providedNow ?? Date.now();
   const employeesById = useMemo(() => {
     const map: Record<string, Employee> = {};
     employees.forEach((e) => {
@@ -100,11 +110,10 @@ export default function OpenVacanciesRedesign(props: Props) {
         );
     }
     if (countdown) {
-      const now = Date.now();
       list = list.filter((v) => {
         const msLeft = deadlineFor(v, settings).getTime() - now;
         const winMin = pickWindowMinutes(v, settings);
-        const sinceKnownMin = minutesBetween(new Date(), new Date(v.knownAt));
+        const sinceKnownMin = minutesBetween(new Date(now), new Date(v.knownAt));
         const pct = Math.max(0, Math.min(1, (winMin - sinceKnownMin) / winMin));
         let cdClass = "green";
         if (msLeft <= 0) cdClass = "red";
@@ -134,6 +143,8 @@ export default function OpenVacanciesRedesign(props: Props) {
     filters,
     vacNameById,
     bundleMode,
+    settings,
+    now,
   ]);
 
   // Cross-day bundle groups so multi-day vacancies render as ONE row
