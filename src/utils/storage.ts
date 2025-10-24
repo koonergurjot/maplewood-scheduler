@@ -59,8 +59,10 @@ export function clearVacancyFilters(): void {
 }
 
 export function loadState<T = any>(): T | null {
+  const storage = getLocalStorage();
+  if (!storage) return null;
   try {
-    const raw = localStorage.getItem(LS_KEY);
+    const raw = storage.getItem(LS_KEY);
     const data = (raw ? JSON.parse(raw) : null) as T | null;
     if (data) migrateCoverageDates(data as any);
     return data;
@@ -70,6 +72,8 @@ export function loadState<T = any>(): T | null {
 }
 
 export function saveState(state: any): boolean {
+  const storage = getLocalStorage();
+  if (!storage) return false;
   try {
     const toSave = { ...state };
     if (Array.isArray(toSave.vacancies)) {
@@ -85,7 +89,7 @@ export function saveState(state: any): boolean {
         return rest;
       });
     }
-    localStorage.setItem(LS_KEY, JSON.stringify(toSave));
+    storage.setItem(LS_KEY, JSON.stringify(toSave));
     return true;
   } catch (err) {
     console.warn("Unable to access localStorage. State not persisted.", err);
