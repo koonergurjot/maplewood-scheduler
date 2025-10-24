@@ -14,7 +14,8 @@
   </p>
 </div>
 
-> Maplewood Scheduler keeps teams on track with a friendly UI and robust API. Plan shifts, track coverage, and ship with confidence.
+> Maplewood Scheduler keeps teams on track with a friendly UI and robust API.
+> Plan shifts, track coverage, and ship with confidence.
 
 <p align="center">
   <img src="https://img.shields.io/badge/%E2%9C%A8-Fast-0ea5e9?style=flat-square" alt="Fast">
