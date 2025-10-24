@@ -2326,6 +2326,7 @@ export default function App() {
                       employees={employees}
                       vacations={vacations}
                       settings={settings}
+                      now={now}
                       selectedIds={selectedVacancyIds}
                       dueNextId={dueNextId}
                       onToggleSelect={(id) =>
