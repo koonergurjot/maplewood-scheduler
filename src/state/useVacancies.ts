@@ -60,8 +60,10 @@ export function useVacancies(persistedArg?: PersistedVacancyState | null) {
   }, []);
 
   function persist(vacs: Vacancy[], log: AuditEntry[] = auditLog) {
+    const latestPersisted =
+      (loadState<PersistedVacancyState>() ?? persistedRef.current ?? {}) as PersistedVacancyState;
     const next = {
-      ...persistedRef.current,
+      ...latestPersisted,
       vacancies: vacs,
       auditLog: log,
     } as PersistedVacancyState;
