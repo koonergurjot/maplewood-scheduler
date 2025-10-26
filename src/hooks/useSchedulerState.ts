@@ -32,15 +32,18 @@ type PersistedState = {
   vacancyRanges?: VacancyRange[];
 };
 
-const normalizeBidTimestamp = (bid: Bid): Bid => {
-  const timestamp = bid.bidTimestamp ?? bid.createdAt ?? "";
+type LegacyBid = Bid & { placedAt?: string };
+
+const normalizeBidTimestamp = (bid: LegacyBid): Bid => {
+  const { placedAt, ...rest } = bid;
+  const timestamp = rest.bidTimestamp ?? placedAt ?? rest.createdAt ?? "";
   return {
-    ...bid,
+    ...rest,
     bidTimestamp: timestamp,
   };
 };
 
-const normalizeBids = (list: Bid[]): Bid[] => list.map(normalizeBidTimestamp);
+const normalizeBids = (list: LegacyBid[]): Bid[] => list.map(normalizeBidTimestamp);
 
 export function useSchedulerState() {
   const persisted: PersistedState | null = loadState();
