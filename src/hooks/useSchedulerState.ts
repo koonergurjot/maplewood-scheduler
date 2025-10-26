@@ -9,6 +9,7 @@ import type {
 } from "../types";
 import { loadState, saveState } from "../utils/storage";
 import { bundleContiguousVacanciesByRef } from "../lib/bundles";
+import type { NotificationPreferences } from "../state/useNotificationPrefs";
 
 const defaultSettings: Settings = {
   responseWindows: { lt2h: 7, h2to4: 15, h4to24: 30, h24to72: 120, gt72: 1440 },
@@ -24,9 +25,15 @@ type PersistedState = {
   archivedBids?: Record<string, Bid[]>;
   settings?: Settings;
   vacancyRanges?: VacancyRange[];
+  notificationPrefs?: NotificationPreferences;
 };
 
-export function useSchedulerState() {
+type SchedulerStateOptions = {
+  notificationPrefs?: NotificationPreferences;
+};
+
+export function useSchedulerState(options: SchedulerStateOptions = {}) {
+  const { notificationPrefs } = options;
   const persisted: PersistedState | null = loadState();
 
   const hydrateEmployees = (list: StoredEmployee[] | undefined): Employee[] =>
@@ -67,7 +74,7 @@ export function useSchedulerState() {
   }, [employees]);
 
   useEffect(() => {
-    saveState({
+    const stateToPersist: PersistedState = {
       employees,
       vacations,
       vacancies,
@@ -75,8 +82,23 @@ export function useSchedulerState() {
       archivedBids,
       settings,
       vacancyRanges,
-    });
-  }, [employees, vacations, vacancies, bids, archivedBids, settings, vacancyRanges]);
+    };
+
+    if (notificationPrefs) {
+      stateToPersist.notificationPrefs = notificationPrefs;
+    }
+
+    saveState(stateToPersist);
+  }, [
+    employees,
+    vacations,
+    vacancies,
+    bids,
+    archivedBids,
+    settings,
+    vacancyRanges,
+    notificationPrefs,
+  ]);
 
   const updateVacancy = (id: string, patch: Partial<Vacancy>) => {
     setVacancies((prev) =>

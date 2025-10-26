@@ -1009,6 +1009,13 @@ export const archiveBidsForVacancy = (
 // ---------- Main App ----------
 export default function App() {
   const persisted = loadState<PersistedState>() ?? null;
+  const {
+    notificationPrefs,
+    toggleChannel: toggleNotificationChannel,
+    updateChannel: updateNotificationChannel,
+    updateLeadTime: updateNotificationLeadTime,
+    setQuietHours: setNotificationQuietHours,
+  } = useNotificationPrefs(persisted?.notificationPrefs);
   const [tab, setTab] = useState<typeof TAB_KEYS[number]>("coverage");
 
   const {
@@ -1027,7 +1034,7 @@ export default function App() {
     employeesById,
     vacancyRanges,
     setVacancyRanges,
-  } = useSchedulerState();
+  } = useSchedulerState({ notificationPrefs });
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
   const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
   const [bundleUndo, setBundleUndo] = useState<{
@@ -1153,14 +1160,6 @@ export default function App() {
     }),
     [schedulerSettings, mergedOrder],
   );
-
-  const {
-    notificationPrefs,
-    toggleChannel: toggleNotificationChannel,
-    updateChannel: updateNotificationChannel,
-    updateLeadTime: updateNotificationLeadTime,
-    setQuietHours: setNotificationQuietHours,
-  } = useNotificationPrefs(persisted?.notificationPrefs);
 
   const [filterWing, setFilterWing] = useState<string>("");
   const [filterClass, setFilterClass] = useState<Classification | "">("");
