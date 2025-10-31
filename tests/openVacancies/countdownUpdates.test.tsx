@@ -58,6 +58,7 @@ function createMockFilters(
     setBundleMode: vi.fn(),
     filtersOpen: false,
     setFiltersOpen: vi.fn(),
+    hasActiveFilters: false,
     resetFilters: vi.fn(),
     ...overrides,
   };
