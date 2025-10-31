@@ -45,6 +45,28 @@ export function useVacancyFilters() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const skipNextPersistRef = useRef(false);
 
+  const hasActiveFilters = useMemo(() => {
+    return (
+      selectedWings.length > 0 ||
+      selectedPositions.length > 0 ||
+      filterShift !== DEFAULT_FILTERS.filterShift ||
+      countdown !== DEFAULT_FILTERS.countdown ||
+      start !== DEFAULT_FILTERS.start ||
+      end !== DEFAULT_FILTERS.end ||
+      bundleMode !== DEFAULT_FILTERS.bundleMode ||
+      search.trim().length > 0
+    );
+  }, [
+    bundleMode,
+    countdown,
+    end,
+    filterShift,
+    search,
+    selectedPositions,
+    selectedWings,
+    start,
+  ]);
+
   useEffect(() => {
     if (skipNextPersistRef.current) {
       skipNextPersistRef.current = false;
@@ -104,6 +126,7 @@ export function useVacancyFilters() {
     setBundleMode,
     filtersOpen,
     setFiltersOpen,
+    hasActiveFilters,
     resetFilters,
   };
 }
