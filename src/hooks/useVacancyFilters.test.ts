@@ -67,10 +67,13 @@ describe("useVacancyFilters localStorage integration", () => {
     expect(result.current.end).toBe(snapshot.end);
     expect(result.current.search).toBe(snapshot.search);
     expect(result.current.bundleMode).toBe(snapshot.bundleMode);
+    expect(result.current.hasActiveFilters).toBe(true);
   });
 
   it("persists changes when filters update", async () => {
     const { result } = renderHook(() => useVacancyFilters());
+
+    expect(result.current.hasActiveFilters).toBe(false);
 
     act(() => {
       result.current.setSearch("evening");
@@ -98,6 +101,8 @@ describe("useVacancyFilters localStorage integration", () => {
         }),
       );
     });
+
+    expect(result.current.hasActiveFilters).toBe(true);
   });
 
   it("clears storage and resets when resetFilters is called", async () => {
@@ -126,6 +131,7 @@ describe("useVacancyFilters localStorage integration", () => {
       expect(result.current.selectedWings).toEqual([]);
       expect(result.current.countdown).toBe("");
       expect(result.current.bundleMode).toBe("all");
+      expect(result.current.hasActiveFilters).toBe(false);
     });
 
     expect(setItemMock.mock.calls.length).toBe(callsBeforeReset);

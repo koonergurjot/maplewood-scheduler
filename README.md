@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <a href="TODO">Live Demo</a> •
+  <a href="./index.html">Live Demo</a> •
   <a href="#installation--quick-start">Quick Start</a> •
   <a href="https://github.com/codespaces/new">Open in Codespaces</a>
 </p>
@@ -68,7 +68,7 @@ Replace the placeholders below with your own images.
 
 ## Live Demo & Quick Links
 
-- 🌐 [Live Demo](TODO)
+- 🌐 [Live Demo](./index.html)
 - 📚 [Docs](./docs/OVERVIEW.md)
 - 🐞 [Issues](https://github.com/koonergurjot/maplewood-scheduler/issues)
 - 💬 [Discussions](https://github.com/koonergurjot/maplewood-scheduler/discussions)
