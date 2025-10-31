@@ -16,7 +16,7 @@ const defaultSettings: Settings = {
 
 type StoredEmployee = Employee & { activeLabel?: string };
 
-type PersistedState = {
+export type PersistedState = {
   employees?: StoredEmployee[];
   vacations?: Vacation[];
   vacancies?: Vacancy[];
