@@ -27,14 +27,17 @@
     "chart.js": "^4.4.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "papaparse": "^5.4.1",
     "pdfkit": "^0.17.2",
+    "pg": "^8.16.3",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.0",
     "react-window": "^2.1.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.0",
@@ -54,6 +57,7 @@
     "glob": "^10.3.10",
     "globals": "^15.6.0",
     "jsdom": "^24.0.0",
+    "pg-mem": "^3.0.5",
     "prettier": "^3.3.3",
     "supertest": "^7.1.1",
     "tsx": "^4.19.0",

@@ -6,10 +6,21 @@ import { createCsv } from "./analyticsFormats/csv.js";
 import { createPdf } from "./analyticsFormats/pdf.js";
 import { parseNumberParam } from "./parseNumberParam.js";
 import { deadlineHub } from "./deadlineHub.js";
+import schedulerStateRouter from "./schedulerStateRoutes.js";
 
 export const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
+
+app.use((err, req, res, next) => {
+  if (err?.type === "entity.too.large") {
+    return res.status(413).json({ error: "Payload too large" });
+  }
+  if (err instanceof SyntaxError && "status" in err && err.status === 400) {
+    return res.status(400).json({ error: "Invalid JSON" });
+  }
+  return next(err);
+});
 
 const VALID_CHANNELS = new Set(["inApp", "email", "sms"]);
 const VALID_SEVERITIES = new Set(["info", "warning", "critical"]);
@@ -110,6 +121,8 @@ app.get("/api/search", (req, res) => {
 
   res.json(results.slice(sliceStart, sliceEnd));
 });
+
+app.use("/api/scheduler-state", schedulerStateRouter);
 
 app.get("/api/analytics", requireAuth, (req, res) => {
   let overtimeThreshold;
