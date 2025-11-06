@@ -1,4 +1,5 @@
 import { authFetch } from "./api";
+import { loadLocalSnapshot } from "./persistence";
 
 export async function logBulkAward({
   vacancyIds,
@@ -15,11 +16,7 @@ export async function logBulkAward({
     vacancyIds,
     employeeId,
     reason,
-    user:
-      user ??
-      (typeof window !== "undefined"
-        ? window.localStorage.getItem("currentUser") || undefined
-        : undefined),
+    user: user ?? loadLocalSnapshot<string>("currentUser") ?? undefined,
     timestamp: new Date().toISOString(),
   };
   await authFetch("/api/logs/bulk-award", {

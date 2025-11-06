@@ -4,6 +4,7 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
 } from "react";
 import type { SetStateAction } from "react";
 
@@ -17,6 +18,7 @@ import type {
   VacancyRange,
 } from "../types";
 import { saveState } from "../utils/storage";
+import type { SchedulerPersistedState } from "../schemas/schedulerState";
 
 import { createSchedulerPersistenceManager } from "./schedulerPersistence";
 
@@ -26,23 +28,15 @@ const defaultSettings: Settings = {
 
 type StoredEmployee = Employee & { activeLabel?: string };
 
-export type PersistedState = {
-  employees?: StoredEmployee[];
-  vacations?: Vacation[];
-  vacancies?: Vacancy[];
-  bids?: Bid[];
-  archivedBids?: Record<string, Bid[]>;
-  settings?: Settings;
-  vacancyRanges?: VacancyRange[];
-  version?: number;
-  updatedAt?: string;
-};
+export type PersistedState = SchedulerPersistedState;
 
 export type SyncConflict = {
   snapshot: PersistedState;
   serverVersion: number | null;
   updatedAt: string | null;
 };
+
+type PersistenceError = { type: "oversize"; bytes: number; timestamp: number };
 
 type SchedulerState = {
   employees: Employee[];
@@ -244,6 +238,9 @@ export function useSchedulerStore(persisted?: PersistedState) {
   const persistenceManagerRef = useRef<ReturnType<
     typeof createSchedulerPersistenceManager
   > | null>(null);
+  const [persistenceError, setPersistenceError] = useState<PersistenceError | null>(
+    null,
+  );
 
   if (!persistenceManagerRef.current) {
     persistenceManagerRef.current = createSchedulerPersistenceManager({
@@ -252,6 +249,13 @@ export function useSchedulerStore(persisted?: PersistedState) {
       },
       onConflict(conflict) {
         dispatch({ type: "conflictDetected", conflict });
+      },
+      onOversizedSnapshot(details) {
+        setPersistenceError({
+          type: "oversize",
+          bytes: details.bytes,
+          timestamp: Date.now(),
+        });
       },
     });
   }
@@ -355,6 +359,11 @@ export function useSchedulerStore(persisted?: PersistedState) {
     [],
   );
 
+  const acknowledgePersistenceError = useCallback(
+    () => setPersistenceError(null),
+    [],
+  );
+
   return {
     employees: state.employees,
     setEmployees,
@@ -380,6 +389,8 @@ export function useSchedulerStore(persisted?: PersistedState) {
     clearSyncConflict,
     setConflictVersion,
     applyServerSnapshot,
+    persistenceError,
+    acknowledgePersistenceError,
   } as const;
 }
 

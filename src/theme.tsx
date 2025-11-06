@@ -1,5 +1,7 @@
 import React from "react";
 
+import { saveLocalSnapshot } from "./utils/persistence";
+
 export type Theme = "light" | "dark";
 
 interface ThemeContextValue {
@@ -14,11 +16,7 @@ export function ThemeProvider({ initialTheme, children }: { initialTheme: Theme;
 
   React.useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    try {
-      localStorage.setItem("theme", theme);
-    } catch {
-      // ignore write errors
-    }
+    saveLocalSnapshot("theme", theme);
   }, [theme]);
 
   const value = React.useMemo(() => ({ theme, setTheme }), [theme]);

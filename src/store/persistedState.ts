@@ -1,34 +1,37 @@
+import { z } from "zod";
+
+import {
+  SchedulerPersistedStateSchema,
+  SchedulerStatePayloadSchema,
+  type SchedulerPersistedState,
+} from "../schemas/schedulerState";
+
 import type { PersistedState } from "./schedulerStore";
 
 export function parsePersistedStatePayload(
   payload: any,
 ): PersistedState | null {
-  if (!payload || typeof payload !== "object") return null;
-  const rawState = payload.state;
-  if (!rawState || typeof rawState !== "object") return null;
+  const payloadSchema = SchedulerStatePayloadSchema
+    .extend({
+      state: SchedulerPersistedStateSchema.optional(),
+      version: z.number().int().nonnegative().optional(),
+      updatedAt: z.string().optional(),
+    })
+    .partial({ state: true, version: true, updatedAt: true });
 
-  const normalized: PersistedState = {
-    ...(rawState as PersistedState),
+  const parsed = payloadSchema.safeParse(payload);
+  if (!parsed.success) return null;
+  const { state, version, updatedAt } = parsed.data;
+  if (!state) return null;
+
+  const normalized: SchedulerPersistedState = {
+    ...state,
   };
 
-  const version =
-    typeof payload.version === "number"
-      ? payload.version
-      : typeof (rawState as PersistedState).version === "number"
-        ? (rawState as PersistedState).version
-        : undefined;
-
-  const updatedAt =
-    typeof payload.updatedAt === "string"
-      ? payload.updatedAt
-      : typeof (rawState as PersistedState).updatedAt === "string"
-        ? (rawState as PersistedState).updatedAt
-        : undefined;
-
-  if (version !== undefined) {
+  if (typeof version === "number") {
     normalized.version = version;
   }
-  if (updatedAt !== undefined) {
+  if (typeof updatedAt === "string") {
     normalized.updatedAt = updatedAt;
   }
 

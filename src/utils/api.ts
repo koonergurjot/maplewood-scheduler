@@ -1,10 +1,12 @@
+import { loadLocalSnapshot, saveLocalSnapshot } from "./persistence";
+
 export const TOKEN_KEY = "apiToken";
 
 export function getToken(): string | null {
   // Prefer token from localStorage if available
-  if (typeof window !== "undefined") {
-    const stored = window.localStorage.getItem(TOKEN_KEY);
-    if (stored) return stored;
+  const stored = loadLocalSnapshot<string>(TOKEN_KEY);
+  if (typeof stored === "string" && stored.trim()) {
+    return stored;
   }
   // Fallback to environment variable
   const metaEnv = (import.meta as unknown as {
@@ -15,9 +17,12 @@ export function getToken(): string | null {
 }
 
 export function setToken(token: string) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(TOKEN_KEY, token);
+  const normalized = token.trim();
+  if (!normalized) {
+    saveLocalSnapshot(TOKEN_KEY, null);
+    return;
   }
+  saveLocalSnapshot(TOKEN_KEY, normalized);
 }
 
 export function getApiBaseUrl(): string {
