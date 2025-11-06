@@ -1,18 +1,14 @@
 import { appConfig } from "../config";
 import migrateCoverageDates from "../../migrations/2025-coverage-dates";
 import { CLASSIFICATIONS, type Classification } from "../types";
+import {
+  SchedulerPersistedStateSchema,
+  type SchedulerPersistedState,
+} from "../schemas/schedulerState";
+import { loadLocalSnapshot, saveLocalSnapshot } from "./persistence";
 
 export const LS_KEY = "maplewood-scheduler-v3";
 export const OPEN_VACANCY_FILTERS_KEY = "openVacancyFilters";
-
-const getLocalStorage = (): Storage | null => {
-  if (typeof localStorage === "undefined") return null;
-  try {
-    return localStorage;
-  } catch {
-    return null;
-  }
-};
 
 export type VacancyFilterSnapshot = {
   selectedWings: string[];
@@ -114,56 +110,32 @@ function sanitizeVacancyFilters(
 }
 
 export function loadVacancyFilters(): StoredVacancyFilters {
-  const storage = getLocalStorage();
-  if (!storage) return null;
-  try {
-    const raw = storage.getItem(OPEN_VACANCY_FILTERS_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as unknown;
-    return sanitizeVacancyFilters(parsed);
-  } catch {
-    return null;
-  }
+  const raw = loadLocalSnapshot<unknown>(OPEN_VACANCY_FILTERS_KEY);
+  if (raw == null) return null;
+  return sanitizeVacancyFilters(raw);
 }
 
 export function saveVacancyFilters(snapshot: VacancyFilterSnapshot): boolean {
-  const storage = getLocalStorage();
-  if (!storage) return false;
-  try {
-    storage.setItem(OPEN_VACANCY_FILTERS_KEY, JSON.stringify(snapshot));
-    return true;
-  } catch {
-    return false;
-  }
+  return saveLocalSnapshot(OPEN_VACANCY_FILTERS_KEY, snapshot);
 }
 
 export function clearVacancyFilters(): void {
-  const storage = getLocalStorage();
-  try {
-    storage?.removeItem(OPEN_VACANCY_FILTERS_KEY);
-  } catch {
-    // noop – storage unavailable
-  }
+  saveLocalSnapshot(OPEN_VACANCY_FILTERS_KEY, null);
 }
 
-export function loadState<T = any>(): T | null {
-  const storage = getLocalStorage();
-  if (!storage) return null;
-  try {
-    const raw = storage.getItem(LS_KEY);
-    const data = (raw ? JSON.parse(raw) : null) as T | null;
-    if (data) migrateCoverageDates(data as any);
-    return data;
-  } catch {
-    return null;
-  }
+export function loadState<T = SchedulerPersistedState>(): T | null {
+  const snapshot = loadLocalSnapshot<SchedulerPersistedState>(
+    LS_KEY,
+    SchedulerPersistedStateSchema,
+  );
+  if (!snapshot) return null;
+  migrateCoverageDates(snapshot as any);
+  return snapshot as unknown as T;
 }
 
 export function saveState(state: any): boolean {
-  const storage = getLocalStorage();
-  if (!storage) return false;
   try {
-    const toSave = { ...state };
+    const toSave: SchedulerPersistedState = { ...state };
     if (Array.isArray(toSave.vacancies)) {
       toSave.vacancies = toSave.vacancies.map((v: any) => {
         if (
@@ -177,8 +149,13 @@ export function saveState(state: any): boolean {
         return rest;
       });
     }
-    storage.setItem(LS_KEY, JSON.stringify(toSave));
-    return true;
+    if (toSave.version === null) {
+      delete (toSave as Record<string, unknown>).version;
+    }
+    if (toSave.updatedAt === null) {
+      delete (toSave as Record<string, unknown>).updatedAt;
+    }
+    return saveLocalSnapshot(LS_KEY, toSave, SchedulerPersistedStateSchema);
   } catch (err) {
     console.warn("Unable to access localStorage. State not persisted.", err);
     return false;

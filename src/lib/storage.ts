@@ -1,3 +1,5 @@
+import { loadLocalSnapshot, saveLocalSnapshot } from "../utils/persistence";
+
 export interface Storage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -14,11 +16,17 @@ export function createMemoryStorage(): Storage {
 }
 
 const storage: Storage =
-  typeof localStorage !== "undefined"
+  typeof window !== "undefined"
     ? {
-        getItem: (key: string) => localStorage.getItem(key),
-        setItem: (key: string, value: string) =>
-          localStorage.setItem(key, value),
+        getItem: (key: string) => {
+          const value = loadLocalSnapshot<string>(key);
+          if (typeof value === "string") return value;
+          if (value == null) return null;
+          return JSON.stringify(value);
+        },
+        setItem: (key: string, value: string) => {
+          saveLocalSnapshot(key, value);
+        },
       }
     : createMemoryStorage();
 

@@ -81,6 +81,7 @@ import RangeBidDialog from "./components/RangeBidDialog";
 import { awardVacancyRange } from "./lib/vacancy-range-award";
 import { useSchedulerBootstrap } from "./hooks/useSchedulerBootstrap";
 import type { PersistedState as SchedulerPersistedState } from "./hooks/useSchedulerState";
+import { MAX_SNAPSHOT_BYTES } from "./store/schedulerPersistence";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -1057,6 +1058,8 @@ function SchedulerAppContent({
     clearSyncConflict,
     setConflictVersion,
     applyServerSnapshot,
+    persistenceError,
+    acknowledgePersistenceError,
   } = useSchedulerState(persisted);
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
   const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
@@ -1072,6 +1075,9 @@ function SchedulerAppContent({
     { message: string; timeout: ReturnType<typeof setTimeout> } | null
   >(null);
   const [importToast, setImportToast] = useState<
+    { message: string; timeout: ReturnType<typeof setTimeout> } | null
+  >(null);
+  const [persistenceToast, setPersistenceToast] = useState<
     { message: string; timeout: ReturnType<typeof setTimeout> } | null
   >(null);
   const [activeVacancyId, setActiveVacancyId] = useState<string | null>(null);
@@ -1119,6 +1125,36 @@ function SchedulerAppContent({
       clearTimeout(bootstrapToast.timeout);
     };
   }, [bootstrapToast]);
+
+  useEffect(() => {
+    if (!persistenceError) return;
+    const limitMb = (MAX_SNAPSHOT_BYTES / (1024 * 1024)).toFixed(1);
+    if (persistenceError.type === "oversize") {
+      const sizeMb = (persistenceError.bytes / (1024 * 1024)).toFixed(2);
+      setPersistenceToast((prev) => {
+        if (prev?.timeout) {
+          clearTimeout(prev.timeout);
+        }
+        const timeout = setTimeout(() => {
+          setPersistenceToast((current) =>
+            current?.timeout === timeout ? null : current,
+          );
+        }, 6000);
+        return {
+          message: `Local changes are too large to sync (${sizeMb} MB). Limit is ${limitMb} MB. Reduce data before retrying.`,
+          timeout,
+        };
+      });
+    }
+    acknowledgePersistenceError();
+  }, [persistenceError, acknowledgePersistenceError]);
+
+  useEffect(() => {
+    if (!persistenceToast?.timeout) return;
+    return () => {
+      clearTimeout(persistenceToast.timeout);
+    };
+  }, [persistenceToast]);
 
   const showConfirm = (body: string, title = "Confirm"): Promise<boolean> => {
     const shouldUseNative =
@@ -2907,6 +2943,10 @@ function SchedulerAppContent({
         )}
         <Toast open={!!bootstrapToast} message={bootstrapToast?.message ?? ""} />
         <Toast open={!!importToast} message={importToast?.message || ""} />
+        <Toast
+          open={!!persistenceToast}
+          message={persistenceToast?.message ?? ""}
+        />
         <Toast
           open={!!stagedDelete}
           message={stagedDelete?.message || ""}

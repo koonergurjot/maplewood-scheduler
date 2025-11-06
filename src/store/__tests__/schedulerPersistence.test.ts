@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createSchedulerPersistenceManager } from "../schedulerPersistence";
+import {
+  createSchedulerPersistenceManager,
+  MAX_SNAPSHOT_BYTES,
+} from "../schedulerPersistence";
 import type { PersistedState } from "../schedulerStore";
 import { __resetOfflineQueueForTests } from "../../utils/offlineQueue";
 
@@ -124,6 +127,33 @@ describe("createSchedulerPersistenceManager", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(signals[0]?.aborted).toBe(true);
+
+    manager.dispose();
+  });
+
+  it("notifies when a snapshot exceeds the maximum payload size", async () => {
+    mockGetToken.mockReturnValue("token");
+    const fetchMock = vi.fn();
+    global.fetch = fetchMock as typeof fetch;
+
+    const onOversizedSnapshot = vi.fn();
+    const manager = createSchedulerPersistenceManager({
+      onServerAck: vi.fn(),
+      onConflict: vi.fn(),
+      onOversizedSnapshot,
+      debounceMs: 0,
+    });
+
+    const largeString = "x".repeat(MAX_SNAPSHOT_BYTES + 10);
+    manager.queue({ ...baseSnapshot, large: largeString } as PersistedState);
+
+    await vi.advanceTimersByTimeAsync(0);
+    await Promise.resolve();
+
+    expect(onOversizedSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ bytes: expect.any(Number) }),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
 
     manager.dispose();
   });

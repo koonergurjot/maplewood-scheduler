@@ -6,6 +6,7 @@ import AnalyticsPage from "./Analytics";
 import Dashboard from "./Dashboard";
 import AuditLog from "./AuditLog";
 import { ThemeProvider, Theme } from "./theme";
+import { loadLocalSnapshot } from "./utils/persistence";
 import { Analytics } from "./components/Analytics";
 import "./styles/theme.css";
 import "./styles/responsive.css";
@@ -17,7 +18,7 @@ import "./styles/search-filter-bar.css";
 
 const initialTheme: Theme = (() => {
   if (typeof window === "undefined") return "light";
-  const stored = localStorage.getItem("theme");
+  const stored = loadLocalSnapshot<Theme>("theme");
   if (stored === "light" || stored === "dark") {
     document.documentElement.setAttribute("data-theme", stored);
     return stored;

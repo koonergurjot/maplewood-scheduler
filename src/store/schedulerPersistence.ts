@@ -1,6 +1,7 @@
 import { getToken } from "../utils/api";
 import { abortQueuedFetchSignal, queuedFetch } from "../utils/offlineQueue";
 import { saveState } from "../utils/storage";
+import { byteLength } from "../utils/persistence";
 
 import type { PersistedState } from "./schedulerStore";
 import { debounce } from "./utils";
@@ -15,7 +16,10 @@ type SchedulerPersistenceConfig = {
   onServerAck: (persisted: PersistedState) => void;
   onConflict: (details: ConflictDetails) => void;
   debounceMs?: number;
+  onOversizedSnapshot?: (details: { bytes: number }) => void;
 };
+
+export const MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024;
 
 type ServerAckPayload = {
   state?: PersistedState;
@@ -65,6 +69,7 @@ export function createSchedulerPersistenceManager({
   onServerAck,
   onConflict,
   debounceMs = 600,
+  onOversizedSnapshot,
 }: SchedulerPersistenceConfig) {
   let inFlight: AbortController | null = null;
   let lastAbortController: AbortController | null = null;
@@ -72,6 +77,17 @@ export function createSchedulerPersistenceManager({
   const send = async (snapshot: PersistedState) => {
     const token = getToken();
     if (!token) return;
+
+    const payload = {
+      state: snapshot,
+      version: snapshot.version,
+    };
+    const body = JSON.stringify(payload);
+    const payloadBytes = byteLength(body);
+    if (payloadBytes > MAX_SNAPSHOT_BYTES) {
+      onOversizedSnapshot?.({ bytes: payloadBytes });
+      return;
+    }
 
     if (inFlight) {
       abortQueuedFetchSignal(inFlight.signal);
@@ -94,10 +110,7 @@ export function createSchedulerPersistenceManager({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          state: snapshot,
-          version: snapshot.version,
-        }),
+        body,
         signal: controller.signal,
       });
 
