@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { getToken } from "../utils/api";
+import { authFetch, getToken } from "../utils/api";
 import { loadState } from "../utils/storage";
 import type { PersistedState } from "./useSchedulerState";
 
@@ -46,11 +46,7 @@ export function useSchedulerBootstrap(): SchedulerBootstrapResult {
       }
 
       try {
-        const response = await fetch("/api/scheduler-state", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await authFetch("/api/scheduler-state");
 
         if (cancelled) return;
 
@@ -85,19 +81,6 @@ export function useSchedulerBootstrap(): SchedulerBootstrapResult {
           return;
         }
 
-        if (response.status === 401) {
-          console.error("Scheduler bootstrap rejected with 401. Redirecting to login.");
-          if (typeof window !== "undefined" && window.location) {
-            const assign = window.location.assign?.bind(window.location);
-            if (typeof assign === "function") {
-              assign(LOGIN_REDIRECT_PATH);
-            } else {
-              window.location.href = LOGIN_REDIRECT_PATH;
-            }
-          }
-          return;
-        }
-
         let body: string | undefined;
         try {
           body = await response.text();
@@ -115,6 +98,25 @@ export function useSchedulerBootstrap(): SchedulerBootstrapResult {
         });
       } catch (err) {
         if (cancelled) return;
+
+        const error = err as { status?: unknown } | null | undefined;
+        const status =
+          typeof error?.status === "number" ? (error.status as number) : undefined;
+        if (status === 401) {
+          console.error(
+            "Scheduler bootstrap rejected with 401. Redirecting to login.",
+          );
+          if (typeof window !== "undefined" && window.location) {
+            const assign = window.location.assign?.bind(window.location);
+            if (typeof assign === "function") {
+              assign(LOGIN_REDIRECT_PATH);
+            } else {
+              window.location.href = LOGIN_REDIRECT_PATH;
+            }
+          }
+          return;
+        }
+
         console.error("Scheduler bootstrap encountered an error", err);
         setState({
           status: "ready",
