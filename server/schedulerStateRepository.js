@@ -40,19 +40,39 @@ export async function upsertSchedulerState(userId, facilityId, expectedVersion, 
 
     if (existing.rowCount === 0) {
       const id = randomUUID();
-      const inserted = await client.query(
-        `INSERT INTO scheduler_states (id, user_id, facility_id, version, state_json, updated_at)
-         VALUES ($1, $2, $3, 1, $4, $5)
-         RETURNING version, updated_at`,
-        [id, userId, facilityId, normalizedState, timestamp],
-      );
-      const row = inserted.rows[0];
-      return {
-        status: "created",
-        version: row.version,
-        updatedAt: normalizeUpdatedAt(row.updated_at ?? timestamp),
-        state: normalizedState,
-      };
+      try {
+        const inserted = await client.query(
+          `INSERT INTO scheduler_states (id, user_id, facility_id, version, state_json, updated_at)
+           VALUES ($1, $2, $3, 1, $4, $5)
+           RETURNING version, updated_at`,
+          [id, userId, facilityId, normalizedState, timestamp],
+        );
+        const row = inserted.rows[0];
+        return {
+          status: "created",
+          version: row.version,
+          updatedAt: normalizeUpdatedAt(row.updated_at ?? timestamp),
+          state: normalizedState,
+        };
+      } catch (error) {
+        if (error?.code === "23505") {
+          const latest = await client.query(
+            `SELECT version, updated_at
+             FROM scheduler_states
+             WHERE user_id = $1 AND facility_id = $2`,
+            [userId, facilityId],
+          );
+          if (latest.rowCount > 0) {
+            const latestRow = latest.rows[0];
+            return {
+              status: "conflict",
+              version: latestRow.version,
+              updatedAt: normalizeUpdatedAt(latestRow.updated_at),
+            };
+          }
+        }
+        throw error;
+      }
     }
 
     const row = existing.rows[0];
