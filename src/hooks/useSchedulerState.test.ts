@@ -38,6 +38,8 @@ const createPersistedState = (): PersistedState => ({
   archivedBids: {},
   settings: { responseWindows: { lt2h: 1, h2to4: 2, h4to24: 3, h24to72: 4, gt72: 5 } },
   vacancyRanges: [],
+  version: 3,
+  updatedAt: "2024-01-01T00:00:00.000Z",
 });
 
 describe("useSchedulerState", () => {
@@ -59,6 +61,12 @@ describe("useSchedulerState", () => {
 
     expect(mockLoadState).toHaveBeenCalledTimes(1);
     expect(mockSaveState).toHaveBeenCalled();
+    expect(mockSaveState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        version: 3,
+        updatedAt: "2024-01-01T00:00:00.000Z",
+      }),
+    );
   });
 
   it("uses provided persisted snapshot without reloading", () => {
