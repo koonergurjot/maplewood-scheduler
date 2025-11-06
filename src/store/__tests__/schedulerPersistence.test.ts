@@ -57,8 +57,10 @@ describe("createSchedulerPersistenceManager", () => {
     global.fetch = fetchMock as typeof fetch;
 
     const onServerAck = vi.fn();
+    const onConflict = vi.fn();
     const manager = createSchedulerPersistenceManager({
       onServerAck,
+      onConflict,
       debounceMs: 100,
     });
 
@@ -103,6 +105,7 @@ describe("createSchedulerPersistenceManager", () => {
 
     const manager = createSchedulerPersistenceManager({
       onServerAck: vi.fn(),
+      onConflict: vi.fn(),
       debounceMs: 100,
     });
 
