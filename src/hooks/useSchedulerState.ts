@@ -24,6 +24,8 @@ export type PersistedState = {
   archivedBids?: Record<string, Bid[]>;
   settings?: Settings;
   vacancyRanges?: VacancyRange[];
+  version?: number;
+  updatedAt?: string;
 };
 
 export function useSchedulerState(
@@ -64,6 +66,14 @@ export function useSchedulerState(
   const [vacancyRanges, setVacancyRanges] = useState<VacancyRange[]>(
     persisted?.vacancyRanges ?? [],
   );
+  const [version, setVersion] = useState<number | null>(() => {
+    const value = persisted?.version;
+    return typeof value === "number" ? value : null;
+  });
+  const [updatedAt, setUpdatedAt] = useState<string | null>(() => {
+    const value = persisted?.updatedAt;
+    return typeof value === "string" ? value : null;
+  });
 
   const employeesById = useMemo<Record<string, Employee>>(() => {
     const map: Record<string, Employee> = {};
@@ -82,8 +92,20 @@ export function useSchedulerState(
       archivedBids,
       settings,
       vacancyRanges,
+      version: version ?? undefined,
+      updatedAt: updatedAt ?? undefined,
     });
-  }, [employees, vacations, vacancies, bids, archivedBids, settings, vacancyRanges]);
+  }, [
+    employees,
+    vacations,
+    vacancies,
+    bids,
+    archivedBids,
+    settings,
+    vacancyRanges,
+    version,
+    updatedAt,
+  ]);
 
   const updateVacancy = (id: string, patch: Partial<Vacancy>) => {
     setVacancies((prev) =>
@@ -118,6 +140,10 @@ export function useSchedulerState(
     employeesById,
     vacancyRanges,
     setVacancyRanges,
+    version,
+    setVersion,
+    updatedAt,
+    setUpdatedAt,
     updateVacancy,
   };
 }

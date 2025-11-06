@@ -44,7 +44,7 @@ import {
   normalizeStatus,
   splitName,
 } from "./utils/headers";
-import { loadState, LS_KEY } from "./utils/storage";
+import { LS_KEY } from "./utils/storage";
 import { randomId } from "./utils/id";
 import CoverageRangesPanel from "./components/CoverageRangesPanel";
 import BulkAwardDialog from "./components/BulkAwardDialog";
@@ -77,6 +77,8 @@ import useNotificationPrefs, {
 import type { DeadlineNotification } from "./types/notifications";
 import RangeBidDialog from "./components/RangeBidDialog";
 import { awardVacancyRange } from "./lib/vacancy-range-award";
+import { useSchedulerBootstrap } from "./hooks/useSchedulerBootstrap";
+import type { PersistedState as SchedulerPersistedState } from "./hooks/useSchedulerState";
 
 /**
  * Maplewood Scheduler — Coverage-first (v2.3.0)
@@ -234,15 +236,8 @@ type StagedDeleteSnapshot = {
   timeout: ReturnType<typeof setTimeout>;
 };
 
-type PersistedState = {
-  employees?: (Employee & { activeLabel?: string })[];
-  vacations?: Vacation[];
-  vacancies?: Vacancy[];
-  bids?: Bid[];
-  archivedBids?: Record<string, Bid[]>;
-  settings?: Settings;
+type PersistedState = SchedulerPersistedState & {
   notificationPrefs?: NotificationPreferences;
-  vacancyRanges?: VacancyRange[];
 };
 
 // ---------- Utils ----------
@@ -1008,9 +1003,36 @@ export const archiveBidsForVacancy = (
 
 // ---------- Main App ----------
 export default function App() {
-  const [persisted] = useState<PersistedState | null>(
-    () => loadState<PersistedState>() ?? null,
+  const { status, persisted, error } = useSchedulerBootstrap();
+
+  if (status !== "ready") {
+    return (
+      <div
+        className="app"
+        role="status"
+        style={{ display: "flex", justifyContent: "center", padding: 32 }}
+      >
+        Loading scheduler…
+      </div>
+    );
+  }
+
+  return (
+    <SchedulerAppContent
+      initialPersisted={persisted}
+      bootstrapError={error}
+    />
   );
+}
+
+function SchedulerAppContent({
+  initialPersisted,
+  bootstrapError,
+}: {
+  initialPersisted: PersistedState | null;
+  bootstrapError: string | null;
+}) {
+  const persisted = initialPersisted ?? null;
   const [tab, setTab] = useState<typeof TAB_KEYS[number]>("coverage");
 
   const {
@@ -1040,6 +1062,9 @@ export default function App() {
   const [stagedDelete, setStagedDelete] = useState<StagedDeleteSnapshot | null>(
     null,
   );
+  const [bootstrapToast, setBootstrapToast] = useState<
+    { message: string; timeout: ReturnType<typeof setTimeout> } | null
+  >(null);
   const [importToast, setImportToast] = useState<
     { message: string; timeout: ReturnType<typeof setTimeout> } | null
   >(null);
@@ -1066,6 +1091,28 @@ export default function App() {
     | { open: true; title: string; body: string; resolve: () => void }
     | null
   >(null);
+
+  useEffect(() => {
+    if (!bootstrapError) return;
+    setBootstrapToast((prev) => {
+      if (prev?.timeout) {
+        clearTimeout(prev.timeout);
+      }
+      const timeout = setTimeout(() => {
+        setBootstrapToast((current) =>
+          current?.message === bootstrapError ? null : current,
+        );
+      }, 5000);
+      return { message: bootstrapError, timeout };
+    });
+  }, [bootstrapError]);
+
+  useEffect(() => {
+    if (!bootstrapToast?.timeout) return;
+    return () => {
+      clearTimeout(bootstrapToast.timeout);
+    };
+  }, [bootstrapToast]);
 
   const showConfirm = (body: string, title = "Confirm"): Promise<boolean> => {
     const shouldUseNative =
@@ -2845,6 +2892,7 @@ export default function App() {
             </div>
           </div>
         )}
+        <Toast open={!!bootstrapToast} message={bootstrapToast?.message ?? ""} />
         <Toast open={!!importToast} message={importToast?.message || ""} />
         <Toast
           open={!!stagedDelete}
