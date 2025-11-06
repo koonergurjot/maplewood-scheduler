@@ -1,4 +1,5 @@
 import { getToken } from "../utils/api";
+import { abortQueuedFetchSignal, queuedFetch } from "../utils/offlineQueue";
 import { saveState } from "../utils/storage";
 
 import type { PersistedState } from "./schedulerStore";
@@ -66,20 +67,28 @@ export function createSchedulerPersistenceManager({
   debounceMs = 600,
 }: SchedulerPersistenceConfig) {
   let inFlight: AbortController | null = null;
+  let lastAbortController: AbortController | null = null;
 
   const send = async (snapshot: PersistedState) => {
     const token = getToken();
     if (!token) return;
 
     if (inFlight) {
+      abortQueuedFetchSignal(inFlight.signal);
       inFlight.abort();
+    }
+    if (lastAbortController) {
+      abortQueuedFetchSignal(lastAbortController.signal);
+      lastAbortController.abort();
+      lastAbortController = null;
     }
 
     const controller = new AbortController();
     inFlight = controller;
+    lastAbortController = controller;
 
     try {
-      const response = await fetch("/api/scheduler-state", {
+      const response = await queuedFetch("/api/scheduler-state", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
