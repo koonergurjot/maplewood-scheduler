@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getToken } from "../utils/api";
 import { loadState } from "../utils/storage";
+import { parsePersistedStatePayload } from "../store/persistedState";
 import type { PersistedState } from "./useSchedulerState";
 
 const LOGIN_REDIRECT_PATH = "/login";
@@ -61,19 +62,8 @@ export function useSchedulerBootstrap(): SchedulerBootstrapResult {
 
         if (response.status === 200) {
           const payload = await response.json();
-          const remoteState: PersistedState | null = payload?.state
-            ? {
-                ...payload.state,
-                version:
-                  typeof payload.version === "number"
-                    ? payload.version
-                    : payload.state.version,
-                updatedAt:
-                  typeof payload.updatedAt === "string"
-                    ? payload.updatedAt
-                    : payload.state.updatedAt,
-              }
-            : null;
+          const remoteState: PersistedState | null =
+            parsePersistedStatePayload(payload);
           if (!remoteState) {
             console.error("Scheduler bootstrap returned an empty payload", payload);
           }

@@ -38,6 +38,12 @@ export type PersistedState = {
   updatedAt?: string;
 };
 
+export type SyncConflict = {
+  snapshot: PersistedState;
+  serverVersion: number | null;
+  updatedAt: string | null;
+};
+
 type SchedulerState = {
   employees: Employee[];
   vacations: Vacation[];
@@ -49,6 +55,7 @@ type SchedulerState = {
   version: number | null;
   updatedAt: string | null;
   isDirty: boolean;
+  syncConflict: SyncConflict | null;
 };
 
 type StateAction =
@@ -65,7 +72,10 @@ type StateAction =
   | { type: "setVersion"; value: number | null }
   | { type: "setUpdatedAt"; value: string | null }
   | { type: "updateVacancy"; id: string; patch: Partial<Vacancy> }
-  | { type: "serverAck"; persisted: PersistedState };
+  | { type: "serverAck"; persisted: PersistedState }
+  | { type: "conflictDetected"; conflict: SyncConflict }
+  | { type: "clearConflict" }
+  | { type: "setConflictVersion"; value: number | null };
 
 function applySet<T>(current: T, updater: SetStateAction<T>): T {
   return typeof updater === "function"
@@ -118,6 +128,7 @@ function toSchedulerState(persisted?: PersistedState | null): SchedulerState {
     version,
     updatedAt,
     isDirty: false,
+    syncConflict: null,
   };
 }
 
@@ -204,7 +215,23 @@ function reducer(state: SchedulerState, action: StateAction): SchedulerState {
     }
     case "serverAck": {
       const next = toSchedulerState(action.persisted);
-      return { ...next, isDirty: false };
+      return { ...next, isDirty: false, syncConflict: null };
+    }
+    case "conflictDetected": {
+      return { ...state, syncConflict: action.conflict };
+    }
+    case "clearConflict": {
+      if (!state.syncConflict) return state;
+      return { ...state, syncConflict: null };
+    }
+    case "setConflictVersion": {
+      if (state.version === action.value) {
+        if (state.isDirty) {
+          return { ...state };
+        }
+        return { ...state, isDirty: true };
+      }
+      return { ...state, version: action.value, isDirty: true };
     }
     default:
       return state;
@@ -222,6 +249,9 @@ export function useSchedulerStore(persisted?: PersistedState) {
     persistenceManagerRef.current = createSchedulerPersistenceManager({
       onServerAck(persistedState) {
         dispatch({ type: "serverAck", persisted: persistedState });
+      },
+      onConflict(conflict) {
+        dispatch({ type: "conflictDetected", conflict });
       },
     });
   }
@@ -309,6 +339,22 @@ export function useSchedulerStore(persisted?: PersistedState) {
     [],
   );
 
+  const clearSyncConflict = useCallback(
+    () => dispatch({ type: "clearConflict" }),
+    [],
+  );
+
+  const setConflictVersion = useCallback(
+    (value: number | null) => dispatch({ type: "setConflictVersion", value }),
+    [],
+  );
+
+  const applyServerSnapshot = useCallback(
+    (persistedState: PersistedState) =>
+      dispatch({ type: "serverAck", persisted: persistedState }),
+    [],
+  );
+
   return {
     employees: state.employees,
     setEmployees,
@@ -330,7 +376,13 @@ export function useSchedulerStore(persisted?: PersistedState) {
     updatedAt: state.updatedAt,
     setUpdatedAt,
     updateVacancy,
+    syncConflict: state.syncConflict,
+    clearSyncConflict,
+    setConflictVersion,
+    applyServerSnapshot,
   } as const;
 }
 
 export default useSchedulerStore;
+
+export type SchedulerStoreApi = ReturnType<typeof useSchedulerStore>;
