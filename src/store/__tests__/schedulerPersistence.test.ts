@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createSchedulerPersistenceManager } from "../schedulerPersistence";
 import type { PersistedState } from "../schedulerStore";
+import { __resetOfflineQueueForTests } from "../../utils/offlineQueue";
 
 const apiMocks = vi.hoisted(() => ({
   getToken: vi.fn(),
@@ -24,6 +25,7 @@ describe("createSchedulerPersistenceManager", () => {
     vi.useFakeTimers();
     mockGetToken.mockReset();
     mockSaveState.mockReset();
+    __resetOfflineQueueForTests();
   });
 
   afterEach(() => {

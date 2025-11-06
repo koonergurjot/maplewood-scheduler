@@ -57,6 +57,7 @@ import VacancyDetail from "./components/VacancyDetail";
 import OpenVacanciesRedesign from "./components/OpenVacanciesRedesign";
 import SearchFilterBar from "./components/SearchFilterBar";
 import SchedulerSyncConflictBoundary from "./components/SchedulerSyncConflictBoundary";
+import OfflineBanner from "./components/OfflineBanner";
 import { useVacancyFilters } from "./hooks/useVacancyFilters";
 import { appConfig } from "./config";
 import { CLASSIFICATIONS } from "./types";
@@ -3180,6 +3181,7 @@ function EmployeesPage({
 
   return (
     <>
+      <OfflineBanner />
       <div className="grid">
         <div className="card">
           <div className="card-h">Import Staff (CSV)</div>
