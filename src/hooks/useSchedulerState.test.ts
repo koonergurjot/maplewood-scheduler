@@ -9,10 +9,20 @@ const storageMocks = vi.hoisted(() => ({
   saveState: vi.fn(),
 }));
 
+const persistenceMocks = vi.hoisted(() => ({
+  createSchedulerPersistenceManager: vi.fn(),
+}));
+
 vi.mock("../utils/storage", () => storageMocks);
+vi.mock("../store/schedulerPersistence", () => ({
+  createSchedulerPersistenceManager:
+    persistenceMocks.createSchedulerPersistenceManager,
+}));
 
 const mockLoadState = storageMocks.loadState as ReturnType<typeof vi.fn>;
 const mockSaveState = storageMocks.saveState as ReturnType<typeof vi.fn>;
+const mockCreatePersistenceManager =
+  persistenceMocks.createSchedulerPersistenceManager as ReturnType<typeof vi.fn>;
 
 const baseVacancy: Vacancy = {
   id: "base",
@@ -46,6 +56,11 @@ describe("useSchedulerState", () => {
   beforeEach(() => {
     mockLoadState.mockReset();
     mockSaveState.mockReset();
+    mockCreatePersistenceManager.mockReset();
+    mockCreatePersistenceManager.mockReturnValue({
+      queue: vi.fn(),
+      dispose: vi.fn(),
+    });
   });
 
   it("hydrates from storage once per mount", () => {
@@ -67,6 +82,7 @@ describe("useSchedulerState", () => {
         updatedAt: "2024-01-01T00:00:00.000Z",
       }),
     );
+    expect(mockCreatePersistenceManager).toHaveBeenCalledTimes(1);
   });
 
   it("uses provided persisted snapshot without reloading", () => {
