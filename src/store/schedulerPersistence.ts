@@ -4,8 +4,15 @@ import { saveState } from "../utils/storage";
 import type { PersistedState } from "./schedulerStore";
 import { debounce } from "./utils";
 
+type ConflictDetails = {
+  snapshot: PersistedState;
+  serverVersion: number | null;
+  updatedAt: string | null;
+};
+
 type SchedulerPersistenceConfig = {
   onServerAck: (persisted: PersistedState) => void;
+  onConflict: (details: ConflictDetails) => void;
   debounceMs?: number;
 };
 
@@ -55,6 +62,7 @@ function normalizeAck(
 
 export function createSchedulerPersistenceManager({
   onServerAck,
+  onConflict,
   debounceMs = 600,
 }: SchedulerPersistenceConfig) {
   let inFlight: AbortController | null = null;
@@ -84,6 +92,23 @@ export function createSchedulerPersistenceManager({
         signal: controller.signal,
       });
 
+      if (response.status === 409) {
+        let payload: any = null;
+        try {
+          payload = await response.json();
+        } catch {
+          payload = null;
+        }
+        const serverVersion =
+          typeof payload?.serverVersion === "number"
+            ? payload.serverVersion
+            : null;
+        const updatedAt =
+          typeof payload?.updatedAt === "string" ? payload.updatedAt : null;
+        onConflict({ snapshot, serverVersion, updatedAt });
+        return;
+      }
+
       if (response.status === 200 || response.status === 201) {
         let payload: any = null;
         try {
@@ -98,6 +123,10 @@ export function createSchedulerPersistenceManager({
     } catch (error) {
       if ((error as DOMException)?.name !== "AbortError") {
         console.error("Failed to persist scheduler state", error);
+      }
+    } finally {
+      if (inFlight === controller) {
+        inFlight = null;
       }
     }
   };

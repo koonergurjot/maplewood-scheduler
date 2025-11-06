@@ -56,6 +56,7 @@ import VacancyRow from "./components/VacancyRow";
 import VacancyDetail from "./components/VacancyDetail";
 import OpenVacanciesRedesign from "./components/OpenVacanciesRedesign";
 import SearchFilterBar from "./components/SearchFilterBar";
+import SchedulerSyncConflictBoundary from "./components/SchedulerSyncConflictBoundary";
 import { useVacancyFilters } from "./hooks/useVacancyFilters";
 import { appConfig } from "./config";
 import { CLASSIFICATIONS } from "./types";
@@ -1051,6 +1052,10 @@ function SchedulerAppContent({
     employeesById,
     vacancyRanges,
     setVacancyRanges,
+    syncConflict,
+    clearSyncConflict,
+    setConflictVersion,
+    applyServerSnapshot,
   } = useSchedulerState(persisted);
   const [selectedVacancyIds, setSelectedVacancyIds] = useState<string[]>([]);
   const [bulkAwardOpen, setBulkAwardOpen] = useState(false);
@@ -2822,6 +2827,13 @@ function SchedulerAppContent({
             <Button variant="primary" onClick={() => { alertState?.resolve(); setAlertState(null); }}>OK</Button>
           </div>
         </Modal>
+        <SchedulerSyncConflictBoundary
+          conflict={syncConflict}
+          clearConflict={clearSyncConflict}
+          setConflictVersion={setConflictVersion}
+          applyServerSnapshot={applyServerSnapshot}
+          confirmDiscard={showConfirm}
+        />
         <BulkAwardDialog
           open={bulkAwardOpen}
           employees={employees}
