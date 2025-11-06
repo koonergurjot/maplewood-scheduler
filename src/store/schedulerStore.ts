@@ -204,7 +204,23 @@ function reducer(state: SchedulerState, action: StateAction): SchedulerState {
     }
     case "serverAck": {
       const next = toSchedulerState(action.persisted);
-      return { ...next, isDirty: false };
+      const version = next.version ?? state.version;
+      const updatedAt = next.updatedAt ?? state.updatedAt;
+
+      if (state.isDirty) {
+        return {
+          ...state,
+          version,
+          updatedAt,
+        };
+      }
+
+      return {
+        ...next,
+        version,
+        updatedAt,
+        isDirty: false,
+      };
     }
     default:
       return state;
