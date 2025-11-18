@@ -40,4 +40,19 @@ describe("aggregateByMonth", () => {
     expect(jan?.awarded).toBe(1);
     expect(jan?.cancelled).toBe(1);
   });
+
+  it("aggregates mixed-case statuses", () => {
+    const mixedCaseVacancies = [
+      { date: "2024-04-01", status: "AWARDED", hours: 9 },
+      { date: "2024-04-02", status: "Cancelled", hours: 8 },
+      { date: "2024-04-03", status: "PoStEd", hours: 7 },
+    ];
+
+    const [april] = aggregateByMonth(mixedCaseVacancies);
+
+    expect(april.period).toBe("2024-04");
+    expect(april.posted).toBe(3);
+    expect(april.awarded).toBe(1);
+    expect(april.cancelled).toBe(1);
+  });
 });
