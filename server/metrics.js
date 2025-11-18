@@ -4,13 +4,18 @@ export function aggregateByMonth(vacancies, options = {}) {
   const { overtimeThreshold = 8 } = options;
   const groups = {};
   for (const v of vacancies) {
-    if (!ALLOWED_STATUSES.has(v.status)) {
+    const normalizedStatus = String(v.status).toLowerCase();
+    if (!ALLOWED_STATUSES.has(normalizedStatus)) {
       console.warn(`Unknown status: ${v.status}`);
       continue;
     }
+    const normalizedVacancy = {
+      ...v,
+      status: normalizedStatus,
+    };
     const month = v.date.slice(0, 7);
     groups[month] = groups[month] || [];
-    groups[month].push(v);
+    groups[month].push(normalizedVacancy);
   }
   return Object.entries(groups)
     .sort(([a], [b]) => a.localeCompare(b))
