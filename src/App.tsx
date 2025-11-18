@@ -1388,7 +1388,7 @@ function SchedulerAppContent({
   const [coverage, setCoverage] = useState<{
     selectedDates?: string[];
     perDayTimes?: Record<string, { start: string; end: string }>;
-    perDayWing?: Record<string, string>;
+    perDayWings?: Record<string, string>;
   } | null>(null);
   const [awardAsBlock, setAwardAsBlock] = useState(true);
 
@@ -1453,7 +1453,7 @@ function SchedulerAppContent({
         : {}),
       reason: "Vacation Backfill",
       classification: vac.classification,
-      wing: coverage?.perDayWing?.[d] ?? v.wing!,
+      wing: coverage?.perDayWings?.[d] ?? v.wing!,
       date: d,
       start:
         coverage?.perDayTimes?.[d]?.start ??

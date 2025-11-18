@@ -219,9 +219,9 @@ export default function VacancyRangeForm({
           initial={{
             selectedDates: workingDays,
             perDayTimes,
-            perDayWing: perDayWings,
+            perDayWings,
           }}
-          onSave={({ selectedDates, perDayTimes: times, perDayWing: wings }) => {
+          onSave={({ selectedDates, perDayTimes: times, perDayWings: wings }) => {
             setWorkingDays(selectedDates);
             setPerDayTimes(times);
             setPerDayWings(wings);

@@ -11,12 +11,12 @@ type Props = {
   initial?: {
     selectedDates?: string[];
     perDayTimes?: Record<string, Times>;
-    perDayWing?: Record<string, string>;
+    perDayWings?: Record<string, string>;
   };
   onSave: (payload: {
     selectedDates: string[];
     perDayTimes: Record<string, Times>;
-    perDayWing: Record<string, string>;
+    perDayWings: Record<string, string>;
   }) => void;
   onClose: () => void;
 };
@@ -130,9 +130,9 @@ export default function CoverageDaysModal({
     return t;
   });
 
-  const [perDayWing, setPerDayWing] = useState<Record<string, string>>(() => {
+  const [perDayWings, setPerDayWings] = useState<Record<string, string>>(() => {
     const w: Record<string, string> = {};
-    inRangeDates.forEach(d => { w[d] = initial?.perDayWing?.[d] ?? ""; });
+    inRangeDates.forEach(d => { w[d] = initial?.perDayWings?.[d] ?? ""; });
     return w;
   });
 
@@ -151,11 +151,11 @@ export default function CoverageDaysModal({
     });
 
     const nextWings: Record<string, string> = {};
-    inRangeDates.forEach(d => { nextWings[d] = initial?.perDayWing?.[d] ?? ""; });
+    inRangeDates.forEach(d => { nextWings[d] = initial?.perDayWings?.[d] ?? ""; });
 
     setSelected(prev => shallowEqualBooleanMap(prev, nextSelected) ? prev : nextSelected);
     setPerDayTimes(prev => shallowEqualTimesMap(prev, nextTimes) ? prev : nextTimes);
-    setPerDayWing(prev => shallowEqualStringMap(prev, nextWings) ? prev : nextWings);
+    setPerDayWings(prev => shallowEqualStringMap(prev, nextWings) ? prev : nextWings);
   }, [open, startDate, endDate, defaultStart, defaultEnd, initial, inRangeDates]);
 
   const toggle = (d: string) => {
@@ -197,7 +197,7 @@ export default function CoverageDaysModal({
     onSave({
       selectedDates: chosen,
       perDayTimes: Object.fromEntries(chosen.map(d => [d, perDayTimes[d]])),
-      perDayWing:  Object.fromEntries(chosen.map(d => [d, perDayWing[d] ?? ""])),
+      perDayWings: Object.fromEntries(chosen.map(d => [d, perDayWings[d] ?? ""])),
     });
   };
 
@@ -243,7 +243,7 @@ export default function CoverageDaysModal({
               <div>{formatShort(d)}</div>
               <input type="time" value={perDayTimes[d].start} onChange={(e) => setPerDayTimes(t => ({ ...t, [d]: { ...t[d], start: e.target.value } }))} />
               <input type="time" value={perDayTimes[d].end}   onChange={(e) => setPerDayTimes(t => ({ ...t, [d]: { ...t[d], end: e.target.value } }))} />
-              <input placeholder="Wing (optional)" value={perDayWing[d] ?? ""} onChange={(e) => setPerDayWing(w => ({ ...w, [d]: e.target.value }))} />
+              <input placeholder="Wing (optional)" value={perDayWings[d] ?? ""} onChange={(e) => setPerDayWings(w => ({ ...w, [d]: e.target.value }))} />
             </div>
           ))}
         </div>
