@@ -20,7 +20,7 @@ describe("CoverageDaysModal", () => {
           perDayTimes: {
             "2024-01-10": { start: "09:00", end: "17:00" },
           },
-          perDayWing: {
+          perDayWings: {
             "2024-01-10": "West",
           },
         }}
@@ -43,7 +43,7 @@ describe("CoverageDaysModal", () => {
           perDayTimes: {
             "2024-01-11": { start: "09:00", end: "17:00" },
           },
-          perDayWing: {
+          perDayWings: {
             "2024-01-11": "West",
           },
         }}
@@ -65,12 +65,12 @@ describe("CoverageDaysModal", () => {
       "2024-01-11": { start: "09:00", end: "17:00" },
       "2024-01-12": { start: "08:00", end: "16:00" },
     });
-    expect(payload.perDayWing).toEqual({
+    expect(payload.perDayWings).toEqual({
       "2024-01-11": "West",
       "2024-01-12": "",
     });
     expect(payload.perDayTimes).not.toHaveProperty("2024-01-10");
-    expect(payload.perDayWing).not.toHaveProperty("2024-01-10");
+    expect(payload.perDayWings).not.toHaveProperty("2024-01-10");
   });
 });
 
