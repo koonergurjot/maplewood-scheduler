@@ -4410,7 +4410,6 @@ export function BidsPage({
                     })),
                   ]);
                   setNewBid({ selectedVacancyIds: [] });
-                  resetVacancyFilters();
                   setBidFormKey((prev) => prev + 1);
                 }}
               >
@@ -4420,7 +4419,6 @@ export function BidsPage({
                 className="btn btn-sm"
                 onClick={() => {
                   setNewBid({ selectedVacancyIds: [] });
-                  resetVacancyFilters();
                   setBidFormKey((prev) => prev + 1);
                 }}
               >
