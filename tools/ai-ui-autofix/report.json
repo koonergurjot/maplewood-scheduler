@@ -1,0 +1,124 @@
+{
+  "baseUrl": "http://127.0.0.1:5173",
+  "routes": [
+    "/",
+    "/dashboard",
+    "/analytics",
+    "/audit-log"
+  ],
+  "widths": [
+    360,
+    768,
+    1280
+  ],
+  "issuesTotal": 8,
+  "generatedAt": "2026-09-06T16:02:12.053Z",
+  "issues": [
+    {
+      "route": "/",
+      "width": 360,
+      "type": "console-error",
+      "details": {
+        "messages": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        ]
+      }
+    },
+    {
+      "route": "/analytics",
+      "width": 360,
+      "type": "console-error",
+      "details": {
+        "messages": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        ]
+      }
+    },
+    {
+      "route": "/analytics",
+      "width": 360,
+      "type": "overflow-x",
+      "details": {}
+    },
+    {
+      "route": "/analytics",
+      "width": 360,
+      "type": "offscreen",
+      "details": {
+        "sample": [
+          {
+            "tag": "div",
+            "class": ""
+          },
+          {
+            "tag": "canvas",
+            "class": ""
+          },
+          {
+            "tag": "div",
+            "class": ""
+          },
+          {
+            "tag": "canvas",
+            "class": ""
+          }
+        ]
+      }
+    },
+    {
+      "route": "/",
+      "width": 768,
+      "type": "console-error",
+      "details": {
+        "messages": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        ]
+      }
+    },
+    {
+      "route": "/analytics",
+      "width": 768,
+      "type": "console-error",
+      "details": {
+        "messages": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        ]
+      }
+    },
+    {
+      "route": "/",
+      "width": 1280,
+      "type": "console-error",
+      "details": {
+        "messages": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        ]
+      }
+    },
+    {
+      "route": "/analytics",
+      "width": 1280,
+      "type": "console-error",
+      "details": {
+        "messages": [
+          "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        ]
+      }
+    }
+  ]
+}
